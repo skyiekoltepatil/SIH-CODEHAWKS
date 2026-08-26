@@ -1,0 +1,169 @@
+.id-card-page-container {
+    padding: 10px;
+    background: #f8fafc;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.breadcrumb {
+    font-size: 0.9rem;
+    color: #4b5563;
+    margin-bottom: 40px;
+    font-weight: 500;
+}
+
+.id-card-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+}
+
+.virtual-id-card {
+    background: white;
+    width: 320px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border: 1px solid #475569;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.id-card-header {
+    padding: 20px 15px 10px 15px;
+    text-align: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.id-card-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.logo-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    line-height: 1;
+}
+
+.logo-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #4c1d95; /* Deep purple */
+    letter-spacing: 1px;
+}
+
+.logo-subtitle {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 2px;
+}
+
+.id-card-address {
+    font-size: 0.65rem;
+    color: #475569;
+    line-height: 1.4;
+}
+
+.id-card-body {
+    padding: 20px 15px;
+    text-align: center;
+}
+
+.id-card-photo {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 15px auto;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.id-card-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.reg-no {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+
+.student-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.course-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.id-card-footer {
+    padding: 15px;
+    text-align: center;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.barcode-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    margin-bottom: 5px;
+}
+
+.bar {
+    background: #0f172a;
+    height: 100%;
+    margin-right: 2px;
+}
+
+.bar.narrow {
+    width: 2px;
+}
+
+.bar.wide {
+    width: 6px;
+}
+
+.barcode-text {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: 2px;
+}
+
+.download-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 4px 6px rgba(37,99,235,0.2);
+    transition: all 0.2s;
+}
+
+.download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 10px rgba(37,99,235,0.3);
+}

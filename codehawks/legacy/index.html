@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIH CODEHAWKS</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar-brand">
+            <i class="fa-solid fa-hawk icon-brand"></i>
+            <h1>SIH CODEHAWKS</h1>
+        </div>
+        <nav class="navbar-links">
+            <a href="#" class="nav-link active" data-page="home">Home</a>
+            <a href="#" class="nav-link" data-page="about">About Us</a>
+            <a href="#" class="nav-link" data-page="dashboard">Dashboard</a>
+            <a href="#" class="nav-link" data-page="schemes">Schemes</a>
+            <a href="#" class="nav-link" data-page="services">Services</a>
+        </nav>
+        <div class="navbar-actions">
+            <i class="fa-solid fa-magnifying-glass nav-search-icon"></i>
+            <!-- Login Button -->
+            <button class="btn-primary login-btn" id="nav-login-btn">Login/Register</button>
+            
+            <!-- User Profile (Hidden by default) -->
+            <div class="user-profile d-none" id="nav-user-profile">
+                <div class="avatar">U</div>
+                <span>User</span>
+                <button class="logout-btn" id="logout-btn" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app-container">
+
+        <!-- ==================== HOME PAGE ==================== -->
+        <section id="page-home" class="page active">
+            
+            <!-- UMANG Style Stats -->
+            <div class="home-stats-wrapper">
+                <div class="home-stats-container">
+                    
+                    <!-- Stat 1 -->
+                    <div class="home-stat-item">
+                        <div class="home-stat-header">
+                            <i class="fa-regular fa-building stat-icon-large"></i>
+                            <div class="home-stat-title">
+                                <h3>207</h3>
+                                <p>Departments/Entities</p>
+                            </div>
+                        </div>
+                        <div class="home-stat-sub">
+                            <div>
+                                <span>Central</span>
+                                <strong>80</strong>
+                            </div>
+                            <div>
+                                <span>State</span>
+                                <strong>127</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stat 2 -->
+                    <div class="home-stat-item">
+                        <div class="home-stat-header">
+                            <i class="fa-solid fa-mobile-screen stat-icon-large"></i>
+                            <div class="home-stat-title">
+                                <h3>2,106</h3>
+                                <p>Services</p>
+                            </div>
+                        </div>
+                        <div class="home-stat-sub">
+                            <div>
+                                <span>Central</span>
+                                <strong>918</strong>
+                            </div>
+                            <div>
+                                <span>State</span>
+                                <strong>1,188</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stat 3 -->
+                    <div class="home-stat-item">
+                        <div class="home-stat-header">
+                            <i class="fa-solid fa-user-shield stat-icon-large"></i>
+                            <div class="home-stat-title">
+                                <h3 class="invisible-num">.</h3>
+                                <p>Registrations</p>
+                            </div>
+                        </div>
+                        <div class="home-stat-sub single-sub">
+                            <div>
+                                <span>Total</span>
+                                <strong>7.75 Crores</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stat 4 -->
+                    <div class="home-stat-item no-border">
+                        <div class="home-stat-header">
+                            <i class="fa-solid fa-money-check-dollar stat-icon-large"></i>
+                            <div class="home-stat-title">
+                                <h3 class="invisible-num">.</h3>
+                                <p>Transactions</p>
+                            </div>
+                        </div>
+                        <div class="home-stat-sub single-sub">
+                            <div>
+                                <span>Total</span>
+                                <strong>554.86 Crores</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- What's New Section -->
+            <div class="whats-new-section">
+                <h2>What's New ?</h2>
+                <p class="whats-new-subtitle">Citizens may explore the newly added services on SIH CODEHAWKS!</p>
+                
+                <div class="whats-new-grid">
+                    <div class="whats-new-card">
+                        <div class="icon-circle" style="color: #e67e22;"><i class="fa-solid fa-hands-holding-child"></i></div>
+                        <p>Poshan Tracker</p>
+                    </div>
+                    <div class="whats-new-card">
+                        <div class="icon-circle" style="color: #27ae60;"><i class="fa-solid fa-landmark"></i></div>
+                        <p>Aaple Sarkar</p>
+                    </div>
+                    <div class="whats-new-card">
+                        <div class="icon-circle" style="color: #f39c12;"><i class="fa-solid fa-fingerprint"></i></div>
+                        <p>Jeevan Pramaan</p>
+                    </div>
+                    <div class="whats-new-card">
+                        <div class="icon-circle" style="color: #8e44ad; border-radius: 0; width: 60px; height: 60px;"><i class="fa-solid fa-dharmachakra"></i></div>
+                        <p>Indian Culture</p>
+                    </div>
+                    <div class="whats-new-card">
+                        <div class="icon-circle" style="color: #2c3e50;"><i class="fa-solid fa-torii-gate"></i></div>
+                        <p>Goa Online</p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ==================== DASHBOARD PAGE ==================== -->
+        <section id="page-dashboard" class="page">
+            <!-- User Dashboard Stats -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa-solid fa-file-signature"></i></div>
+                    <div class="stat-info">
+                        <h3 id="stat-applied">0</h3>
+                        <p>Schemes Applied</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: var(--success); background-color: #d1fae5;"><i class="fa-solid fa-check-circle"></i></div>
+                    <div class="stat-info">
+                        <h3 id="stat-approved">0</h3>
+                        <p>Approved</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: var(--warning); background-color: #fef3c7;"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                    <div class="stat-info">
+                        <h3 id="stat-pending">0</h3>
+                        <p>Pending</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: var(--danger); background-color: #fee2e2;"><i class="fa-solid fa-circle-xmark"></i></div>
+                    <div class="stat-info">
+                        <h3 id="stat-rejected">0</h3>
+                        <p>Rejected</p>
+                    </div>
+                </div>
+            </div>
+
+            <main class="dashboard-main">
+                <div class="main-content">
+                    <div class="welcome-header">
+                        <h2>User Dashboard</h2>
+                        <p>Track your applications, manage your profile, and get help from our AI Assistant.</p>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab-btn active" data-target="applications"><i class="fa-regular fa-clock"></i> My Applications</button>
+                        <button class="tab-btn" data-target="profile"><i class="fa-regular fa-user"></i> Profile</button>
+                        <button class="tab-btn" data-target="ai-assistant"><i class="fa-solid fa-robot"></i> AI Assistant</button>
+                    </div>
+
+                    <div class="tab-content-container">
+                        <!-- My Applications Tab -->
+                        <div class="tab-content active" id="applications">
+                            <div class="section-header">
+                                <h3>Schemes Applied & Details</h3>
+                            </div>
+                            <div class="applications-list" id="applications-list">
+                                <!-- Dynamic content populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Profile Tab -->
+                        <div class="tab-content" id="profile">
+                            <div class="profile-ui-container">
+                                <!-- Left Sidebar -->
+                                <aside class="profile-sidebar">
+                                    <button class="profile-nav-btn active"><i class="fa-solid fa-user"></i> PERSONAL DETAILS</button>
+                                    <button class="profile-nav-btn"><i class="fa-solid fa-phone"></i> CONTACT DETAILS</button>
+                                    <button class="profile-nav-btn"><i class="fa-solid fa-users"></i> FAMILY DETAILS</button>
+                                    <button class="profile-nav-btn"><i class="fa-solid fa-graduation-cap"></i> EDUCATION DETAILS</button>
+                                    <button class="profile-nav-btn"><i class="fa-solid fa-building-columns"></i> BANK DETAILS</button>
+                                    <button class="profile-nav-btn"><i class="fa-solid fa-upload"></i> UPLOAD DOCUMENTS</button>
+                                    <button class="profile-nav-btn"><i class="fa-solid fa-briefcase"></i> EXPERIENCE DETAILS</button>
+                                    <button class="profile-nav-btn"><i class="fa-solid fa-trophy"></i> AWARD / PARTICIPATION DETAILS</button>
+                                    <button class="profile-nav-btn"><i class="fa-solid fa-person-running"></i> STUDENT ACTIVITY</button>
+                                    <button class="profile-nav-btn"><i class="fa-solid fa-handshake-angle"></i> SOCIAL DETAILS</button>
+                                    <button class="profile-nav-btn"><i class="fa-solid fa-id-badge"></i> ID-CARD PHOTO & SIGN UPLOAD</button>
+                                    <button class="profile-nav-btn"><i class="fa-solid fa-notes-medical"></i> MEDICAL DETAILS</button>
+                                    <button class="profile-nav-btn"><i class="fa-solid fa-star"></i> PERSON SKILL & INTEREST</button>
+                                    <button class="profile-nav-btn"><i class="fa-solid fa-shield-halved"></i> ANTI-RAGGING DETAILS</button>
+                                </aside>
+
+                                <!-- Right Content Area -->
+                                <main class="profile-content-area">
+                                    <!-- Horizontal Tabs -->
+                                    <div class="profile-top-tabs">
+                                        <button class="profile-top-tab-btn active">PERSONAL DETAILS</button>
+                                        <button class="profile-top-tab-btn">IDENTITY</button>
+                                        <button class="profile-top-tab-btn">RELIGION</button>
+                                        <button class="profile-top-tab-btn">PHYSICALLY HANDICAPPED</button>
+                                        <button class="profile-top-tab-btn">MINORITY DETAILS</button>
+                                        <button class="profile-top-tab-btn">PASSPORT DETAILS</button>
+                                        <button class="profile-top-tab-btn">EXAMINATION DETAILS</button>
+                                    </div>
+
+                                    <!-- Form Content -->
+                                    <div class="profile-form-wrapper">
+                                        <div class="profile-name-header">
+                                            <div><span class="label">First Name <span class="req">*</span> :</span><span class="val">Bhushan</span></div>
+                                            <div><span class="label">Middle Name :</span><span class="val">Atul</span></div>
+                                            <div><span class="label">Last Name <span class="req">*</span> :</span><span class="val">Kolte</span></div>
+                                        </div>
+
+                                        <form id="ui-profile-form" onsubmit="event.preventDefault(); saveProfile();">
+                                            <div class="ui-form-grid">
+                                                
+                                                <div class="ui-input-group">
+                                                    <label>Official Email <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-pen"></i>
+                                                        <input type="email" value="bhushankolte20@gmail.com" required>
+                                                    </div>
+                                                </div>
+
+                                                <div class="ui-input-group">
+                                                    <label>Student Admission Main Category <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-list"></i>
+                                                        <select required><option>OBC</option><option>General</option></select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="ui-input-group">
+                                                    <label>Caste <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-list"></i>
+                                                        <select required><option>Kunbi</option><option>Other</option></select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="ui-input-group">
+                                                    <label>Sub Cast <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-list"></i>
+                                                        <select required><option>Hindu</option></select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="ui-input-group">
+                                                    <label>Nationality <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-list"></i>
+                                                        <select required><option>India</option></select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="ui-input-group">
+                                                    <label>Domicile <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-list"></i>
+                                                        <select required><option>Maharashtra</option></select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="ui-input-group">
+                                                    <label>Mobile Number <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-pen"></i>
+                                                        <input type="tel" value="8407984539" required>
+                                                    </div>
+                                                </div>
+
+                                                <div class="ui-input-group">
+                                                    <label>Birth Place <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-pen"></i>
+                                                        <input type="text" value="Malkapur" required>
+                                                    </div>
+                                                </div>
+
+                                                <div class="ui-input-group">
+                                                    <label>Birth Country <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-list"></i>
+                                                        <select required><option>India</option></select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="ui-input-group">
+                                                    <label>Birth State <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-list"></i>
+                                                        <select required><option>Maharashtra</option></select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="ui-input-group">
+                                                    <label>Birth District <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-list"></i>
+                                                        <select required><option>Buldhana</option></select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="ui-input-group">
+                                                    <label>Native Place <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-pen"></i>
+                                                        <input type="text" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="ui-form-grid" style="margin-top: 24px;">
+                                                <div class="ui-input-group">
+                                                    <label>Native Country <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-list"></i>
+                                                        <select required><option></option></select>
+                                                    </div>
+                                                </div>
+                                                <div class="ui-input-group">
+                                                    <label>Native State <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-list"></i>
+                                                        <select required><option></option></select>
+                                                    </div>
+                                                </div>
+                                                <div class="ui-input-group">
+                                                    <label>Native District <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-list"></i>
+                                                        <select required><option></option></select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="ui-form-grid two-cols" style="margin-top: 24px;">
+                                                <div class="ui-input-group">
+                                                    <label>Primary_Email (Personal) <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-pen"></i>
+                                                        <input type="email" value="bhushankolte20@gmail.com" required>
+                                                    </div>
+                                                </div>
+                                                <div class="ui-input-group">
+                                                    <label>Alternate_Email <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-pen"></i>
+                                                        <input type="email" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="ui-form-grid two-cols" style="margin-top: 24px;">
+                                                <div class="ui-input-group">
+                                                    <label>Blood Group <span class="req">*</span></label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-list"></i>
+                                                        <select required><option>AB+ve</option></select>
+                                                    </div>
+                                                </div>
+                                                <div class="ui-input-group">
+                                                    <label>Anti Ragging Undertaking No <span class="req">*</span></label>
+                                                    <div class="input-wrapper" style="border: none; padding: 0;">
+                                                        <div style="display:flex; align-items:center; border: 1px solid #ccc; border-radius: 4px; padding: 0 10px; width: 100%;">
+                                                            <i class="fa-solid fa-pen"></i>
+                                                            <input type="text" style="width:100%; border:none; outline:none; padding:12px 0;">
+                                                        </div>
+                                                    </div>
+                                                    <a href="#" style="font-size: 0.75rem; margin-top: 6px; display: block; color: blue;">Link(Click the link to fill the Anti Ragging Undertaking form)</a>
+                                                </div>
+                                            </div>
+
+                                            <div class="ui-form-grid two-cols" style="margin-top: 24px;">
+                                                <div class="ui-input-group">
+                                                    <label>Earning Parent Name(last first middle)</label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-pen"></i>
+                                                        <input type="text">
+                                                    </div>
+                                                </div>
+                                                <div class="ui-input-group">
+                                                    <label>Earning Parent Relation</label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-list"></i>
+                                                        <select><option></option></select>
+                                                    </div>
+                                                </div>
+                                                <div class="ui-input-group">
+                                                    <label>Career Choice</label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-briefcase"></i>
+                                                        <select><option></option></select>
+                                                    </div>
+                                                </div>
+                                                <div class="ui-input-group">
+                                                    <label>Alumni Institute</label>
+                                                    <div class="input-wrapper">
+                                                        <i class="fa-solid fa-graduation-cap"></i>
+                                                        <select><option></option></select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="profile-form-footer">
+                                                <button type="submit" class="btn-primary">SAVE AND NEXT</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </main>
+                            </div>
+                        </div>
+
+                        <!-- AI Assistant Tab -->
+                        <div class="tab-content" id="ai-assistant">
+                            <div class="section-header">
+                                <h3>AI Assistant</h3>
+                            </div>
+                            <div class="chat-container">
+                                <div class="chat-messages" id="chat-messages">
+                                    <div class="message ai-message">
+                                        Hello! I am your SIH CODEHAWKS AI Assistant. How can I help you check your application status or find new schemes?
+                                    </div>
+                                </div>
+                                <div class="chat-input-area">
+                                    <input type="text" id="chat-input" placeholder="Type your message...">
+                                    <button id="send-msg-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="sidebar-right">
+                    <div class="card notifications-card">
+                        <h3>Recent Notifications</h3>
+                        <div class="notification-item unread">
+                            <div class="notif-dot green"></div>
+                            <div class="notif-content">
+                                <h4>Application Approved</h4>
+                                <p>Your PM-KISAN application has been approved.</p>
+                                <span class="notif-date">Today, 10:30 AM</span>
+                            </div>
+                        </div>
+                        <div class="notification-item">
+                            <div class="notif-dot blue"></div>
+                            <div class="notif-content">
+                                <h4>Document Verification</h4>
+                                <p>Please upload income certificate for Ayushman Bharat.</p>
+                                <span class="notif-date">Yesterday, 02:15 PM</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card support-card">
+                        <h3>Help & Support</h3>
+                        <button class="support-btn" onclick="alert('Calling National Helpline: 1800-111-555')">
+                            <i class="fa-solid fa-phone"></i> Call Helpline: 1800-111-555
+                        </button>
+                    </div>
+                </aside>
+            </main>
+        </section>
+
+
+        <!-- ==================== SCHEMES PAGE ==================== -->
+        <section id="page-schemes" class="page">
+            <div class="page-container">
+                <div class="page-header">
+                    <h2>Government Schemes</h2>
+                    <p>Discover and apply for eligible government schemes based on your profile.</p>
+                </div>
+                
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Search schemes by name, category, or keyword..." id="search-input">
+                    <button class="filter-btn"><i class="fa-solid fa-filter"></i> Filter</button>
+                </div>
+
+                <div class="schemes-grid" id="schemes-list">
+                    <!-- Dynamic content populated by JS -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==================== ABOUT US PAGE ==================== -->
+        <section id="page-about" class="page">
+            <div class="page-container content-page">
+                <div class="page-header text-center">
+                    <h2>About SIH CODEHAWKS</h2>
+                    <p>Empowering citizens through seamless access to government services.</p>
+                </div>
+                <div class="about-content">
+                    <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200&h=400" alt="About Us Banner" class="about-banner">
+                    
+                    <h3>Our Mission</h3>
+                    <p>SIH CODEHAWKS is a unified digital platform designed to bridge the gap between the government and its citizens. Our mission is to make the discovery, application, and tracking of government schemes and services completely transparent, accessible, and hassle-free for every individual across the nation.</p>
+                    
+                    <h3>What We Do</h3>
+                    <ul>
+                        <li><strong>Unified Dashboard:</strong> A single portal to manage all your government interactions.</li>
+                        <li><strong>AI-Powered Assistance:</strong> Smart chatbots to guide you through application processes in multiple languages.</li>
+                        <li><strong>Real-time Tracking:</strong> Transparent status updates for all your submitted applications.</li>
+                        <li><strong>Secure Data Management:</strong> End-to-end encryption ensuring your documents and personal details are always safe.</li>
+                    </ul>
+
+                    <h3>Why Choose Us?</h3>
+                    <p>Developed as part of the Smart India Hackathon (SIH), CODEHAWKS focuses on citizen-centric design. We eliminate bureaucratic hurdles by auto-filling forms using secure data integration, proactively notifying you about eligible schemes, and providing 24/7 support.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SERVICES PAGE ==================== -->
+        <section id="page-services" class="page">
+            <div class="page-container content-page">
+                <div class="page-header">
+                    <h2>Platform Services</h2>
+                    <p>Explore the suite of services provided by the SIH CODEHAWKS platform.</p>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card">
+                        <i class="fa-solid fa-id-card service-icon"></i>
+                        <h3>Document Wallet</h3>
+                        <p>Securely store and share your vital documents like Aadhar, PAN, and Income Certificates directly with government departments.</p>
+                    </div>
+                    <div class="service-card">
+                        <i class="fa-solid fa-language service-icon"></i>
+                        <h3>Multilingual Support</h3>
+                        <p>Access all services and scheme details in your regional language for better understanding and inclusivity.</p>
+                    </div>
+                    <div class="service-card">
+                        <i class="fa-solid fa-bell service-icon"></i>
+                        <h3>Smart Alerts</h3>
+                        <p>Receive SMS and email notifications whenever a new scheme matches your profile or an application status changes.</p>
+                    </div>
+                    <div class="service-card">
+                        <i class="fa-solid fa-headset service-icon"></i>
+                        <h3>Grievance Redressal</h3>
+                        <p>Lodge complaints regarding delayed applications and track the resolution process in real-time.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Auth Modal (Login / Register) -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="modal auth-card">
+            <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
+                <h3 id="auth-title">Welcome Back</h3>
+                <button class="close-modal" onclick="closeAuthModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab-btn active" data-target="login-form">Login</button>
+                <button class="auth-tab-btn" data-target="register-form">Register</button>
+            </div>
+
+            <div class="modal-body" style="padding-top: 1rem;">
+                
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form active" onsubmit="event.preventDefault(); handleLogin();">
+                    <div class="form-group">
+                        <label>Mobile Number or Email</label>
+                        <input type="text" placeholder="Enter your mobile or email" required id="login-id">
+                    </div>
+                    <div class="form-group">
+                        <label>Password / OTP</label>
+                        <input type="password" placeholder="Enter your password or OTP" required id="login-pwd">
+                    </div>
+                    <div class="form-row-checkbox">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="remember-me">
+                            <span class="checkmark"></span>
+                            Remember Me
+                        </label>
+                        <a href="#" class="forgot-link">Forgot Password?</a>
+                    </div>
+                    <button type="submit" class="btn-primary full-width">Secure Login</button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="register-form" class="auth-form d-none" onsubmit="event.preventDefault(); handleRegister();">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" placeholder="As per Aadhar" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Mobile Number</label>
+                        <input type="tel" placeholder="+91 XXXXX XXXXX" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Create Password</label>
+                        <input type="password" placeholder="Min 8 characters" required>
+                    </div>
+                    <button type="submit" class="btn-primary full-width">Register Now</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Applying to Schemes -->
+    <div class="modal-overlay" id="apply-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Apply for Scheme</h3>
+                <button class="close-modal" id="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>You are about to apply for <strong id="modal-scheme-name"></strong>.</p>
+                <form id="apply-form" onsubmit="event.preventDefault(); submitApplication();">
+                    <div class="form-group">
+                        <label>Aadhar Number</label>
+                        <input type="text" placeholder="XXXX-XXXX-XXXX" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Mobile Number</label>
+                        <input type="text" placeholder="+91 XXXXX XXXXX" required>
+                    </div>
+                    <button type="submit" class="btn-primary full-width">Submit Application</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Details Modal -->
+    <div class="modal-overlay" id="details-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Application Details</h3>
+                <button class="close-modal" onclick="closeDetailsModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="details-modal-body">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Action completed successfully!</div>
+
+    <script src="script.js"></script>
+</body>
+</html>
