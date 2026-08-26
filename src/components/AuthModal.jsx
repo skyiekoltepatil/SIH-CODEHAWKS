@@ -7,14 +7,40 @@ export default function AuthModal({ onClose }) {
 
     const handleLogin = (e) => {
         e.preventDefault();
-        login();
-        onClose();
+        
+        if (window.grecaptcha) {
+            window.grecaptcha.ready(() => {
+                window.grecaptcha.execute(import.meta.env.VITE_RECAPTCHA_SITE_KEY, {action: 'login'}).then((token) => {
+                    console.log("reCAPTCHA token:", token);
+                    // TODO: Send this token to your backend for verification
+                    login();
+                    onClose();
+                });
+            });
+        } else {
+            console.warn("reCAPTCHA not loaded");
+            login();
+            onClose();
+        }
     };
 
     const handleRegister = (e) => {
         e.preventDefault();
-        login();
-        onClose();
+        
+        if (window.grecaptcha) {
+            window.grecaptcha.ready(() => {
+                window.grecaptcha.execute(import.meta.env.VITE_RECAPTCHA_SITE_KEY, {action: 'register'}).then((token) => {
+                    console.log("reCAPTCHA token:", token);
+                    // TODO: Send this token to your backend for verification
+                    login();
+                    onClose();
+                });
+            });
+        } else {
+            console.warn("reCAPTCHA not loaded");
+            login();
+            onClose();
+        }
     };
 
     return (
