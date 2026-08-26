@@ -1,0 +1,217 @@
+/* =========================================
+   Image-Style Profile UI
+   ========================================= */
+   .profile-ui-container {
+    display: flex;
+    background: white;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    min-height: 700px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.profile-sidebar {
+    width: 140px;
+    background: linear-gradient(to bottom, #dbeafe, #bfdbfe);
+    border-right: 1px solid var(--border-color);
+    padding: 20px 0;
+}
+
+.profile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    text-align: center;
+    padding: 20px 10px;
+    border: none;
+    background: transparent;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: #1f2937;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+}
+
+.profile-nav-btn i {
+    width: auto;
+    margin-right: 0;
+    text-align: center;
+    color: #4b5563;
+    font-size: 1.25rem;
+}
+
+.profile-nav-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.profile-nav-btn.active {
+    background: white;
+    color: #111827;
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+    margin-left: 10px;
+    width: calc(100% - 10px);
+    box-shadow: -2px 0 5px rgba(0,0,0,0.02);
+}
+.profile-nav-btn.active i {
+    color: var(--primary-color);
+}
+
+.profile-content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-top-tabs {
+    display: flex;
+    background: #eef2f6;
+    border-bottom: 1px solid var(--border-color);
+    overflow-x: auto;
+}
+
+.profile-top-tab-btn {
+    padding: 16px 20px;
+    border: none;
+    background: transparent;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: #6b7280;
+    cursor: pointer;
+    text-transform: uppercase;
+    border-top: 3px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.profile-top-tab-btn:hover {
+    color: #1f2937;
+    background: rgba(255,255,255,0.5);
+}
+
+.profile-top-tab-btn.active {
+    background: white;
+    color: #1f2937;
+    border-top-color: var(--primary-color);
+}
+
+.profile-form-wrapper {
+    padding: 30px;
+    flex: 1;
+    background: white;
+}
+
+.profile-name-header {
+    display: flex;
+    gap: 60px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.profile-name-header .label {
+    font-size: 0.75rem;
+    color: #64748b;
+    display: block;
+    margin-bottom: 4px;
+}
+.profile-name-header .req {
+    color: var(--danger);
+}
+.profile-name-header .val {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #6d28d9; /* Purple */
+}
+
+.ui-form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px 24px;
+}
+.ui-form-grid.two-cols {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.ui-input-group {
+    position: relative;
+}
+
+.ui-input-group label {
+    position: absolute;
+    top: -9px;
+    left: 10px;
+    background-color: white;
+    padding: 0 6px;
+    font-size: 0.7rem;
+    color: #64748b;
+    z-index: 2;
+    white-space: nowrap;
+    font-weight: 600;
+    width: max-content;
+    max-width: 90%;
+}
+
+.ui-input-group .req {
+    color: var(--danger);
+}
+
+.ui-input-group .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 0 12px;
+    background: white;
+    transition: all 0.2s;
+}
+
+.ui-input-group .input-wrapper:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.ui-input-group .input-wrapper i {
+    color: #94a3b8;
+    margin-right: 12px;
+    font-size: 0.85rem;
+}
+
+.ui-input-group .input-wrapper input, 
+.ui-input-group .input-wrapper select {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 14px 0;
+    font-size: 0.9rem;
+    background: transparent;
+    color: #1e293b;
+    width: 100%;
+}
+.ui-input-group .input-wrapper select {
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.profile-form-footer {
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+    padding-top: 20px;
+}
+.profile-form-footer .btn-primary {
+    padding: 12px 40px;
+    border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
