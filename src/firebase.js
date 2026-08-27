@@ -27,6 +27,11 @@ const db = getFirestore(app);
 let appCheck;
 if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
   try {
+    // To bypass the 15-minute wait, we are using a hardcoded debug token
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      self.FIREBASE_APPCHECK_DEBUG_TOKEN = "a1b2c3d4-e5f6-7890-1234-567890abcdef";
+    }
+
     appCheck = initializeAppCheck(app, {
       provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
       isTokenAutoRefreshEnabled: true
