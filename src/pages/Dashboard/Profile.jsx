@@ -1,8 +1,9 @@
 import { useState, useEffect, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { db } from '../../firebase';
+import { db, auth } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import './Profile.css';
 import './Profile.css';
 
@@ -25,6 +26,17 @@ export default function Profile() {
         domicile: ''
     });
     const [isSaving, setIsSaving] = useState(false);
+
+    // Password Form State
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmNewPassword: ''
+    });
+    const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
         if (location.state?.tab) {
@@ -68,6 +80,41 @@ export default function Profile() {
         }
     };
 
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        if (passwordData.newPassword !== passwordData.confirmNewPassword) {
+            alert("New passwords do not match!");
+            return;
+        }
+        if (passwordData.newPassword.length < 6) {
+            alert("Password should be at least 6 characters.");
+            return;
+        }
+        setIsUpdatingPassword(true);
+        try {
+            const currentUser = auth.currentUser;
+            if (!currentUser) throw new Error("User not logged in");
+            
+            // Re-authenticate first
+            const credential = EmailAuthProvider.credential(currentUser.email, passwordData.currentPassword);
+            await reauthenticateWithCredential(currentUser, credential);
+            
+            // Update password
+            await updatePassword(currentUser, passwordData.newPassword);
+            alert("Password updated successfully!");
+            setPasswordData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+        } catch (error) {
+            console.error("Error updating password:", error);
+            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
+                alert('Current password is incorrect.');
+            } else {
+                alert('Failed to update password: ' + error.message);
+            }
+        } finally {
+            setIsUpdatingPassword(false);
+        }
+    };
+
     return (
         <div id="profile">
             <div className="profile-ui-container">
@@ -100,7 +147,7 @@ export default function Profile() {
                     {/* Form Content */}
                     {activeSidebar === 'CHANGE_PASSWORD' ? (
                         <div className="profile-form-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <form id="ui-profile-form" onSubmit={(e) => { e.preventDefault(); alert('Password updated successfully!'); }} style={{ maxWidth: '500px', width: '100%', padding: '40px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #cbd5e1' }}>
+                            <form id="ui-profile-form" onSubmit={handleChangePassword} style={{ maxWidth: '500px', width: '100%', padding: '40px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #cbd5e1' }}>
                                 <h3 style={{ marginBottom: '30px', color: '#1e293b', fontSize: '1.5rem', textAlign: 'center' }}>Change Password</h3>
                                 
                                 <div className="ui-form-grid" style={{ gridTemplateColumns: '1fr', gap: '24px' }}>
@@ -108,26 +155,29 @@ export default function Profile() {
                                         <label>Current Password</label>
                                         <div className="input-wrapper">
                                             <i className="fa-solid fa-lock"></i>
-                                            <input type="password" />
+                                            <input type={showCurrentPassword ? "text" : "password"} required value={passwordData.currentPassword} onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})} />
+                                            <i className={`fa-solid ${showCurrentPassword ? 'fa-eye-slash' : 'fa-eye'}`} onClick={() => setShowCurrentPassword(!showCurrentPassword)} style={{ cursor: 'pointer', margin: 0, paddingLeft: '10px', color: '#94a3b8' }}></i>
                                         </div>
                                     </div>
                                     <div className="ui-input-group">
                                         <label>New Password</label>
                                         <div className="input-wrapper">
                                             <i className="fa-solid fa-key"></i>
-                                            <input type="password" />
+                                            <input type={showNewPassword ? "text" : "password"} required value={passwordData.newPassword} onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})} />
+                                            <i className={`fa-solid ${showNewPassword ? 'fa-eye-slash' : 'fa-eye'}`} onClick={() => setShowNewPassword(!showNewPassword)} style={{ cursor: 'pointer', margin: 0, paddingLeft: '10px', color: '#94a3b8' }}></i>
                                         </div>
                                     </div>
                                     <div className="ui-input-group">
                                         <label>Confirm New Password</label>
                                         <div className="input-wrapper">
                                             <i className="fa-solid fa-key"></i>
-                                            <input type="password" />
+                                            <input type={showConfirmPassword ? "text" : "password"} required value={passwordData.confirmNewPassword} onChange={(e) => setPasswordData({...passwordData, confirmNewPassword: e.target.value})} />
+                                            <i className={`fa-solid ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`} onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={{ cursor: 'pointer', margin: 0, paddingLeft: '10px', color: '#94a3b8' }}></i>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="profile-form-footer" style={{ marginTop: '30px', paddingTop: '0' }}>
-                                    <button type="submit" className="btn-primary" style={{ width: '100%' }}>UPDATE PASSWORD</button>
+                                    <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={isUpdatingPassword}>{isUpdatingPassword ? 'UPDATING...' : 'UPDATE PASSWORD'}</button>
                                 </div>
                             </form>
                         </div>
