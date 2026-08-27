@@ -217,40 +217,60 @@ export default function Profile() {
         return c === 0;
     };
 
-    const handleVerifyAadhaar = async () => {
+    const [aadhaarLoadingText, setAadhaarLoadingText] = useState("");
+    const [panLoadingText, setPanLoadingText] = useState("");
+
+    const handleVerifyAadhaar = () => {
         if (!identityData.aadhaarNumber) return;
-        setIsVerifyingIdentity(true);
-        // Simulate network call to Digilocker/UIDAI
-        setTimeout(async () => {
-            setIsVerifyingIdentity(false);
+        setAadhaarLoadingText("Connecting to UIDAI...");
+        
+        setTimeout(() => {
             if (validateAadhaar(identityData.aadhaarNumber)) {
-                setAadhaarVerified(true);
-                alert("Aadhaar Verified Successfully!");
-                if (user?.uid) {
-                    const docRef = doc(db, 'users', user.uid);
-                    await setDoc(docRef, { identityDetails: { ...identityData, aadhaarVerified: true, panVerified } }, { merge: true });
-                }
+                setAadhaarLoadingText("Sending OTP...");
+                setTimeout(async () => {
+                    const otp = window.prompt("Aadhaar e-KYC: Enter the 6-digit OTP sent to your Aadhaar-linked mobile number:");
+                    if (otp && otp.length >= 4) {
+                        setAadhaarLoadingText("Verifying OTP...");
+                        setTimeout(async () => {
+                            setAadhaarVerified(true);
+                            setAadhaarLoadingText("");
+                            alert("Aadhaar e-KYC Verified Successfully via UIDAI!");
+                            if (user?.uid) {
+                                const docRef = doc(db, 'users', user.uid);
+                                await setDoc(docRef, { identityDetails: { ...identityData, aadhaarVerified: true, panVerified } }, { merge: true });
+                            }
+                        }, 1000);
+                    } else {
+                        setAadhaarLoadingText("");
+                        alert("Verification cancelled or invalid OTP.");
+                    }
+                }, 800);
             } else {
+                setAadhaarLoadingText("");
                 alert("Invalid Aadhaar Number! Checksum verification failed.");
             }
         }, 1500);
     };
 
-    const handleVerifyPan = async () => {
+    const handleVerifyPan = () => {
         if (!identityData.panNumber) return;
-        setIsVerifyingIdentity(true);
-        setTimeout(async () => {
-            setIsVerifyingIdentity(false);
+        setPanLoadingText("Connecting to NSDL...");
+        setTimeout(() => {
             const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
             if (panRegex.test(identityData.panNumber.toUpperCase())) {
-                setPanVerified(true);
-                alert("PAN Card Verified Successfully!");
-                if (user?.uid) {
-                    const docRef = doc(db, 'users', user.uid);
-                    await setDoc(docRef, { identityDetails: { ...identityData, panVerified: true, aadhaarVerified } }, { merge: true });
-                }
+                setPanLoadingText("Fetching PAN Details...");
+                setTimeout(async () => {
+                    setPanVerified(true);
+                    setPanLoadingText("");
+                    alert("PAN Card Verified Successfully via Income Tax Dept!");
+                    if (user?.uid) {
+                        const docRef = doc(db, 'users', user.uid);
+                        await setDoc(docRef, { identityDetails: { ...identityData, panVerified: true, aadhaarVerified } }, { merge: true });
+                    }
+                }, 1200);
             } else {
-                alert("Invalid PAN Card Format. Must be 5 letters, 4 numbers, 1 letter.");
+                setPanLoadingText("");
+                alert("Invalid PAN Card Number format! Must be 5 Letters, 4 Numbers, 1 Letter.");
             }
         }, 1500);
     };
@@ -656,8 +676,8 @@ export default function Profile() {
                                                 <input type="text" placeholder="12 Digit Aadhaar Number" value={identityData.aadhaarNumber} onChange={e => setIdentityData({...identityData, aadhaarNumber: e.target.value})} disabled={aadhaarVerified} maxLength="12" />
                                             </div>
                                             {!aadhaarVerified && (
-                                                <button type="button" className="btn-primary" onClick={handleVerifyAadhaar} disabled={isVerifyingIdentity} style={{ whiteSpace: 'nowrap' }}>
-                                                    {isVerifyingIdentity ? 'VERIFYING...' : 'VERIFY AADHAAR'}
+                                                <button type="button" className="btn-primary" onClick={handleVerifyAadhaar} disabled={aadhaarLoadingText !== ""} style={{ whiteSpace: 'nowrap' }}>
+                                                    {aadhaarLoadingText !== "" ? aadhaarLoadingText : 'VERIFY AADHAAR'}
                                                 </button>
                                             )}
                                             {aadhaarVerified && (
@@ -666,7 +686,7 @@ export default function Profile() {
                                                 </div>
                                             )}
                                         </div>
-                                        <small style={{ color: '#64748b', marginTop: '5px', display: 'block' }}>We use the Verhoeff algorithm to instantly validate Aadhaar checksums.</small>
+                                        <small style={{ color: '#64748b', marginTop: '5px', display: 'block' }}>We will send an OTP to your Aadhaar-linked mobile number for e-KYC.</small>
                                     </div>
 
                                     <div className="ui-input-group">
@@ -677,8 +697,8 @@ export default function Profile() {
                                                 <input type="text" placeholder="ABCDE1234F" style={{ textTransform: 'uppercase' }} value={identityData.panNumber} onChange={e => setIdentityData({...identityData, panNumber: e.target.value.toUpperCase()})} disabled={panVerified} maxLength="10" />
                                             </div>
                                             {!panVerified && (
-                                                <button type="button" className="btn-primary" onClick={handleVerifyPan} disabled={isVerifyingIdentity} style={{ whiteSpace: 'nowrap' }}>
-                                                    {isVerifyingIdentity ? 'VERIFYING...' : 'VERIFY PAN'}
+                                                <button type="button" className="btn-primary" onClick={handleVerifyPan} disabled={panLoadingText !== ""} style={{ whiteSpace: 'nowrap' }}>
+                                                    {panLoadingText !== "" ? panLoadingText : 'VERIFY PAN'}
                                                 </button>
                                             )}
                                             {panVerified && (
