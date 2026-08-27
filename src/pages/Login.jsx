@@ -1,7 +1,7 @@
 import { useContext, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { updateProfile } from 'firebase/auth';
+import { updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase';
 
 export default function Login() {
@@ -13,8 +13,28 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
     const [error, setError] = useState('');
+    const [resetMessage, setResetMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
+    const handleForgotPassword = async () => {
+        if (!email) {
+            setError("Please enter your email address first to reset password.");
+            setResetMessage("");
+            return;
+        }
+        setIsLoading(true);
+        try {
+            await sendPasswordResetEmail(auth, email);
+            setResetMessage("Password reset email sent! Check your inbox.");
+            setError("");
+        } catch (err) {
+            setError(err.message.replace('Firebase: ', ''));
+            setResetMessage("");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -31,10 +51,10 @@ export default function Login() {
                 
                 // Force a context refresh so the UI sees the new name immediately
                 await auth.currentUser.reload();
-                window.location.href = '/dashboard/profile';
+                window.location.href = '/';
             } else {
                 await login(email, password);
-                navigate('/dashboard/profile');
+                navigate('/');
             }
         } catch (err) {
             setError(err.message.replace('Firebase: ', ''));
@@ -58,6 +78,11 @@ export default function Login() {
                         {error}
                     </div>
                 )}
+                {resetMessage && (
+                    <div style={{ background: '#dcfce7', color: '#166534', padding: '10px 15px', borderRadius: '6px', marginBottom: '20px', fontSize: '0.85rem' }}>
+                        {resetMessage}
+                    </div>
+                )}
 
                 {isRegistering && (
                     <div style={{ marginBottom: '20px' }}>
@@ -78,7 +103,17 @@ export default function Login() {
                 </div>
 
                 <div style={{ marginBottom: '24px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', color: '#1e293b', fontWeight: '600', fontSize: '0.85rem' }}>Password</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <label style={{ display: 'block', color: '#1e293b', fontWeight: '600', fontSize: '0.85rem' }}>Password</label>
+                        {!isRegistering && (
+                            <span 
+                                onClick={handleForgotPassword}
+                                style={{ color: '#2563eb', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '500' }}
+                            >
+                                Forgot Password?
+                            </span>
+                        )}
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0 12px', background: 'white', position: 'relative' }}>
                         <i className="fa-solid fa-lock" style={{ color: '#94a3b8', width: '20px' }}></i>
                         <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', padding: '12px 10px', width: '100%', minWidth: '0' }} placeholder="••••••••" />
