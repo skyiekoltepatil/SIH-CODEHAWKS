@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { db, auth } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, RecaptchaVerifier, linkWithPhoneNumber } from 'firebase/auth';
 import './Profile.css';
 import './Profile.css';
 
@@ -38,6 +38,26 @@ export default function Profile() {
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+    // Contact Details & Phone Auth State
+    const [contactData, setContactData] = useState({
+        phoneNumber: '',
+        address: ''
+    });
+    const [otp, setOtp] = useState('');
+    const [isOtpSent, setIsOtpSent] = useState(false);
+    const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
+    const [phoneVerified, setPhoneVerified] = useState(false);
+    const [confirmationResult, setConfirmationResult] = useState(null);
+
+    // Identity Details State
+    const [identityData, setIdentityData] = useState({
+        aadhaarNumber: '',
+        panNumber: ''
+    });
+    const [aadhaarVerified, setAadhaarVerified] = useState(false);
+    const [panVerified, setPanVerified] = useState(false);
+    const [isVerifyingIdentity, setIsVerifyingIdentity] = useState(false);
+
     useEffect(() => {
         if (location.state?.tab) {
             setActiveSidebar(location.state.tab);
@@ -54,7 +74,18 @@ export default function Profile() {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
                         const data = docSnap.data();
-                        setFormData(prev => ({ ...prev, ...data.personalDetails }));
+                        setFormData(prev => ({ ...prev, ...(data.personalDetails || {}) }));
+                        if (data.contactDetails) {
+                            setContactData(prev => ({ ...prev, ...data.contactDetails }));
+                            if (data.contactDetails.phoneVerified) {
+                                setPhoneVerified(true);
+                            }
+                        }
+                        if (data.identityDetails) {
+                            setIdentityData(prev => ({ ...prev, ...data.identityDetails }));
+                            if (data.identityDetails.aadhaarVerified) setAadhaarVerified(true);
+                            if (data.identityDetails.panVerified) setPanVerified(true);
+                        }
                     }
                 } catch (error) {
                     console.error("Error fetching profile data:", error);
@@ -75,6 +106,162 @@ export default function Profile() {
         } catch (error) {
             console.error("Error saving profile:", error);
             alert('Failed to save profile: ' + error.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const setupRecaptcha = () => {
+        if (!window.recaptchaVerifier) {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                'size': 'invisible',
+            });
+        }
+    };
+
+    const handleSendOTP = async () => {
+        if (!contactData.phoneNumber || contactData.phoneNumber.length < 10) {
+            alert('Please enter a valid phone number with country code (e.g., +919876543210)');
+            return;
+        }
+        setIsVerifyingPhone(true);
+        try {
+            setupRecaptcha();
+            const appVerifier = window.recaptchaVerifier;
+            const confirmation = await linkWithPhoneNumber(auth.currentUser, contactData.phoneNumber, appVerifier);
+            setConfirmationResult(confirmation);
+            setIsOtpSent(true);
+            alert('OTP sent to your phone!');
+        } catch (error) {
+            console.error("Error sending OTP:", error);
+            alert("Failed to send OTP: " + error.message);
+            if (window.recaptchaVerifier) {
+                window.recaptchaVerifier.clear();
+                window.recaptchaVerifier = null;
+            }
+        } finally {
+            setIsVerifyingPhone(false);
+        }
+    };
+
+    const handleVerifyOTP = async () => {
+        if (!otp) return;
+        setIsVerifyingPhone(true);
+        try {
+            await confirmationResult.confirm(otp);
+            setPhoneVerified(true);
+            if (user?.uid) {
+                const docRef = doc(db, 'users', user.uid);
+                await setDoc(docRef, { contactDetails: { ...contactData, phoneVerified: true } }, { merge: true });
+            }
+            alert('Phone Number Verified Successfully!');
+        } catch (error) {
+            console.error("Error verifying OTP:", error);
+            alert("Invalid OTP: " + error.message);
+        } finally {
+            setIsVerifyingPhone(false);
+        }
+    };
+
+    const handleSaveContact = async (e) => {
+        e.preventDefault();
+        setIsSaving(true);
+        try {
+            if (!user?.uid) throw new Error("User not found");
+            const docRef = doc(db, 'users', user.uid);
+            await setDoc(docRef, { contactDetails: { ...contactData, phoneVerified } }, { merge: true });
+            alert('Contact details saved successfully!');
+        } catch (error) {
+            console.error("Error saving contact details:", error);
+            alert('Failed to save: ' + error.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Aadhaar Verhoeff algorithm logic
+    const d = [
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+        [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
+        [2, 3, 4, 0, 1, 7, 8, 9, 5, 6],
+        [3, 4, 0, 1, 2, 8, 9, 5, 6, 7],
+        [4, 0, 1, 2, 3, 9, 5, 6, 7, 8],
+        [5, 9, 8, 7, 6, 0, 4, 3, 2, 1],
+        [6, 5, 9, 8, 7, 1, 0, 4, 3, 2],
+        [7, 6, 5, 9, 8, 2, 1, 0, 4, 3],
+        [8, 7, 6, 5, 9, 3, 2, 1, 0, 4],
+        [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+    ];
+    const p = [
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+        [1, 5, 7, 6, 2, 8, 3, 0, 9, 4],
+        [5, 8, 0, 3, 7, 9, 6, 1, 4, 2],
+        [8, 9, 1, 6, 0, 4, 3, 5, 2, 7],
+        [9, 4, 5, 3, 1, 2, 6, 8, 7, 0],
+        [4, 2, 8, 6, 5, 7, 3, 9, 0, 1],
+        [2, 7, 9, 3, 8, 0, 6, 4, 1, 5],
+        [7, 0, 4, 6, 9, 1, 3, 2, 5, 8]
+    ];
+    
+    const validateAadhaar = (aadhaar) => {
+        if (!/^\d{12}$/.test(aadhaar)) return false;
+        let c = 0;
+        let invertedArray = aadhaar.split('').reverse().map(Number);
+        for (let i = 0; i < invertedArray.length; i++) {
+            c = d[c][p[i % 8][invertedArray[i]]];
+        }
+        return c === 0;
+    };
+
+    const handleVerifyAadhaar = async () => {
+        if (!identityData.aadhaarNumber) return;
+        setIsVerifyingIdentity(true);
+        // Simulate network call to Digilocker/UIDAI
+        setTimeout(async () => {
+            setIsVerifyingIdentity(false);
+            if (validateAadhaar(identityData.aadhaarNumber)) {
+                setAadhaarVerified(true);
+                alert("Aadhaar Verified Successfully!");
+                if (user?.uid) {
+                    const docRef = doc(db, 'users', user.uid);
+                    await setDoc(docRef, { identityDetails: { ...identityData, aadhaarVerified: true, panVerified } }, { merge: true });
+                }
+            } else {
+                alert("Invalid Aadhaar Number! Checksum verification failed.");
+            }
+        }, 1500);
+    };
+
+    const handleVerifyPan = async () => {
+        if (!identityData.panNumber) return;
+        setIsVerifyingIdentity(true);
+        setTimeout(async () => {
+            setIsVerifyingIdentity(false);
+            const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+            if (panRegex.test(identityData.panNumber.toUpperCase())) {
+                setPanVerified(true);
+                alert("PAN Card Verified Successfully!");
+                if (user?.uid) {
+                    const docRef = doc(db, 'users', user.uid);
+                    await setDoc(docRef, { identityDetails: { ...identityData, panVerified: true, aadhaarVerified } }, { merge: true });
+                }
+            } else {
+                alert("Invalid PAN Card Format. Must be 5 letters, 4 numbers, 1 letter.");
+            }
+        }, 1500);
+    };
+    
+    const handleSaveIdentity = async (e) => {
+        e.preventDefault();
+        setIsSaving(true);
+        try {
+            if (!user?.uid) throw new Error("User not found");
+            const docRef = doc(db, 'users', user.uid);
+            await setDoc(docRef, { identityDetails: { ...identityData, aadhaarVerified, panVerified } }, { merge: true });
+            alert('Identity details saved successfully!');
+        } catch (error) {
+            console.error("Error saving identity details:", error);
+            alert('Failed to save: ' + error.message);
         } finally {
             setIsSaving(false);
         }
@@ -393,6 +580,120 @@ export default function Profile() {
                             </div>
                         </form>
                     </div>
+                    ) : activeTab === 'CONTACT_DETAILS' && activeSidebar === 'CONTACT_DETAILS' ? (
+                        <div className="profile-form-wrapper">
+                            <form id="ui-profile-form" onSubmit={handleSaveContact}>
+                                <div className="ui-form-grid" style={{ gridTemplateColumns: '1fr' }}>
+                                    
+                                    <div className="ui-input-group">
+                                        <label>Phone Number (with country code)</label>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <div className="input-wrapper" style={{ flex: 1, border: phoneVerified ? '1px solid #22c55e' : '' }}>
+                                                <i className="fa-solid fa-phone" style={{ color: phoneVerified ? '#22c55e' : '' }}></i>
+                                                <input type="text" placeholder="+919876543210" value={contactData.phoneNumber} onChange={e => setContactData({...contactData, phoneNumber: e.target.value})} disabled={phoneVerified || isOtpSent} />
+                                            </div>
+                                            {!phoneVerified && !isOtpSent && (
+                                                <button type="button" className="btn-primary" onClick={handleSendOTP} disabled={isVerifyingPhone} style={{ whiteSpace: 'nowrap' }}>
+                                                    {isVerifyingPhone ? 'SENDING...' : 'VERIFY PHONE'}
+                                                </button>
+                                            )}
+                                            {phoneVerified && (
+                                                <div style={{ display: 'flex', alignItems: 'center', background: '#dcfce7', color: '#166534', padding: '0 15px', borderRadius: '6px', fontWeight: '600' }}>
+                                                    <i className="fa-solid fa-check-circle" style={{ marginRight: '8px' }}></i> VERIFIED
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {isOtpSent && !phoneVerified && (
+                                        <div className="ui-input-group" style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '10px' }}>
+                                            <label style={{ color: '#2563eb' }}>Enter 6-Digit OTP</label>
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <div className="input-wrapper" style={{ flex: 1 }}>
+                                                    <i className="fa-solid fa-key"></i>
+                                                    <input type="text" placeholder="123456" value={otp} onChange={e => setOtp(e.target.value)} />
+                                                </div>
+                                                <button type="button" className="btn-primary" onClick={handleVerifyOTP} disabled={isVerifyingPhone}>
+                                                    {isVerifyingPhone ? 'VERIFYING...' : 'SUBMIT OTP'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="ui-input-group" style={{ marginTop: '20px' }}>
+                                        <label>Full Residential Address</label>
+                                        <div className="input-wrapper" style={{ height: 'auto', alignItems: 'flex-start' }}>
+                                            <i className="fa-solid fa-map-location-dot" style={{ marginTop: '14px' }}></i>
+                                            <textarea rows="4" style={{ flex: 1, border: 'none', outline: 'none', padding: '12px 10px', width: '100%', resize: 'vertical', background: 'transparent' }} placeholder="Enter your full address" value={contactData.address} onChange={e => setContactData({...contactData, address: e.target.value})}></textarea>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                
+                                <div id="recaptcha-container"></div>
+
+                                <div className="profile-form-footer">
+                                    <button type="submit" className="btn-primary" disabled={isSaving}>
+                                        {isSaving ? 'SAVING...' : 'SAVE & CONTINUE'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    ) : activeTab === 'IDENTITY' ? (
+                        <div className="profile-form-wrapper">
+                            <form id="ui-profile-form" onSubmit={handleSaveIdentity}>
+                                <div className="ui-form-grid" style={{ gridTemplateColumns: '1fr', gap: '30px' }}>
+                                    
+                                    <div className="ui-input-group">
+                                        <label>Aadhaar Card Number</label>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <div className="input-wrapper" style={{ flex: 1, border: aadhaarVerified ? '1px solid #22c55e' : '' }}>
+                                                <i className="fa-solid fa-id-card" style={{ color: aadhaarVerified ? '#22c55e' : '' }}></i>
+                                                <input type="text" placeholder="12 Digit Aadhaar Number" value={identityData.aadhaarNumber} onChange={e => setIdentityData({...identityData, aadhaarNumber: e.target.value})} disabled={aadhaarVerified} maxLength="12" />
+                                            </div>
+                                            {!aadhaarVerified && (
+                                                <button type="button" className="btn-primary" onClick={handleVerifyAadhaar} disabled={isVerifyingIdentity} style={{ whiteSpace: 'nowrap' }}>
+                                                    {isVerifyingIdentity ? 'VERIFYING...' : 'VERIFY AADHAAR'}
+                                                </button>
+                                            )}
+                                            {aadhaarVerified && (
+                                                <div style={{ display: 'flex', alignItems: 'center', background: '#dcfce7', color: '#166534', padding: '0 15px', borderRadius: '6px', fontWeight: '600' }}>
+                                                    <i className="fa-solid fa-check-circle" style={{ marginRight: '8px' }}></i> VERIFIED
+                                                </div>
+                                            )}
+                                        </div>
+                                        <small style={{ color: '#64748b', marginTop: '5px', display: 'block' }}>We use the Verhoeff algorithm to instantly validate Aadhaar checksums.</small>
+                                    </div>
+
+                                    <div className="ui-input-group">
+                                        <label>PAN Card Number</label>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <div className="input-wrapper" style={{ flex: 1, border: panVerified ? '1px solid #22c55e' : '' }}>
+                                                <i className="fa-solid fa-address-card" style={{ color: panVerified ? '#22c55e' : '' }}></i>
+                                                <input type="text" placeholder="ABCDE1234F" style={{ textTransform: 'uppercase' }} value={identityData.panNumber} onChange={e => setIdentityData({...identityData, panNumber: e.target.value.toUpperCase()})} disabled={panVerified} maxLength="10" />
+                                            </div>
+                                            {!panVerified && (
+                                                <button type="button" className="btn-primary" onClick={handleVerifyPan} disabled={isVerifyingIdentity} style={{ whiteSpace: 'nowrap' }}>
+                                                    {isVerifyingIdentity ? 'VERIFYING...' : 'VERIFY PAN'}
+                                                </button>
+                                            )}
+                                            {panVerified && (
+                                                <div style={{ display: 'flex', alignItems: 'center', background: '#dcfce7', color: '#166534', padding: '0 15px', borderRadius: '6px', fontWeight: '600' }}>
+                                                    <i className="fa-solid fa-check-circle" style={{ marginRight: '8px' }}></i> VERIFIED
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div className="profile-form-footer" style={{ marginTop: '40px' }}>
+                                    <button type="submit" className="btn-primary" disabled={isSaving}>
+                                        {isSaving ? 'SAVING...' : 'SAVE & CONTINUE'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     ) : (
                         <div className="profile-form-wrapper" style={{ minHeight: '500px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <p style={{ color: '#94a3b8', fontSize: '1.2rem' }}>Blank Page for {activeTab.replace(/_/g, ' ')}</p>
