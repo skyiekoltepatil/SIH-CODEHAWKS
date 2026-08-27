@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 // import { getAnalytics } from "firebase/analytics";
 
 // Your web app's Firebase configuration
@@ -21,4 +22,16 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 // const analytics = getAnalytics(app); // Disabling analytics for now to avoid SSR/AdBlocker errors
 
-export { app, auth, db };
+// Initialize App Check (using reCAPTCHA Enterprise)
+// This is the safest, invisible method that protects the entire backend
+let appCheck;
+try {
+  appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
+    isTokenAutoRefreshEnabled: true
+  });
+} catch (error) {
+  console.warn("App Check failed to initialize. Make sure VITE_RECAPTCHA_SITE_KEY is set.", error);
+}
+
+export { app, auth, db, appCheck };
