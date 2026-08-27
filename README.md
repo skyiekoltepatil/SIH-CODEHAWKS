@@ -1,6 +1,6 @@
 # SIH CODEHAWKS
 
-![SIH-CODEHAWKS Logo](./sih-codehawks.png)
+![SIH-CODEHAWKS Logo](./src/assets/sih-codehawks.png)
 
 ## 📖 Overview
 **SIH CODEHAWKS** is a modern, responsive web application designed for comprehensive academic data collection and user profile management. Built on a robust React + Vite architecture, it seamlessly integrates with Google Firebase for secure user authentication and real-time database management.
