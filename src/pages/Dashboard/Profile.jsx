@@ -57,6 +57,15 @@ export default function Profile() {
     const [aadhaarVerified, setAadhaarVerified] = useState(false);
     const [panVerified, setPanVerified] = useState(false);
     const [isVerifyingIdentity, setIsVerifyingIdentity] = useState(false);
+    
+    // Email OTP States
+    const [aadhaarOtp, setAadhaarOtp] = useState('');
+    const [isAadhaarOtpSent, setIsAadhaarOtpSent] = useState(false);
+    const [expectedAadhaarOtp, setExpectedAadhaarOtp] = useState('');
+
+    const [panOtp, setPanOtp] = useState('');
+    const [isPanOtpSent, setIsPanOtpSent] = useState(false);
+    const [expectedPanOtp, setExpectedPanOtp] = useState('');
 
     useEffect(() => {
         if (location.state?.tab) {
@@ -262,22 +271,9 @@ export default function Profile() {
                 const emailSent = await sendEmailOTP(generatedOTP, 'Aadhaar');
                 
                 if (emailSent) {
-                    const otp = window.prompt(`Aadhaar e-KYC: We've sent a 6-digit OTP to ${user?.email || 'your email'}. Enter it below:\n(Check browser console if EmailJS is not configured)`);
-                    if (otp && otp === generatedOTP) {
-                        setAadhaarLoadingText("Verifying OTP...");
-                        setTimeout(async () => {
-                            setAadhaarVerified(true);
-                            setAadhaarLoadingText("");
-                            alert("Aadhaar e-KYC Verified Successfully!");
-                            if (user?.uid) {
-                                const docRef = doc(db, 'users', user.uid);
-                                await setDoc(docRef, { identityDetails: { ...identityData, aadhaarVerified: true, panVerified } }, { merge: true });
-                            }
-                        }, 1000);
-                    } else {
-                        setAadhaarLoadingText("");
-                        alert("Verification cancelled or invalid OTP.");
-                    }
+                    setExpectedAadhaarOtp(generatedOTP);
+                    setIsAadhaarOtpSent(true);
+                    setAadhaarLoadingText("");
                 } else {
                     setAadhaarLoadingText("");
                     alert("Failed to send OTP to your email. Please check your EmailJS configuration.");
@@ -287,6 +283,25 @@ export default function Profile() {
                 alert("Invalid Aadhaar Number! Checksum verification failed.");
             }
         }, 1000);
+    };
+
+    const handleSubmitAadhaarOtp = async () => {
+        if (!aadhaarOtp) return;
+        if (aadhaarOtp === expectedAadhaarOtp) {
+            setAadhaarLoadingText("Verifying OTP...");
+            setTimeout(async () => {
+                setAadhaarVerified(true);
+                setIsAadhaarOtpSent(false);
+                setAadhaarLoadingText("");
+                alert("Aadhaar e-KYC Verified Successfully!");
+                if (user?.uid) {
+                    const docRef = doc(db, 'users', user.uid);
+                    await setDoc(docRef, { identityDetails: { ...identityData, aadhaarVerified: true, panVerified } }, { merge: true });
+                }
+            }, 1000);
+        } else {
+            alert("Verification cancelled or invalid OTP.");
+        }
     };
 
     const handleVerifyPan = async () => {
@@ -301,22 +316,9 @@ export default function Profile() {
                 const emailSent = await sendEmailOTP(generatedOTP, 'PAN');
 
                 if (emailSent) {
-                    const otp = window.prompt(`PAN Verification: We've sent a 6-digit OTP to ${user?.email || 'your email'}. Enter it below:\n(Check browser console if EmailJS is not configured)`);
-                    if (otp && otp === generatedOTP) {
-                        setPanLoadingText("Fetching PAN Details...");
-                        setTimeout(async () => {
-                            setPanVerified(true);
-                            setPanLoadingText("");
-                            alert("PAN Card Verified Successfully!");
-                            if (user?.uid) {
-                                const docRef = doc(db, 'users', user.uid);
-                                await setDoc(docRef, { identityDetails: { ...identityData, panVerified: true, aadhaarVerified } }, { merge: true });
-                            }
-                        }, 1200);
-                    } else {
-                        setPanLoadingText("");
-                        alert("Verification cancelled or invalid OTP.");
-                    }
+                    setExpectedPanOtp(generatedOTP);
+                    setIsPanOtpSent(true);
+                    setPanLoadingText("");
                 } else {
                     setPanLoadingText("");
                     alert("Failed to send OTP to your email. Please check your EmailJS configuration.");
@@ -326,6 +328,25 @@ export default function Profile() {
                 alert("Invalid PAN Card Number format! Must be 5 Letters, 4 Numbers, 1 Letter.");
             }
         }, 1000);
+    };
+
+    const handleSubmitPanOtp = async () => {
+        if (!panOtp) return;
+        if (panOtp === expectedPanOtp) {
+            setPanLoadingText("Fetching PAN Details...");
+            setTimeout(async () => {
+                setPanVerified(true);
+                setIsPanOtpSent(false);
+                setPanLoadingText("");
+                alert("PAN Card Verified Successfully!");
+                if (user?.uid) {
+                    const docRef = doc(db, 'users', user.uid);
+                    await setDoc(docRef, { identityDetails: { ...identityData, panVerified: true, aadhaarVerified } }, { merge: true });
+                }
+            }, 1200);
+        } else {
+            alert("Verification cancelled or invalid OTP.");
+        }
     };
     
     const handleSaveIdentity = async (e) => {
@@ -728,7 +749,7 @@ export default function Profile() {
                                                 <i className="fa-solid fa-id-card" style={{ color: aadhaarVerified ? '#22c55e' : '' }}></i>
                                                 <input type="text" placeholder="12 Digit Aadhaar Number" value={identityData.aadhaarNumber} onChange={e => setIdentityData({...identityData, aadhaarNumber: e.target.value})} disabled={aadhaarVerified} maxLength="12" />
                                             </div>
-                                            {!aadhaarVerified && (
+                                            {!aadhaarVerified && !isAadhaarOtpSent && (
                                                 <button type="button" className="btn-primary" onClick={handleVerifyAadhaar} disabled={aadhaarLoadingText !== ""} style={{ whiteSpace: 'nowrap' }}>
                                                     {aadhaarLoadingText !== "" ? aadhaarLoadingText : 'VERIFY AADHAAR'}
                                                 </button>
@@ -739,8 +760,23 @@ export default function Profile() {
                                                 </div>
                                             )}
                                         </div>
-                                        <small style={{ color: '#64748b', marginTop: '5px', display: 'block' }}>We will send an OTP to your Aadhaar-linked mobile number for e-KYC.</small>
+                                        <small style={{ color: '#64748b', marginTop: '5px', display: 'block' }}>We will send an OTP to your email for e-KYC.</small>
                                     </div>
+
+                                    {isAadhaarOtpSent && !aadhaarVerified && (
+                                        <div className="ui-input-group" style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '-10px', marginBottom: '20px' }}>
+                                            <label style={{ color: '#2563eb' }}>Enter 6-Digit OTP sent to your email</label>
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <div className="input-wrapper" style={{ flex: 1 }}>
+                                                    <i className="fa-solid fa-key"></i>
+                                                    <input type="text" placeholder="123456" value={aadhaarOtp} onChange={e => setAadhaarOtp(e.target.value)} />
+                                                </div>
+                                                <button type="button" className="btn-primary" onClick={handleSubmitAadhaarOtp} disabled={aadhaarLoadingText !== ""}>
+                                                    {aadhaarLoadingText !== "" ? 'VERIFYING...' : 'SUBMIT OTP'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="ui-input-group">
                                         <label>PAN Card Number</label>
@@ -749,7 +785,7 @@ export default function Profile() {
                                                 <i className="fa-solid fa-address-card" style={{ color: panVerified ? '#22c55e' : '' }}></i>
                                                 <input type="text" placeholder="ABCDE1234F" style={{ textTransform: 'uppercase' }} value={identityData.panNumber} onChange={e => setIdentityData({...identityData, panNumber: e.target.value.toUpperCase()})} disabled={panVerified} maxLength="10" />
                                             </div>
-                                            {!panVerified && (
+                                            {!panVerified && !isPanOtpSent && (
                                                 <button type="button" className="btn-primary" onClick={handleVerifyPan} disabled={panLoadingText !== ""} style={{ whiteSpace: 'nowrap' }}>
                                                     {panLoadingText !== "" ? panLoadingText : 'VERIFY PAN'}
                                                 </button>
@@ -761,6 +797,21 @@ export default function Profile() {
                                             )}
                                         </div>
                                     </div>
+
+                                    {isPanOtpSent && !panVerified && (
+                                        <div className="ui-input-group" style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '-10px' }}>
+                                            <label style={{ color: '#2563eb' }}>Enter 6-Digit OTP sent to your email</label>
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <div className="input-wrapper" style={{ flex: 1 }}>
+                                                    <i className="fa-solid fa-key"></i>
+                                                    <input type="text" placeholder="123456" value={panOtp} onChange={e => setPanOtp(e.target.value)} />
+                                                </div>
+                                                <button type="button" className="btn-primary" onClick={handleSubmitPanOtp} disabled={panLoadingText !== ""}>
+                                                    {panLoadingText !== "" ? 'VERIFYING...' : 'SUBMIT OTP'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
 
                                 </div>
 
