@@ -4,7 +4,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { db, auth } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, RecaptchaVerifier, linkWithPhoneNumber } from 'firebase/auth';
-import './Profile.css';
+import emailjs from '@emailjs/browser';
 import './Profile.css';
 
 export default function Profile() {
@@ -220,21 +220,55 @@ export default function Profile() {
     const [aadhaarLoadingText, setAadhaarLoadingText] = useState("");
     const [panLoadingText, setPanLoadingText] = useState("");
 
-    const handleVerifyAadhaar = () => {
+    const sendEmailOTP = async (otp, type) => {
+        try {
+            const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+            const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+            const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+            
+            // If keys are not set up, just log to console for development
+            if (!SERVICE_ID || SERVICE_ID === 'YOUR_SERVICE_ID') {
+                console.warn(`[DEV MODE] EmailJS not configured. Simulated OTP for ${type} is: ${otp}`);
+                return true; // Simulate success
+            }
+
+            await emailjs.send(
+                SERVICE_ID,
+                TEMPLATE_ID,
+                {
+                    to_email: user?.email,
+                    to_name: user?.displayName || formData.firstName || 'User',
+                    otp: otp,
+                    document_type: type
+                },
+                PUBLIC_KEY
+            );
+            return true;
+        } catch (error) {
+            console.error("EmailJS Error:", error);
+            return false;
+        }
+    };
+
+    const handleVerifyAadhaar = async () => {
         if (!identityData.aadhaarNumber) return;
         setAadhaarLoadingText("Connecting to UIDAI...");
         
-        setTimeout(() => {
+        setTimeout(async () => {
             if (validateAadhaar(identityData.aadhaarNumber)) {
-                setAadhaarLoadingText("Sending OTP...");
-                setTimeout(async () => {
-                    const otp = window.prompt("Aadhaar e-KYC: Enter the 6-digit OTP sent to your Aadhaar-linked mobile number:");
-                    if (otp && otp.length >= 4) {
+                setAadhaarLoadingText("Sending OTP to Email...");
+                
+                const generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+                const emailSent = await sendEmailOTP(generatedOTP, 'Aadhaar');
+                
+                if (emailSent) {
+                    const otp = window.prompt(`Aadhaar e-KYC: We've sent a 6-digit OTP to ${user?.email || 'your email'}. Enter it below:\n(Check browser console if EmailJS is not configured)`);
+                    if (otp && otp === generatedOTP) {
                         setAadhaarLoadingText("Verifying OTP...");
                         setTimeout(async () => {
                             setAadhaarVerified(true);
                             setAadhaarLoadingText("");
-                            alert("Aadhaar e-KYC Verified Successfully via UIDAI!");
+                            alert("Aadhaar e-KYC Verified Successfully!");
                             if (user?.uid) {
                                 const docRef = doc(db, 'users', user.uid);
                                 await setDoc(docRef, { identityDetails: { ...identityData, aadhaarVerified: true, panVerified } }, { merge: true });
@@ -244,35 +278,54 @@ export default function Profile() {
                         setAadhaarLoadingText("");
                         alert("Verification cancelled or invalid OTP.");
                     }
-                }, 800);
+                } else {
+                    setAadhaarLoadingText("");
+                    alert("Failed to send OTP to your email. Please check your EmailJS configuration.");
+                }
             } else {
                 setAadhaarLoadingText("");
                 alert("Invalid Aadhaar Number! Checksum verification failed.");
             }
-        }, 1500);
+        }, 1000);
     };
 
-    const handleVerifyPan = () => {
+    const handleVerifyPan = async () => {
         if (!identityData.panNumber) return;
         setPanLoadingText("Connecting to NSDL...");
-        setTimeout(() => {
+        setTimeout(async () => {
             const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
             if (panRegex.test(identityData.panNumber.toUpperCase())) {
-                setPanLoadingText("Fetching PAN Details...");
-                setTimeout(async () => {
-                    setPanVerified(true);
-                    setPanLoadingText("");
-                    alert("PAN Card Verified Successfully via Income Tax Dept!");
-                    if (user?.uid) {
-                        const docRef = doc(db, 'users', user.uid);
-                        await setDoc(docRef, { identityDetails: { ...identityData, panVerified: true, aadhaarVerified } }, { merge: true });
+                setPanLoadingText("Sending OTP to Email...");
+                
+                const generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+                const emailSent = await sendEmailOTP(generatedOTP, 'PAN');
+
+                if (emailSent) {
+                    const otp = window.prompt(`PAN Verification: We've sent a 6-digit OTP to ${user?.email || 'your email'}. Enter it below:\n(Check browser console if EmailJS is not configured)`);
+                    if (otp && otp === generatedOTP) {
+                        setPanLoadingText("Fetching PAN Details...");
+                        setTimeout(async () => {
+                            setPanVerified(true);
+                            setPanLoadingText("");
+                            alert("PAN Card Verified Successfully!");
+                            if (user?.uid) {
+                                const docRef = doc(db, 'users', user.uid);
+                                await setDoc(docRef, { identityDetails: { ...identityData, panVerified: true, aadhaarVerified } }, { merge: true });
+                            }
+                        }, 1200);
+                    } else {
+                        setPanLoadingText("");
+                        alert("Verification cancelled or invalid OTP.");
                     }
-                }, 1200);
+                } else {
+                    setPanLoadingText("");
+                    alert("Failed to send OTP to your email. Please check your EmailJS configuration.");
+                }
             } else {
                 setPanLoadingText("");
                 alert("Invalid PAN Card Number format! Must be 5 Letters, 4 Numbers, 1 Letter.");
             }
-        }, 1500);
+        }, 1000);
     };
     
     const handleSaveIdentity = async (e) => {
