@@ -120,6 +120,10 @@ export default function Profile() {
     };
 
     const handleSendOTP = async () => {
+        if (!auth.currentUser) {
+            alert("You must be logged in to verify your phone number!");
+            return;
+        }
         if (!contactData.phoneNumber || contactData.phoneNumber.length < 10) {
             alert('Please enter a valid phone number with country code (e.g., +919876543210)');
             return;
