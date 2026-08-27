@@ -25,13 +25,17 @@ const db = getFirestore(app);
 // Initialize App Check (using reCAPTCHA Enterprise)
 // This is the safest, invisible method that protects the entire backend
 let appCheck;
-try {
-  appCheck = initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
-    isTokenAutoRefreshEnabled: true
-  });
-} catch (error) {
-  console.warn("App Check failed to initialize. Make sure VITE_RECAPTCHA_SITE_KEY is set.", error);
+if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
+  try {
+    appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
+      isTokenAutoRefreshEnabled: true
+    });
+  } catch (error) {
+    console.warn("App Check failed to initialize.", error);
+  }
+} else {
+  console.warn("App Check skipped: VITE_RECAPTCHA_SITE_KEY is not defined locally.");
 }
 
 export { app, auth, db, appCheck };
