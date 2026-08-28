@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase';
+import { verifyRecaptcha } from '../utils/recaptcha';
 
 export default function Login() {
     const { login, register } = useContext(AuthContext);
@@ -42,6 +43,9 @@ export default function Login() {
         setIsLoading(true);
 
         try {
+            // Anti-bot check: verify score >= 0.5 with backend
+            await verifyRecaptcha(isRegistering ? 'register' : 'login');
+
             if (isRegistering) {
                 const userCredential = await register(email, password);
                 // Update the user's profile with their real name
