@@ -1,13 +1,12 @@
 /**
- * Executes reCAPTCHA v3 if configured, and validates with the backend API.
- * Gracefully handles v2/v3 key coexistence without blocking legitimate users.
+ * Executes invisible reCAPTCHA v3 and validates the score with the backend API.
  * @param {string} action - 'login' or 'register'
  * @returns {Promise<boolean>}
  */
 export async function verifyRecaptcha(action = 'login') {
-    const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+    const siteKey = import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY || import.meta.env.VITE_RECAPTCHA_SITE_KEY;
     if (!siteKey) {
-        console.warn('reCAPTCHA site key missing. Proceeding in dev mode.');
+        console.warn('reCAPTCHA v3 site key missing. Proceeding in dev mode.');
         return true;
     }
 
@@ -25,21 +24,20 @@ export async function verifyRecaptcha(action = 'login') {
                 }
 
                 const token = await window.grecaptcha.execute(siteKey, { action }).catch((err) => {
-                    console.warn('[reCAPTCHA v3] Key type notice (e.g. v2 checkbox key in use):', err?.message || err);
+                    console.warn('[reCAPTCHA v3] Execute warning:', err?.message || err);
                     return null;
                 });
 
                 if (!token) {
-                    // If v3 execute is bypassed for v2 keys, proceed safely
                     resolve(true);
                     return;
                 }
 
-                // Verify the token with backend API endpoint
+                // Verify the v3 token with backend API endpoint
                 const res = await fetch('/api/verify-captcha', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token })
+                    body: JSON.stringify({ token, version: 'v3' })
                 });
 
                 const result = await res.json();
@@ -50,11 +48,10 @@ export async function verifyRecaptcha(action = 'login') {
                     return;
                 }
 
-                console.log(`[reCAPTCHA Verified] Action: ${action}, Score: ${result.score}`);
+                console.log(`[reCAPTCHA v3 Verified] Action: ${action}, Score: ${result.score}`);
                 resolve(true);
             } catch (err) {
-                console.error('[reCAPTCHA Error]:', err);
-                // Fail-open on client error so legitimate users aren't locked out
+                console.error('[reCAPTCHA v3 Error]:', err);
                 resolve(true);
             }
         });

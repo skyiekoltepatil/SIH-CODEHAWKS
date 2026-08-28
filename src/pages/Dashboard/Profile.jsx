@@ -63,7 +63,7 @@ export default function Profile() {
                         return;
                     }
                     try {
-                        const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+                        const siteKey = import.meta.env.VITE_RECAPTCHA_V2_SITE_KEY || import.meta.env.VITE_RECAPTCHA_SITE_KEY;
                         if (siteKey) {
                             passwordWidgetIdRef.current = window.grecaptcha.render(passwordCaptchaRef.current, {
                                 sitekey: siteKey,
@@ -229,11 +229,11 @@ export default function Profile() {
 
         setIsUpdatingPassword(true);
         try {
-            // Verify reCAPTCHA token with backend
+            // Verify reCAPTCHA v2 token with backend
             const verifyRes = await fetch('/api/verify-captcha', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: passwordCaptchaToken })
+                body: JSON.stringify({ token: passwordCaptchaToken, version: 'v2' })
             });
             const verifyResult = await verifyRes.json();
             if (!verifyRes.ok || !verifyResult.success) {
