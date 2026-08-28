@@ -4,7 +4,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { db, auth } from '../../firebase';
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
 
-import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, RecaptchaVerifier, linkWithPhoneNumber } from 'firebase/auth';
+import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, RecaptchaVerifier, linkWithPhoneNumber, sendPasswordResetEmail } from 'firebase/auth';
 import emailjs from '@emailjs/browser';
 import './Profile.css';
 
@@ -209,6 +209,25 @@ export default function Profile() {
             alert('Failed to save profile: ' + error.message);
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleForgotPassword = async () => {
+        const userEmail = auth.currentUser?.email || user?.email || formData.officialEmail;
+        if (!userEmail) {
+            alert("No registered email found for this account. Please ensure you are logged in.");
+            return;
+        }
+
+        const confirmSend = window.confirm(`Send password reset email to ${userEmail}?`);
+        if (!confirmSend) return;
+
+        try {
+            await sendPasswordResetEmail(auth, userEmail);
+            alert(`Password reset link has been sent to ${userEmail}.\n\nPlease check your Gmail inbox (and spam folder) to set your new password.`);
+        } catch (err) {
+            console.error("Error sending password reset email:", err);
+            alert("Failed to send reset email: " + err.message.replace('Firebase: ', ''));
         }
     };
 
@@ -560,6 +579,15 @@ export default function Profile() {
                                             <i className="fa-solid fa-lock"></i>
                                             <input type={showCurrentPassword ? "text" : "password"} required value={passwordData.currentPassword} onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})} />
                                             <i className={`fa-solid ${showCurrentPassword ? 'fa-eye-slash' : 'fa-eye'}`} onClick={() => setShowCurrentPassword(!showCurrentPassword)} style={{ cursor: 'pointer', margin: 0, paddingLeft: '10px', color: '#94a3b8' }}></i>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                                            <span 
+                                                onClick={handleForgotPassword}
+                                                style={{ color: '#2563eb', fontSize: '0.82rem', cursor: 'pointer', fontWeight: '500' }}
+                                                title="Send password reset link to your email"
+                                            >
+                                                Forgot Password?
+                                            </span>
                                         </div>
                                     </div>
                                     <div className="ui-input-group">
