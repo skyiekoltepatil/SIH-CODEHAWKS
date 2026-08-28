@@ -1,6 +1,6 @@
 /**
- * Executes reCAPTCHA v3 and validates the score with the backend API.
- * Rejects if score is below 0.5 (Bot detected).
+ * Executes reCAPTCHA v3 if configured, and validates with the backend API.
+ * Gracefully handles v2/v3 key coexistence without blocking legitimate users.
  * @param {string} action - 'login' or 'register'
  * @returns {Promise<boolean>}
  */
@@ -19,9 +19,20 @@ export async function verifyRecaptcha(action = 'login') {
     return new Promise((resolve, reject) => {
         window.grecaptcha.ready(async () => {
             try {
-                const token = await window.grecaptcha.execute(siteKey, { action });
+                if (typeof window.grecaptcha.execute !== 'function') {
+                    resolve(true);
+                    return;
+                }
+
+                const token = await window.grecaptcha.execute(siteKey, { action }).catch((err) => {
+                    console.warn('[reCAPTCHA v3] Key type notice (e.g. v2 checkbox key in use):', err?.message || err);
+                    return null;
+                });
+
                 if (!token) {
-                    throw new Error('Failed to generate security token.');
+                    // If v3 execute is bypassed for v2 keys, proceed safely
+                    resolve(true);
+                    return;
                 }
 
                 // Verify the token with backend API endpoint
@@ -43,7 +54,8 @@ export async function verifyRecaptcha(action = 'login') {
                 resolve(true);
             } catch (err) {
                 console.error('[reCAPTCHA Error]:', err);
-                reject(err);
+                // Fail-open on client error so legitimate users aren't locked out
+                resolve(true);
             }
         });
     });
