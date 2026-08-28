@@ -1,7 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { db, auth } from '../../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import './VirtualIdCard.css';
 
 export default function VirtualIdCard() {
+    const [userData, setUserData] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if (auth.currentUser) {
+                try {
+                    const docRef = doc(db, 'users', auth.currentUser.uid);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        setUserData({ uid: auth.currentUser.uid, ...docSnap.data() });
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                }
+            }
+            setLoading(false);
+        };
+
+        // Listen for auth state changes in case it hasn't initialized yet
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) fetchUserData();
+            else setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
     const handleDownload = () => {
         alert("Downloading ID Card...");
         // In a real application, you would generate a PDF or image here.
@@ -35,9 +64,23 @@ export default function VirtualIdCard() {
                         </div>
                         
                         <div className="id-card-details">
-                            <h4 className="reg-no">Reg No: 25ET2021010</h4>
-                            <h3 className="student-name">BHUSHAN ATUL KOLTE</h3>
-                            <p className="course-name">UG(Engg & Tech)</p>
+                            {loading ? (
+                                <p>Loading ID...</p>
+                            ) : userData ? (
+                                <>
+                                    <h4 className="reg-no">UID: {userData.uid}</h4>
+                                    <h3 className="student-name">
+                                        {userData.personalDetails?.firstName || ''} {userData.personalDetails?.lastName || 'STUDENT'}
+                                    </h3>
+                                    <p className="course-name">{userData.personalDetails?.admissionCategory || 'UG(Engg & Tech)'}</p>
+                                </>
+                            ) : (
+                                <>
+                                    <h4 className="reg-no">UID: NOT LOGGED IN</h4>
+                                    <h3 className="student-name">UNKNOWN USER</h3>
+                                    <p className="course-name">N/A</p>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -52,7 +95,9 @@ export default function VirtualIdCard() {
                             <div className="bar narrow"></div><div className="bar wide"></div><div className="bar narrow"></div><div className="bar narrow"></div>
                             <div className="bar wide"></div><div className="bar wide"></div><div className="bar narrow"></div><div className="bar narrow"></div>
                         </div>
-                        <div className="barcode-text">25ET2021010</div>
+                        <div className="barcode-text">
+                            {loading ? '...' : userData ? userData.uid : 'INVALID'}
+                        </div>
                     </div>
                 </div>
 
