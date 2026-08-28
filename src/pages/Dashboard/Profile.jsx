@@ -2,7 +2,8 @@ import { useState, useEffect, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { db, auth } from '../../firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
+
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, RecaptchaVerifier, linkWithPhoneNumber } from 'firebase/auth';
 import emailjs from '@emailjs/browser';
 import './Profile.css';
@@ -26,6 +27,7 @@ export default function Profile() {
         domicile: ''
     });
     const [isSaving, setIsSaving] = useState(false);
+    const [isPushing, setIsPushing] = useState(false);
 
     // Password Form State
     const [passwordData, setPasswordData] = useState({
@@ -103,6 +105,35 @@ export default function Profile() {
         };
         fetchProfileData();
     }, [user]);
+
+    const handlePush = async (collectionName, siteName) => {
+        setIsPushing(true);
+        try {
+            const payload = {
+                userId: user.uid,
+                personalDetails: formData,
+                contactDetails: {
+                    ...contactData,
+                    phoneVerified
+                },
+                identityDetails: {
+                    ...identityData,
+                    aadhaarVerified,
+                    panVerified
+                },
+                timestamp: Date.now()
+            };
+
+            await addDoc(collection(db, collectionName), payload);
+            
+            alert(`Profile securely submitted to ${siteName}!`);
+        } catch (error) {
+            console.error("Error pushing profile:", error);
+            alert('Failed to submit profile: ' + error.message);
+        } finally {
+            setIsPushing(false);
+        }
+    };
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -468,6 +499,26 @@ export default function Profile() {
                         </div>
                     ) : activeTab === 'PERSONAL_DETAILS' && activeSidebar === 'PERSONAL_DETAILS' ? (
                     <div className="profile-form-wrapper">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ margin: 0, color: '#1e293b' }}>Personal Details</h3>
+                            <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <a href="/mock-b" target="_blank" rel="noopener noreferrer" style={{ padding: '8px 12px', background: '#f1f5f9', color: '#475569', borderRadius: '6px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: '600', border: '1px solid #cbd5e1' }}><i className="fa-solid fa-arrow-up-right-from-square"></i> Open Site B</a>
+                                    <a href="/mock-c" target="_blank" rel="noopener noreferrer" style={{ padding: '8px 12px', background: '#f1f5f9', color: '#475569', borderRadius: '6px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: '600', border: '1px solid #cbd5e1' }}><i className="fa-solid fa-arrow-up-right-from-square"></i> Open Site C</a>
+                                    <a href="/mock-d" target="_blank" rel="noopener noreferrer" style={{ padding: '8px 12px', background: '#f1f5f9', color: '#475569', borderRadius: '6px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: '600', border: '1px solid #cbd5e1' }}><i className="fa-solid fa-arrow-up-right-from-square"></i> Open Site D</a>
+                                </div>
+                                <div className="submit-dropdown-container">
+                                    <button type="button" disabled={isPushing} style={{ background: '#2563eb', color: 'white', padding: '10px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '600', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        {isPushing ? 'SUBMITTING...' : <><i className="fa-solid fa-paper-plane"></i> PUSH DATA OPTIONS <i className="fa-solid fa-chevron-down" style={{fontSize: '0.8em', marginLeft: '5px'}}></i></>}
+                                    </button>
+                                    <div className="submit-dropdown-content">
+                                        <button onClick={() => handlePush('mock_site_b', 'Site B')}><i className="fa-solid fa-globe"></i> Push to Site B</button>
+                                        <button onClick={() => handlePush('mock_site_c', 'Site C')}><i className="fa-solid fa-globe"></i> Push to Site C</button>
+                                        <button onClick={() => handlePush('mock_site_d', 'Site D')}><i className="fa-solid fa-globe"></i> Push to Site D</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <form id="ui-profile-form" onSubmit={handleSave}>
                             <div className="ui-form-grid">
                                 <div className="ui-input-group">
