@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 // import { getAnalytics } from "firebase/analytics";
 
@@ -20,27 +21,32 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const functions = getFunctions(app);
+
+// Connect to local emulator if running locally
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  connectFunctionsEmulator(functions, "localhost", 5001);
+}
+
 // const analytics = getAnalytics(app); // Disabling analytics for now to avoid SSR/AdBlocker errors
 
 // Initialize App Check (using reCAPTCHA Enterprise)
-// This is the safest, invisible method that protects the entire backend
 let appCheck;
-if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
-  try {
-    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      appCheck = initializeAppCheck(app, {
-        provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
-        isTokenAutoRefreshEnabled: true
-      });
-      console.log("App Check initialized for production.");
-    } else {
-      console.warn("App Check completely skipped on localhost to allow easy development testing.");
-    }
-  } catch (error) {
-    console.warn("App Check failed to initialize.", error);
-  }
-} else {
-  console.warn("App Check skipped: VITE_RECAPTCHA_SITE_KEY is not defined locally.");
+const recaptchaKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LehXJotAAAAAMmJv8AOo39KRWH1ilotOzzzO_Iy";
+
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  // Enable the debug token for localhost so Firebase accepts requests
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = "99911826-0CC2-4C06-A3AE-992E5554F355";
 }
 
-export { app, auth, db, appCheck };
+try {
+  appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(recaptchaKey),
+    isTokenAutoRefreshEnabled: true
+  });
+  console.log("App Check initialized.");
+} catch (error) {
+  console.warn("App Check failed to initialize.", error);
+}
+
+export { app, auth, db, appCheck, functions };

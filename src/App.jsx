@@ -10,6 +10,7 @@ import Profile from './pages/Dashboard/Profile';
 import AIAssistant from './pages/Dashboard/AIAssistant';
 import VirtualIdCard from './pages/Dashboard/VirtualIdCard';
 import Login from './pages/Login';
+import MockSite from './pages/Demo/MockSite';
 import { AuthProvider } from './context/AuthContext';
 import './index.css';
 
@@ -32,6 +33,11 @@ function App() {
               <Route path="ai-assistant" element={<AIAssistant />} />
               <Route path="id-card" element={<VirtualIdCard />} />
             </Route>
+
+            {/* Mock Sites Demo Routes */}
+            <Route path="mock-b" element={<MockSite siteName="Mock Site B" collectionName="mock_site_b" />} />
+            <Route path="mock-c" element={<MockSite siteName="Mock Site C" collectionName="mock_site_c" />} />
+            <Route path="mock-d" element={<MockSite siteName="Mock Site D" collectionName="mock_site_d" />} />
           </Route>
         </Routes>
       </Router>
