@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { db, auth } from '../../firebase';
@@ -46,6 +46,41 @@ export default function Profile() {
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [passwordCaptchaToken, setPasswordCaptchaToken] = useState(null);
+    const passwordCaptchaRef = useRef(null);
+    const passwordWidgetIdRef = useRef(null);
+
+    // Initialize reCAPTCHA v2 checkbox for Change Password
+    useEffect(() => {
+        if (activeSidebar === 'CHANGE_PASSWORD') {
+            const initCaptcha = () => {
+                if (window.grecaptcha && window.grecaptcha.render && passwordCaptchaRef.current) {
+                    if (passwordWidgetIdRef.current !== null) {
+                        try {
+                            window.grecaptcha.reset(passwordWidgetIdRef.current);
+                            setPasswordCaptchaToken(null);
+                        } catch (e) {}
+                        return;
+                    }
+                    try {
+                        const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+                        if (siteKey) {
+                            passwordWidgetIdRef.current = window.grecaptcha.render(passwordCaptchaRef.current, {
+                                sitekey: siteKey,
+                                callback: (token) => setPasswordCaptchaToken(token),
+                                'expired-callback': () => setPasswordCaptchaToken(null)
+                            });
+                        }
+                    } catch (err) {
+                        console.warn("reCAPTCHA v2 render error:", err);
+                    }
+                }
+            };
+
+            const timer = setTimeout(initCaptcha, 250);
+            return () => clearTimeout(timer);
+        }
+    }, [activeSidebar]);
 
     // Contact Details & Phone Auth State
     const [contactData, setContactData] = useState({
@@ -174,6 +209,65 @@ export default function Profile() {
             alert('Failed to save profile: ' + error.message);
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        if (passwordData.newPassword !== passwordData.confirmNewPassword) {
+            alert("New passwords do not match!");
+            return;
+        }
+        if (passwordData.newPassword.length < 6) {
+            alert("Password should be at least 6 characters.");
+            return;
+        }
+        if (!passwordCaptchaToken) {
+            alert("Please complete the 'I'm not a robot' security check before changing your password.");
+            return;
+        }
+
+        setIsUpdatingPassword(true);
+        try {
+            // Verify reCAPTCHA token with backend
+            const verifyRes = await fetch('/api/verify-captcha', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: passwordCaptchaToken })
+            });
+            const verifyResult = await verifyRes.json();
+            if (!verifyRes.ok || !verifyResult.success) {
+                throw new Error(verifyResult.error || "Security check failed. Please verify the captcha again.");
+            }
+
+            const currentUser = auth.currentUser;
+            if (!currentUser) throw new Error("User not logged in");
+            
+            // Re-authenticate first
+            const credential = EmailAuthProvider.credential(currentUser.email, passwordData.currentPassword);
+            await reauthenticateWithCredential(currentUser, credential);
+            
+            // Update password
+            await updatePassword(currentUser, passwordData.newPassword);
+            alert("Password updated successfully!");
+            setPasswordData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+            setPasswordCaptchaToken(null);
+            if (passwordWidgetIdRef.current !== null && window.grecaptcha) {
+                window.grecaptcha.reset(passwordWidgetIdRef.current);
+            }
+        } catch (error) {
+            console.error("Error updating password:", error);
+            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
+                alert('Current password is incorrect.');
+            } else {
+                alert('Failed to update password: ' + error.message);
+            }
+            if (passwordWidgetIdRef.current !== null && window.grecaptcha) {
+                window.grecaptcha.reset(passwordWidgetIdRef.current);
+            }
+            setPasswordCaptchaToken(null);
+        } finally {
+            setIsUpdatingPassword(false);
         }
     };
 
@@ -422,40 +516,7 @@ export default function Profile() {
         }
     };
 
-    const handleChangePassword = async (e) => {
-        e.preventDefault();
-        if (passwordData.newPassword !== passwordData.confirmNewPassword) {
-            alert("New passwords do not match!");
-            return;
-        }
-        if (passwordData.newPassword.length < 6) {
-            alert("Password should be at least 6 characters.");
-            return;
-        }
-        setIsUpdatingPassword(true);
-        try {
-            const currentUser = auth.currentUser;
-            if (!currentUser) throw new Error("User not logged in");
-            
-            // Re-authenticate first
-            const credential = EmailAuthProvider.credential(currentUser.email, passwordData.currentPassword);
-            await reauthenticateWithCredential(currentUser, credential);
-            
-            // Update password
-            await updatePassword(currentUser, passwordData.newPassword);
-            alert("Password updated successfully!");
-            setPasswordData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
-        } catch (error) {
-            console.error("Error updating password:", error);
-            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
-                alert('Current password is incorrect.');
-            } else {
-                alert('Failed to update password: ' + error.message);
-            }
-        } finally {
-            setIsUpdatingPassword(false);
-        }
-    };
+
 
     return (
         <div id="profile">
@@ -518,7 +579,10 @@ export default function Profile() {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="profile-form-footer" style={{ marginTop: '30px', paddingTop: '0' }}>
+                                <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0 10px' }}>
+                                    <div ref={passwordCaptchaRef}></div>
+                                </div>
+                                <div className="profile-form-footer" style={{ marginTop: '20px', paddingTop: '0' }}>
                                     <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={isUpdatingPassword}>{isUpdatingPassword ? 'UPDATING...' : 'UPDATE PASSWORD'}</button>
                                 </div>
                             </form>
