@@ -13,15 +13,19 @@ export default async function handler(req, res) {
       }
     }
 
-    const token = body?.token;
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    const { token, version = 'v3' } = body || {};
+
+    // Select the matching Secret Key based on version (v2 or v3)
+    const secretKey = version === 'v2' 
+      ? (process.env.RECAPTCHA_V2_SECRET_KEY || process.env.RECAPTCHA_SECRET_KEY)
+      : (process.env.RECAPTCHA_V3_SECRET_KEY || process.env.RECAPTCHA_SECRET_KEY);
 
     if (!token) {
       return res.status(400).json({ success: false, error: 'Security token is missing.' });
     }
 
     if (!secretKey) {
-      console.warn('RECAPTCHA_SECRET_KEY is not configured on server.');
+      console.warn(`RECAPTCHA_${version.toUpperCase()}_SECRET_KEY is not configured on server.`);
       return res.status(200).json({ success: true, score: 1.0, note: 'Dev mode bypass' });
     }
 
@@ -36,12 +40,18 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // Check if Google verified the token and score is >= 0.5
-    if (!data.success || (typeof data.score === 'number' && data.score < 0.5)) {
-      console.warn(`[reCAPTCHA Blocked] Score: ${data.score}, Errors:`, data['error-codes']);
+    // Verification check:
+    // - For v3: Must be success AND score >= 0.5
+    // - For v2: Must be success
+    const isScoreValid = typeof data.score === 'number' ? data.score >= 0.5 : true;
+
+    if (!data.success || !isScoreValid) {
+      console.warn(`[reCAPTCHA ${version} Blocked] Score: ${data.score}, Errors:`, data['error-codes']);
       return res.status(403).json({
         success: false,
-        error: 'Automated activity detected. Access denied by security policy.',
+        error: version === 'v2' 
+          ? 'Security check failed. Please solve the captcha checkbox.' 
+          : 'Automated activity detected. Access denied.',
         score: data.score || 0.0
       });
     }
@@ -49,7 +59,8 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       score: data.score,
-      action: data.action
+      action: data.action,
+      version
     });
   } catch (error) {
     console.error('Error verifying reCAPTCHA token:', error);
