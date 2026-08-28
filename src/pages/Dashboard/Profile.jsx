@@ -514,7 +514,6 @@ export default function Profile() {
                                     <div className="submit-dropdown-content">
                                         <button onClick={() => handlePush('mock_site_b', 'Site B')}><i className="fa-solid fa-globe"></i> Push to Site B</button>
                                         <button onClick={() => handlePush('mock_site_c', 'Site C')}><i className="fa-solid fa-globe"></i> Push to Site C</button>
-                                        <button onClick={() => handlePush('mock_site_d', 'Site D')}><i className="fa-solid fa-globe"></i> Push to Site D</button>
                                     </div>
                                 </div>
                             </div>
