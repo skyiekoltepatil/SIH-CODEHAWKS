@@ -29,6 +29,13 @@ export default function Profile() {
     const [isSaving, setIsSaving] = useState(false);
     const [isPushing, setIsPushing] = useState(false);
 
+    // Permission Modal State for Pushing Data
+    const [pushModal, setPushModal] = useState({
+        isOpen: false,
+        collectionName: '',
+        siteName: ''
+    });
+
     // Password Form State
     const [passwordData, setPasswordData] = useState({
         currentPassword: '',
@@ -60,7 +67,7 @@ export default function Profile() {
     const [panVerified, setPanVerified] = useState(false);
     const [isVerifyingIdentity, setIsVerifyingIdentity] = useState(false);
     
-    // Email OTP States
+    // OTP states for Aadhaar and PAN
     const [aadhaarOtp, setAadhaarOtp] = useState('');
     const [isAadhaarOtpSent, setIsAadhaarOtpSent] = useState(false);
     const [expectedAadhaarOtp, setExpectedAadhaarOtp] = useState('');
@@ -76,7 +83,7 @@ export default function Profile() {
         }
     }, [location.state]);
 
-    // Fetch existing data on mount
+    // Load initial data
     useEffect(() => {
         const fetchProfileData = async () => {
             if (user?.uid) {
@@ -85,7 +92,7 @@ export default function Profile() {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
                         const data = docSnap.data();
-                        setFormData(prev => ({ ...prev, ...(data.personalDetails || {}) }));
+                        if (data.personalDetails) setFormData(prev => ({ ...prev, ...data.personalDetails }));
                         if (data.contactDetails) {
                             setContactData(prev => ({ ...prev, ...data.contactDetails }));
                             if (data.contactDetails.phoneVerified) {
@@ -106,11 +113,28 @@ export default function Profile() {
         fetchProfileData();
     }, [user]);
 
-    const handlePush = async (collectionName, siteName) => {
+    const handleRequestPush = (collectionName, siteName) => {
+        setPushModal({
+            isOpen: true,
+            collectionName,
+            siteName
+        });
+    };
+
+    const handleCancelPush = () => {
+        setPushModal({
+            isOpen: false,
+            collectionName: '',
+            siteName: ''
+        });
+    };
+
+    const handleConfirmPush = async () => {
+        if (!pushModal.collectionName) return;
         setIsPushing(true);
         try {
             const payload = {
-                userId: user.uid,
+                userId: user?.uid || 'anonymous',
                 personalDetails: formData,
                 contactDetails: {
                     ...contactData,
@@ -124,9 +148,11 @@ export default function Profile() {
                 timestamp: Date.now()
             };
 
-            await addDoc(collection(db, collectionName), payload);
+            await addDoc(collection(db, pushModal.collectionName), payload);
             
-            alert(`Profile securely submitted to ${siteName}!`);
+            const targetSite = pushModal.siteName;
+            setPushModal({ isOpen: false, collectionName: '', siteName: '' });
+            alert(`Profile securely submitted to ${targetSite}!`);
         } catch (error) {
             console.error("Error pushing profile:", error);
             alert('Failed to submit profile: ' + error.message);
@@ -512,7 +538,7 @@ export default function Profile() {
                                         {isPushing ? 'SUBMITTING...' : <><i className="fa-solid fa-paper-plane"></i> PUSH DATA OPTIONS <i className="fa-solid fa-chevron-down" style={{fontSize: '0.8em', marginLeft: '5px'}}></i></>}
                                     </button>
                                     <div className="submit-dropdown-content">
-                                        <button onClick={() => handlePush('mock_site_b', 'Site B')}><i className="fa-solid fa-globe"></i> Push to Site B</button>
+                                        <button type="button" onClick={() => handleRequestPush('mock_site_b', 'Site B')}><i className="fa-solid fa-globe"></i> Push to Site B</button>
                                     </div>
                                 </div>
                             </div>
@@ -878,6 +904,214 @@ export default function Profile() {
                     )}
                 </main>
             </div>
+
+            {/* Permission Pop-up Confirmation Modal */}
+            {pushModal.isOpen && (
+                <div 
+                    className="modal-overlay active" 
+                    style={{ 
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                        backdropFilter: 'blur(4px)',
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        zIndex: 9999,
+                        padding: '20px'
+                    }}
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget && !isPushing) {
+                            handleCancelPush();
+                        }
+                    }}
+                >
+                    <div 
+                        className="modal" 
+                        style={{ 
+                            maxWidth: '480px', 
+                            width: '100%', 
+                            padding: 0, 
+                            borderRadius: '16px', 
+                            backgroundColor: '#ffffff',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                            overflow: 'hidden',
+                            border: '1px solid #e2e8f0',
+                            animation: 'modalSlideUp 0.25s ease-out'
+                        }}
+                    >
+                        {/* Header */}
+                        <div style={{ 
+                            background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)', 
+                            color: 'white', 
+                            padding: '18px 24px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'space-between' 
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ 
+                                    background: 'rgba(255, 255, 255, 0.2)', 
+                                    width: '36px', 
+                                    height: '36px', 
+                                    borderRadius: '50%', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    fontSize: '1.1rem' 
+                                }}>
+                                    <i className="fa-solid fa-shield-halved"></i>
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600, color: 'white' }}>Data Sharing Permission</h3>
+                                    <span style={{ fontSize: '0.8rem', color: '#bfdbfe' }}>Security & Consent Verification</span>
+                                </div>
+                            </div>
+                            <button 
+                                type="button"
+                                disabled={isPushing}
+                                onClick={handleCancelPush} 
+                                style={{ 
+                                    background: 'transparent', 
+                                    border: 'none', 
+                                    color: 'rgba(255,255,255,0.85)', 
+                                    fontSize: '1.2rem', 
+                                    cursor: isPushing ? 'not-allowed' : 'pointer', 
+                                    padding: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                                title="Close"
+                            >
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '20px' }}>
+                                <div style={{ 
+                                    background: '#eff6ff', 
+                                    color: '#2563eb', 
+                                    padding: '12px', 
+                                    borderRadius: '12px', 
+                                    fontSize: '1.4rem', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    flexShrink: 0 
+                                }}>
+                                    <i className="fa-solid fa-circle-question"></i>
+                                </div>
+                                <div>
+                                    <h4 style={{ margin: '0 0 6px 0', fontSize: '1.05rem', color: '#1e293b', fontWeight: 600 }}>
+                                        Submit Data to {pushModal.siteName}?
+                                    </h4>
+                                    <p style={{ margin: 0, color: '#475569', fontSize: '0.92rem', lineHeight: '1.5' }}>
+                                        Do you really want to submit and sync your profile data with <strong>{pushModal.siteName}</strong>?
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Data Summary Card */}
+                            <div style={{ 
+                                background: '#f8fafc', 
+                                border: '1px solid #e2e8f0', 
+                                borderRadius: '10px', 
+                                padding: '14px 16px', 
+                                marginBottom: '24px', 
+                                fontSize: '0.85rem', 
+                                color: '#475569' 
+                            }}>
+                                <div style={{ fontWeight: 600, marginBottom: '8px', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <i className="fa-solid fa-list-check" style={{ color: '#2563eb' }}></i> Details to be transferred:
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '6px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <i className="fa-solid fa-user" style={{ color: '#94a3b8', fontSize: '0.8rem' }}></i>
+                                        <span><strong>Name:</strong> {formData.firstName ? `${formData.firstName} ${formData.lastName}` : 'N/A'}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <i className="fa-solid fa-envelope" style={{ color: '#94a3b8', fontSize: '0.8rem' }}></i>
+                                        <span><strong>Email:</strong> {formData.officialEmail || 'N/A'}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <i className="fa-solid fa-phone" style={{ color: '#94a3b8', fontSize: '0.8rem' }}></i>
+                                        <span><strong>Phone:</strong> {phoneVerified ? 'Verified' : 'Unverified'}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <i className="fa-solid fa-id-card" style={{ color: '#94a3b8', fontSize: '0.8rem' }}></i>
+                                        <span><strong>KYC:</strong> {aadhaarVerified || panVerified ? 'Verified' : 'Pending'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Action Buttons: Yes / No */}
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                                <button 
+                                    type="button" 
+                                    disabled={isPushing}
+                                    onClick={handleCancelPush}
+                                    style={{ 
+                                        padding: '10px 22px', 
+                                        borderRadius: '8px', 
+                                        border: '1px solid #cbd5e1', 
+                                        background: '#f1f5f9', 
+                                        color: '#475569', 
+                                        fontWeight: '600', 
+                                        fontSize: '0.9rem',
+                                        cursor: isPushing ? 'not-allowed' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseOver={(e) => !isPushing && (e.currentTarget.style.background = '#e2e8f0')}
+                                    onMouseOut={(e) => !isPushing && (e.currentTarget.style.background = '#f1f5f9')}
+                                >
+                                    <i className="fa-solid fa-xmark"></i> No
+                                </button>
+                                <button 
+                                    type="button" 
+                                    disabled={isPushing}
+                                    onClick={handleConfirmPush}
+                                    style={{ 
+                                        padding: '10px 26px', 
+                                        borderRadius: '8px', 
+                                        border: 'none', 
+                                        background: isPushing ? '#93c5fd' : '#2563eb', 
+                                        color: 'white', 
+                                        fontWeight: '600', 
+                                        fontSize: '0.9rem',
+                                        cursor: isPushing ? 'not-allowed' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.25)',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseOver={(e) => !isPushing && (e.currentTarget.style.background = '#1d4ed8')}
+                                    onMouseOut={(e) => !isPushing && (e.currentTarget.style.background = '#2563eb')}
+                                >
+                                    {isPushing ? (
+                                        <>
+                                            <i className="fa-solid fa-spinner fa-spin"></i> Submitting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="fa-solid fa-check"></i> Yes
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
