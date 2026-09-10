@@ -1,6 +1,9 @@
 import { useLocation } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
-import { applicationsData } from '../../data';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../../context/AuthContext';
+import { db } from '../../firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import { openDocumentUrl } from '../../utils/fileUpload';
 import './Applications.css';
 
 export default function Applications() {
@@ -10,6 +13,9 @@ export default function Applications() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [expandedRowId, setExpandedRowId] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+    const { user } = useContext(AuthContext);
+    const [applicationsData, setApplicationsData] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [helpDrawerAppId, setHelpDrawerAppId] = useState(null);
 
     const toggleRow = (id) => {
@@ -33,7 +39,41 @@ export default function Applications() {
         if (location.state?.filter) {
             setFilter(location.state.filter);
         }
+        if (location.state?.expandAppId) {
+            setExpandedRowId(location.state.expandAppId);
+        }
     }, [location.state]);
+
+    useEffect(() => {
+        const fetchApplications = async () => {
+            if (user?.uid) {
+                try {
+                    const appsRef = collection(db, 'users', user.uid, 'applications');
+                    const querySnapshot = await getDocs(appsRef);
+                    const appsData = [];
+                    querySnapshot.forEach((docSnap) => {
+                        appsData.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    
+                    appsData.sort((a, b) => {
+                        const timeA = a.timestamp?.toMillis?.() || 0;
+                        const timeB = b.timestamp?.toMillis?.() || 0;
+                        return timeB - timeA;
+                    });
+                    
+                    setApplicationsData(appsData);
+                } catch (error) {
+                    console.error("Error fetching applications:", error);
+                } finally {
+                    setLoading(false);
+                }
+            } else {
+                setLoading(false);
+            }
+        };
+
+        fetchApplications();
+    }, [user]);
 
     let displayedApplications = applicationsData.filter(app => {
         if (filter !== 'All' && app.status !== filter) return false;
@@ -106,7 +146,7 @@ export default function Applications() {
                                     <React.Fragment key={app.id}>
                                         <tr onClick={() => toggleRow(app.id)} style={{ cursor: 'pointer' }} className={expandedRowId === app.id ? 'active-row' : ''}>
                                             <td className="fw-600">{app.schemeName || app.name}</td>
-                                            <td>{app.id < 1000 ? `APP-2023-894${app.id}` : app.id}</td>
+                                            <td>{typeof app.id === 'string' && app.id.startsWith('APP') ? app.id : (typeof app.id === 'number' && app.id < 1000 ? `APP-2023-894${app.id}` : app.id)}</td>
                                             <td>{app.dateApplied || app.date || '12 Oct 2023'}</td>
                                             <td>
                                                 <span className={`status-badge-soft ${badgeClass}`}>
@@ -206,25 +246,24 @@ export default function Applications() {
                                                                         <div className="acs2-col-box">
                                                                             <h5 className="acs2-title">Uploaded Application Documents</h5>
                                                                             <div className="acs2-doc-list">
-                                                                                <div className="acs2-doc-item verified">
-                                                                                    <div className="doc-name"><i className="fa-regular fa-file-lines"></i> Aadhar file</div>
-                                                                                    <div className="doc-status"><i className="fa-solid fa-circle-check"></i> Verified <span className="doc-light">(Internal Data Audit)</span></div>
-                                                                                </div>
-                                                                                <div className="acs2-doc-item verified">
-                                                                                    <div className="doc-name"><i className="fa-regular fa-file-lines"></i> Aadhar file</div>
-                                                                                    <div className="doc-status"><i className="fa-solid fa-circle-check"></i> Verified <span className="doc-light">(Internal Data Audit)</span> <i className="fa-solid fa-chevron-down"></i></div>
-                                                                                </div>
-                                                                                <div className="acs2-doc-item pending">
-                                                                                    <div className="doc-name"><i className="fa-regular fa-file-lines"></i> PM-JAY document</div>
-                                                                                    <div className="doc-status">More <i className="fa-solid fa-chevron-down"></i></div>
-                                                                                </div>
-                                                                                <div className="acs2-doc-item pending">
-                                                                                    <div className="doc-name"><i className="fa-regular fa-file-lines"></i> File docs</div>
-                                                                                    <div className="doc-status">More <i className="fa-solid fa-chevron-down"></i></div>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="acs2-file-drop">
-                                                                                <i className="fa-solid fa-arrow-up-from-bracket"></i> File drop area
+                                                                                {app.documents && app.documents.length > 0 ? (
+                                                                                    app.documents.map((docItem, dIdx) => (
+                                                                                        <div 
+                                                                                            key={dIdx} 
+                                                                                            className="acs2-doc-item verified"
+                                                                                            onClick={() => openDocumentUrl(docItem.url, docItem.name || `Document_${dIdx + 1}`)}
+                                                                                            style={{ cursor: 'pointer' }}
+                                                                                            title="Click to view/download document"
+                                                                                        >
+                                                                                            <div className="doc-name"><i className="fa-regular fa-file-lines"></i> {docItem.name || `Document ${dIdx + 1}`}</div>
+                                                                                            <div className="doc-status"><i className="fa-solid fa-circle-check"></i> View / Download <i className="fa-solid fa-arrow-up-right-from-square" style={{ marginLeft: '4px', fontSize: '0.8rem' }}></i></div>
+                                                                                        </div>
+                                                                                    ))
+                                                                                ) : (
+                                                                                    <div style={{ padding: '12px', color: '#64748b', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                                                                                        No documents attached to this application.
+                                                                                    </div>
+                                                                                )}
                                                                             </div>
                                                                         </div>
                                                                         

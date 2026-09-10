@@ -2,7 +2,9 @@ import { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { db } from '../../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { PieChart, PieSlice, PieCenter } from '../../components/ui/charts';
+import { uploadDocument } from '../../utils/fileUpload';
 import './DashboardOverview.css';
 
 export default function DashboardOverview() {
@@ -12,6 +14,11 @@ export default function DashboardOverview() {
     const [currentPage, setCurrentPage] = useState(1);
     const [showAlert, setShowAlert] = useState(true);
     const [profileCompletion, setProfileCompletion] = useState(0); // Default base percentage
+    const [verificationStatus, setVerificationStatus] = useState({
+        contact: false,
+        bank: false,
+        aadhaar: false
+    });
     
     // Notifications Tracking
     const [notifications, setNotifications] = useState([
@@ -22,15 +29,11 @@ export default function DashboardOverview() {
     const readNotifications = notifications.filter(n => n.read).length;
     const notificationsPercentage = Math.round((readNotifications / notifications.length) * 100) || 0;
 
-    const applications = [
-        { id: 1, name: 'PM-KISAN', status: 'Pending', desc: 'Field Inspection in Progress', currentStep: 3, totalSteps: 5 },
-        { id: 2, name: 'Ayushman Bharat PM-JAY', status: 'Approved', desc: 'Awaiting card pick-up at CSC center', currentStep: 4, totalSteps: 4 },
-        { id: 3, name: 'Mudra Yojana Loan', status: 'Rejected', desc: 'Reason: Incomplete Business Plan', currentStep: 1, totalSteps: 4 },
-        { id: 4, name: 'PM Awas Yojana', status: 'Approved', desc: 'Funds disbursed to bank account', currentStep: 5, totalSteps: 5 },
-        { id: 5, name: 'Kisan Credit Card', status: 'Pending', desc: 'Document verification pending', currentStep: 2, totalSteps: 4 },
-        { id: 6, name: 'PM Shram Yogi Maandhan', status: 'Approved', desc: 'Policy generated', currentStep: 3, totalSteps: 3 },
-        { id: 7, name: 'Soil Health Card', status: 'Approved', desc: 'Card dispatched via post', currentStep: 3, totalSteps: 3 }
-    ];
+    const [applications, setApplications] = useState([]);
+    
+    // Avatar State
+    const [avatarUrl, setAvatarUrl] = useState(user?.photoURL || null);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
     useEffect(() => {
         const fetchProfileData = async () => {
@@ -68,15 +71,64 @@ export default function DashboardOverview() {
                         
                         const calculatedPercentage = totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
                         setProfileCompletion(calculatedPercentage);
+
+                        // Check verifications
+                        const contactVerified = !!(userData?.personalDetails?.mobileNumber && userData?.personalDetails?.primaryEmail);
+                        const bankAdded = !!(userData?.documents?.passbook);
+                        const aadhaarVerified = !!(userData?.identityDetails?.aadhaarNumber);
+
+                        setVerificationStatus({
+                            contact: contactVerified,
+                            bank: bankAdded,
+                            aadhaar: aadhaarVerified
+                        });
+
+                        // Set Avatar from Firestore if available
+                        if (userData?.documents?.photo?.url) {
+                            setAvatarUrl(userData.documents.photo.url);
+                        } else if (user?.photoURL) {
+                            setAvatarUrl(user.photoURL);
+                        }
                     } else {
                         setProfileCompletion(0);
+                        setVerificationStatus({
+                            contact: false,
+                            bank: false,
+                            aadhaar: false
+                        });
                     }
                 } catch (error) {
                     console.error("Error fetching profile for completion tracking:", error);
                 }
             }
         };
+
+        const fetchApplications = async () => {
+            if (user?.uid) {
+                try {
+                    const appsRef = collection(db, 'users', user.uid, 'applications');
+                    const querySnapshot = await getDocs(appsRef);
+                    const appsData = [];
+                    querySnapshot.forEach((docSnap) => {
+                        appsData.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    
+                    // Sort by timestamp if available
+                    appsData.sort((a, b) => {
+                        const timeA = a.timestamp?.toMillis?.() || 0;
+                        const timeB = b.timestamp?.toMillis?.() || 0;
+                        return timeB - timeA;
+                    });
+                    
+                    setApplications(appsData);
+                } catch (error) {
+                    console.error("Error fetching applications:", error);
+                }
+            }
+        };
+
         fetchProfileData();
+        fetchApplications();
     }, [user]);
 
     const totalCount = applications.length;
@@ -97,6 +149,31 @@ export default function DashboardOverview() {
     const totalPages = Math.ceil(filteredApps.length / itemsPerPage);
     const paginatedApps = filteredApps.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+    const handleAvatarUpload = async (event) => {
+        const file = event.target.files?.[0];
+        if (!file || !user?.uid) return;
+        
+        setIsUploadingAvatar(true);
+        try {
+            const uploaded = await uploadDocument(file);
+            const newUrl = uploaded.url;
+            
+            // Save to Firestore under documents.photo
+            await setDoc(doc(db, 'users', user.uid), {
+                documents: { photo: { url: newUrl } }
+            }, { merge: true });
+            
+            setAvatarUrl(newUrl);
+        } catch (error) {
+            console.error("Error uploading avatar:", error);
+            alert("Failed to upload profile photo.");
+        } finally {
+            setIsUploadingAvatar(false);
+            // Reset input
+            event.target.value = '';
+        }
+    };
+
     return (
         <div className="dashboard-overview">
             {showAlert && (
@@ -116,13 +193,31 @@ export default function DashboardOverview() {
                 <div className="left-column">
                     <div className="profile-card">
                         <div className="profile-header">
-                            <div className="profile-avatar">
-                                {user?.photoURL ? (
-                                    <img src={user.photoURL} alt="Profile" />
+                            <label className="profile-avatar" htmlFor="avatar-upload">
+                                {isUploadingAvatar ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                        <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '2rem' }}></i>
+                                    </div>
+                                ) : avatarUrl ? (
+                                    <img src={avatarUrl} alt="Profile" />
                                 ) : (
                                     <i className="fa-solid fa-user"></i>
                                 )}
-                            </div>
+                                {!isUploadingAvatar && (
+                                    <div className="avatar-overlay">
+                                        <i className="fa-solid fa-camera"></i>
+                                        <span>Update Photo</span>
+                                    </div>
+                                )}
+                                <input 
+                                    type="file" 
+                                    id="avatar-upload" 
+                                    className="avatar-upload-input" 
+                                    accept="image/*" 
+                                    onChange={handleAvatarUpload}
+                                    disabled={isUploadingAvatar}
+                                />
+                            </label>
                             <div className="profile-info">
                                 <h2>{user?.name || 'John Doe'} <span className="farmer-id">(Farmer ID: 7890)</span></h2>
                                 
@@ -137,13 +232,13 @@ export default function DashboardOverview() {
 
                                 <div className="verification-badges">
                                     <div className="ver-badge">
-                                        <i className="fa-solid fa-square-check checked"></i> Contact Info Verified
+                                        <i className={`fa-${verificationStatus.contact ? 'solid fa-square-check checked' : 'regular fa-square unchecked'}`}></i> Contact Info Verified
                                     </div>
                                     <div className="ver-badge">
-                                        <i className="fa-solid fa-square-check checked"></i> Bank Details Added
+                                        <i className={`fa-${verificationStatus.bank ? 'solid fa-square-check checked' : 'regular fa-square unchecked'}`}></i> Bank Details Added
                                     </div>
                                     <div className="ver-badge">
-                                        <i className="fa-regular fa-square unchecked"></i> Aadhaar e-KYC
+                                        <i className={`fa-${verificationStatus.aadhaar ? 'solid fa-square-check checked' : 'regular fa-square unchecked'}`}></i> Aadhaar e-KYC
                                     </div>
                                 </div>
 
@@ -154,107 +249,109 @@ export default function DashboardOverview() {
                         </div>
                     </div>
 
-                    <div className="scheme-status-card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3>PM-KISAN</h3>
-                            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#3b82f6' }}>Progress: 60%</span>
+                    {applications.length === 0 ? (
+                        <div className="scheme-status-card" style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+                            <i className="fa-solid fa-folder-open" style={{ fontSize: '3rem', marginBottom: '16px', color: '#cbd5e1' }}></i>
+                            <h3>No Applications Yet</h3>
+                            <p>You haven't applied for any schemes. Check out the Recommendations or Schemes page to get started!</p>
+                            <button className="btn-primary" style={{ marginTop: '16px' }} onClick={() => navigate('/schemes')}>Browse Schemes</button>
                         </div>
-                        <div className="stepper-container">
-                            <div className="stepper-line"></div>
-                            <div className="stepper-line-fill" style={{ width: '60%' }}></div>
+                    ) : (
+                        applications.map((app) => {
+                            let progressPercent = 25;
+                            if (app.status === 'Approved') {
+                                progressPercent = 100;
+                            } else if (app.status === 'Rejected') {
+                                progressPercent = 75;
+                            } else if (app.totalSteps && app.currentStep !== undefined) {
+                                progressPercent = Math.round((app.currentStep / app.totalSteps) * 100);
+                            } else {
+                                progressPercent = 50;
+                            }
                             
-                            <div className="step-item completed">
-                                <div className="step-icon"><i className="fa-solid fa-check"></i></div>
-                                <div className="step-label">Application</div>
-                            </div>
+                            const statusClass = app.status === 'Approved' ? 'status-approved' : (app.status === 'Rejected' ? 'status-rejected' : 'status-pending');
                             
-                            <div className="step-item completed">
-                                <div className="step-icon"><i className="fa-solid fa-check"></i></div>
-                                <div className="step-label">Verification</div>
-                            </div>
-                            
-                            <div className="step-item active">
-                                <div className="step-icon"><i className="fa-solid fa-stopwatch"></i></div>
-                                <div className="step-label">Field Inspection</div>
-                                <div className="step-sublabel">Field Inspection in Progress</div>
-                            </div>
-                            
-                            <div className="step-item">
-                                <div className="step-icon"><i className="fa-solid fa-file-invoice"></i></div>
-                                <div className="step-label">Sanction</div>
-                            </div>
-                            
-                            <div className="step-item">
-                                <div className="step-icon"><i className="fa-solid fa-coins"></i></div>
-                                <div className="step-label">Fund Disbursal</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="scheme-status-card">
-                        <div className="scheme-flex">
-                            <div style={{ width: '100%' }}>
-                                <h3>Ayushman Bharat PM-JAY</h3>
-                                <div className="scheme-status-text">
-                                    Status: <span className="status-approved">Approved</span> (Awaiting card pick-up at CSC center)
-                                </div>
-                                <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#64748b' }}>Progress: 100%</span>
-                                    <div style={{ flex: 1, height: '6px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                                        <div style={{ width: '100%', height: '100%', background: '#10b981' }}></div>
+                            return (
+                                <div className="scheme-status-card" key={app.id}>
+                                    <div className="scheme-flex">
+                                        <div style={{ width: '100%' }}>
+                                            <h3>{app.schemeName || 'Unknown Scheme'}</h3>
+                                            <div className="scheme-status-text">
+                                                Status: <span className={statusClass}>{app.status}</span> ({app.desc || 'Application submitted'})
+                                            </div>
+                                            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#64748b' }}>
+                                                    {app.status === 'Rejected' ? `Progress: Stopped at ${progressPercent}%` : `Progress: ${progressPercent}%`}
+                                                </span>
+                                                <div style={{ flex: 1, height: '6px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                                                    <div style={{ 
+                                                        width: `${progressPercent}%`, 
+                                                        height: '100%', 
+                                                        background: app.status === 'Approved' ? '#10b981' : (app.status === 'Rejected' ? '#ef4444' : '#3b82f6') 
+                                                    }}></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            className={app.status === 'Rejected' ? 'btn-reapply' : 'btn-track'}
+                                            onClick={() => navigate('/dashboard/applications', { state: { expandAppId: app.id } })}
+                                        >
+                                            {app.status === 'Rejected' ? 'Re-apply' : 'Track'}
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
-                            <button className="btn-track">Track Card</button>
-                        </div>
-                    </div>
-
-                    <div className="scheme-status-card">
-                        <div className="scheme-flex">
-                            <div style={{ width: '100%' }}>
-                                <h3>Mudra Yojana Loan</h3>
-                                <div className="scheme-status-text">
-                                    Status: <span className="status-rejected">Rejected</span> (Reason: Incomplete Business Plan)
-                                </div>
-                                <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#64748b' }}>Progress: Stopped at 25%</span>
-                                    <div style={{ flex: 1, height: '6px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                                        <div style={{ width: '25%', height: '100%', background: '#ef4444' }}></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <button className="btn-reapply">Re-apply</button>
-                        </div>
-                    </div>
+                            );
+                        })
+                    )}
                 </div>
 
                 {/* Right Sidebar */}
                 <div className="right-column">
                     <div className="sidebar-card">
                         <h3>My Performance Snapshot</h3>
-                        <div className="chart-container">
-                            <div className={`bar-wrapper ${selectedFilter === 'All' ? 'active-filter' : ''}`} onClick={() => handleFilterClick('All')} style={{cursor: 'pointer'}}>
-                                <span className="bar-value">{totalCount}</span>
-                                <div className="bar bar-total"></div>
-                            </div>
-                            <div className={`bar-wrapper ${selectedFilter === 'Approved' ? 'active-filter' : ''}`} onClick={() => handleFilterClick('Approved')} style={{cursor: 'pointer'}}>
-                                <span className="bar-value">{approvedCount}</span>
-                                <div className="bar bar-approved" style={{ height: `${(approvedCount/totalCount)*100}%` }}></div>
-                            </div>
-                            <div className={`bar-wrapper ${selectedFilter === 'Pending' ? 'active-filter' : ''}`} onClick={() => handleFilterClick('Pending')} style={{cursor: 'pointer'}}>
-                                <span className="bar-value">{pendingCount}</span>
-                                <div className="bar bar-pending" style={{ height: `${(pendingCount/totalCount)*100}%` }}></div>
-                            </div>
-                            <div className={`bar-wrapper ${selectedFilter === 'Rejected' ? 'active-filter' : ''}`} onClick={() => handleFilterClick('Rejected')} style={{cursor: 'pointer'}}>
-                                <span className="bar-value">{rejectedCount}</span>
-                                <div className="bar bar-rejected" style={{ height: `${(rejectedCount/totalCount)*100}%` }}></div>
-                            </div>
-                        </div>
-                        <div className="chart-labels">
-                            <div className={`chart-label-item ${selectedFilter === 'All' ? 'active-label' : ''}`} onClick={() => handleFilterClick('All')} style={{cursor: 'pointer'}}>Total Applications: {totalCount}</div>
-                            <div className={`chart-label-item ${selectedFilter === 'Approved' ? 'active-label' : ''}`} onClick={() => handleFilterClick('Approved')} style={{cursor: 'pointer'}}>Approved: {approvedCount}</div>
-                            <div className={`chart-label-item ${selectedFilter === 'Pending' ? 'active-label' : ''}`} onClick={() => handleFilterClick('Pending')} style={{cursor: 'pointer'}}>Pending: {pendingCount}</div>
-                            <div className={`chart-label-item ${selectedFilter === 'Rejected' ? 'active-label' : ''}`} onClick={() => handleFilterClick('Rejected')} style={{cursor: 'pointer'}}>Rejected: {rejectedCount}</div>
+                        <div className="donut-chart-container" style={{ display: 'flex', justifyContent: 'center', margin: '20px 0', position: 'relative' }}>
+                            <svg width="0" height="0">
+                                <defs>
+                                    <pattern id="lines" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                                        <rect width="8" height="8" fill="#fee2e2" />
+                                        <line x1="0" y1="0" x2="0" y2="8" stroke="#ef4444" strokeWidth="2" />
+                                    </pattern>
+                                    <pattern id="vertical-lines" width="6" height="6" patternUnits="userSpaceOnUse">
+                                        <rect width="6" height="6" fill="#fef3c7" />
+                                        <line x1="0" y1="0" x2="0" y2="6" stroke="#f59e0b" strokeWidth="1" />
+                                    </pattern>
+                                    <pattern id="horizontal-lines" width="6" height="6" patternUnits="userSpaceOnUse">
+                                        <rect width="6" height="6" fill="#d1fae5" />
+                                        <line x1="0" y1="3" x2="6" y2="3" stroke="#10b981" strokeWidth="1" />
+                                    </pattern>
+                                </defs>
+                            </svg>
+                            <PieChart 
+                                data={[
+                                    { label: 'Approved', value: approvedCount, color: '#10b981', fill: 'url(#horizontal-lines)' },
+                                    { label: 'Pending', value: pendingCount, color: '#f59e0b', fill: 'url(#vertical-lines)' },
+                                    { label: 'Rejected', value: rejectedCount, color: '#ef4444', fill: 'url(#lines)' }
+                                ].filter(d => d.value > 0)} 
+                                size={220} 
+                                innerRadius={70} 
+                                padAngle={0.03} 
+                                cornerRadius={4}
+                            >
+                                {totalCount > 0 ? (
+                                    [
+                                        { label: 'Approved', value: approvedCount, color: '#10b981', fill: 'url(#horizontal-lines)' },
+                                        { label: 'Pending', value: pendingCount, color: '#f59e0b', fill: 'url(#vertical-lines)' },
+                                        { label: 'Rejected', value: rejectedCount, color: '#ef4444', fill: 'url(#lines)' }
+                                    ]
+                                    .filter(d => d.value > 0)
+                                    .map((_, index) => (
+                                        <PieSlice key={index} index={index} />
+                                    ))
+                                ) : (
+                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '140px', height: '140px', borderRadius: '50%', border: '40px solid #e2e8f0', boxSizing: 'border-box' }}></div>
+                                )}
+                                <PieCenter defaultLabel="Total" />
+                            </PieChart>
                         </div>
 
                         <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
@@ -269,7 +366,7 @@ export default function DashboardOverview() {
                             {paginatedApps.map(app => (
                                 <div key={app.id} className="mini-scheme-item" style={{ marginBottom: '8px' }}>
                                     <div className="mini-scheme-header">
-                                        <strong>{app.name}</strong>
+                                        <strong>{app.schemeName || app.name}</strong>
                                         <span className={`status-badge status-${app.status.toLowerCase()}`}>{app.status}</span>
                                     </div>
                                     <p>{app.desc}</p>

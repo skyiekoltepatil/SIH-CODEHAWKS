@@ -1,11 +1,12 @@
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { db, auth } from '../../firebase';
+import { db, auth, storage } from '../../firebase';
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
 
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, RecaptchaVerifier, linkWithPhoneNumber, sendPasswordResetEmail } from 'firebase/auth';
-import emailjs from '@emailjs/browser';
+
+import { uploadDocument } from '../../utils/fileUpload';
 import './Profile.css';
 
 export default function Profile() {
@@ -116,6 +117,7 @@ export default function Profile() {
     });
     const [aadhaarVerified, setAadhaarVerified] = useState(false);
     const [panVerified, setPanVerified] = useState(false);
+    const [showAadhaar, setShowAadhaar] = useState(false);
     const [isVerifyingIdentity, setIsVerifyingIdentity] = useState(false);
     
     // OTP states for Aadhaar and PAN
@@ -138,6 +140,10 @@ export default function Profile() {
 
     const [docModal, setDocModal] = useState({ isOpen: false, type: null });
     const [docFormData, setDocFormData] = useState({ file: null, docName: '', subjectText: '' });
+    
+    // Profile Lock State
+    const [isProfileLocked, setIsProfileLocked] = useState(false);
+    const [isLockingProfile, setIsLockingProfile] = useState(false);
 
     const openDocModal = (type) => {
         const existing = uploadedFiles[type];
@@ -157,8 +163,8 @@ export default function Profile() {
         if (field === 'file') {
             if (e.target.files && e.target.files[0]) {
                 const file = e.target.files[0];
-                if (file.size > 5 * 1024 * 1024) {
-                    alert("File size exceeds 5MB limit");
+                if (file.size > 10 * 1024 * 1024) {
+                    alert("Warning: File size exceeds 10MB limit. Please upload a smaller file.");
                     return;
                 }
                 setDocFormData(prev => ({ ...prev, file }));
@@ -195,44 +201,23 @@ export default function Profile() {
         try {
             const newDocUrls = {};
             
-            // Loop through uploadedFiles and upload any new File objects to Cloudinary
+            // Loop through uploadedFiles and upload any new File objects with multi-tier storage
             for (const [docType, docObj] of Object.entries(uploadedFiles)) {
                 if (!docObj) continue;
                 
                 if (docObj.file instanceof File) {
                     const fileObj = docObj.file;
-                    const formData = new FormData();
-                    formData.append('file', fileObj);
-                    formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'documents database');
-                    formData.append('cloud_name', import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'elh1llzh');
+                    const uploaded = await uploadDocument(fileObj);
 
-                    const response = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'elh1llzh'}/auto/upload`, {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error('Cloudinary error response:', errorText);
-                        throw new Error(`Cloudinary upload failed for ${docType}: ${errorText}`);
-                    }
-
-                    const data = await response.json();
                     newDocUrls[docType] = { 
                         name: fileObj.name, 
-                        url: data.secure_url, 
+                        url: uploaded.url, 
                         size: fileObj.size,
                         docName: docObj.docName || '',
                         subjectText: docObj.subjectText || ''
                     };
                 } else if (docObj.url) {
-                    // Keep existing URL object but update metadata if changed
-                    newDocUrls[docType] = {
-                        ...docObj,
-                        docName: docObj.docName || '',
-                        subjectText: docObj.subjectText || ''
-                    };
-                    delete newDocUrls[docType].file; // Cleanup just in case
+                    newDocUrls[docType] = docObj;
                 }
             }
 
@@ -244,9 +229,43 @@ export default function Profile() {
             alert('Documents uploaded successfully!');
         } catch (error) {
             console.error("Error uploading documents: ", error);
-            alert("Failed to upload some documents. Please try again.");
+            alert(`Document upload issue: ${error.message || 'Please try again'}`);
         } finally {
             setIsUploadingDocs(false);
+        }
+    };
+
+    const handleLockProfile = async () => {
+        if (!window.confirm("Are you sure you want to lock your profile? You will not be able to edit any details after locking.")) {
+            return;
+        }
+        setIsLockingProfile(true);
+        try {
+            await setDoc(doc(db, 'users', user.uid), { isProfileLocked: true }, { merge: true });
+            setIsProfileLocked(true);
+            alert("Profile successfully locked and verified!");
+        } catch (error) {
+            console.error("Error locking profile:", error);
+            alert("Failed to lock profile. Please try again.");
+        } finally {
+            setIsLockingProfile(false);
+        }
+    };
+
+    const handleUnlockProfile = async () => {
+        if (!window.confirm("Are you sure you want to unlock your profile? You will be able to edit your details again.")) {
+            return;
+        }
+        setIsLockingProfile(true);
+        try {
+            await setDoc(doc(db, 'users', user.uid), { isProfileLocked: false }, { merge: true });
+            setIsProfileLocked(false);
+            alert("Profile successfully unlocked!");
+        } catch (error) {
+            console.error("Error unlocking profile:", error);
+            alert("Failed to unlock profile. Please try again.");
+        } finally {
+            setIsLockingProfile(false);
         }
     };
 
@@ -280,6 +299,9 @@ export default function Profile() {
                         }
                         if (data.documents) {
                             setUploadedFiles(prev => ({ ...prev, ...data.documents }));
+                        }
+                        if (data.isProfileLocked) {
+                            setIsProfileLocked(true);
                         }
                     }
                 } catch (error) {
@@ -543,33 +565,9 @@ export default function Profile() {
     const [panLoadingText, setPanLoadingText] = useState("");
 
     const sendEmailOTP = async (otp, type) => {
-        try {
-            const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-            const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-            const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-            
-            // If keys are not set up, just log to console for development
-            if (!SERVICE_ID || SERVICE_ID === 'YOUR_SERVICE_ID') {
-                console.warn(`[DEV MODE] EmailJS not configured. Simulated OTP for ${type} is: ${otp}`);
-                return true; // Simulate success
-            }
-
-            await emailjs.send(
-                SERVICE_ID,
-                TEMPLATE_ID,
-                {
-                    to_email: user?.email,
-                    to_name: user?.displayName || formData.firstName || 'User',
-                    otp: otp,
-                    document_type: type
-                },
-                PUBLIC_KEY
-            );
-            return true;
-        } catch (error) {
-            console.error("EmailJS Error:", error);
-            return false;
-        }
+        // Simulated OTP without EmailJS
+        console.warn(`[DEV MODE] Simulated OTP for ${type} is: ${otp}`);
+        return true; 
     };
 
     const handleVerifyAadhaar = async () => {
@@ -696,6 +694,37 @@ export default function Profile() {
 
                 {/* Right Content Area */}
                 <main className="profile-content-area">
+                    {/* Lock Profile Banner */}
+                    <div style={{ marginBottom: '20px', padding: '15px', background: isProfileLocked ? '#dcfce7' : '#fef3c7', borderRadius: '8px', border: `1px solid ${isProfileLocked ? '#86efac' : '#fde68a'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <h3 style={{ margin: 0, color: isProfileLocked ? '#166534' : '#92400e', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {isProfileLocked ? <><i className="fa-solid fa-lock"></i> Profile Locked & Finalized</> : <><i className="fa-solid fa-lock-open"></i> Profile Unlocked</>}
+                            </h3>
+                            <p style={{ margin: '5px 0 0 0', color: isProfileLocked ? '#15803d' : '#b45309', fontSize: '0.9rem' }}>
+                                {isProfileLocked 
+                                    ? "Your profile is locked for verification and cannot be edited." 
+                                    : "Lock your profile when you have finished entering your details."}
+                            </p>
+                        </div>
+                        {isProfileLocked ? (
+                            <button 
+                                onClick={handleUnlockProfile} 
+                                disabled={isLockingProfile}
+                                style={{ padding: '10px 20px', background: 'transparent', color: '#15803d', border: '1px solid #15803d', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                            >
+                                {isLockingProfile ? "UNLOCKING..." : "UNLOCK PROFILE"}
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={handleLockProfile} 
+                                disabled={isLockingProfile}
+                                style={{ padding: '10px 20px', background: '#b45309', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                            >
+                                {isLockingProfile ? "LOCKING..." : "LOCK PROFILE"}
+                            </button>
+                        )}
+                    </div>
+
                     {/* Horizontal Tabs */}
                     {activeSidebar === 'PERSONAL_DETAILS' && (
                     <div className="profile-top-tabs">
@@ -713,6 +742,7 @@ export default function Profile() {
                     {activeSidebar === 'CHANGE_PASSWORD' ? (
                         <div className="profile-form-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                             <form id="ui-profile-form" onSubmit={handleChangePassword} style={{ maxWidth: '500px', width: '100%', padding: '40px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #cbd5e1' }}>
+                                <fieldset disabled={isProfileLocked} style={{ border: 'none', padding: 0, margin: 0 }}>
                                 <h3 style={{ marginBottom: '30px', color: '#1e293b', fontSize: '1.5rem', textAlign: 'center' }}>Change Password</h3>
                                 
                                 <div className="ui-form-grid" style={{ gridTemplateColumns: '1fr', gap: '24px' }}>
@@ -756,6 +786,7 @@ export default function Profile() {
                                 <div className="profile-form-footer" style={{ marginTop: '20px', paddingTop: '0' }}>
                                     <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={isUpdatingPassword}>{isUpdatingPassword ? 'UPDATING...' : 'UPDATE PASSWORD'}</button>
                                 </div>
+                                </fieldset>
                             </form>
                         </div>
                     ) : activeTab === 'PERSONAL_DETAILS' && activeSidebar === 'PERSONAL_DETAILS' ? (
@@ -779,6 +810,7 @@ export default function Profile() {
                             </div>
                         </div>
                         <form id="ui-profile-form" onSubmit={handleSave}>
+                            <fieldset disabled={isProfileLocked} style={{ border: 'none', padding: 0, margin: 0 }}>
                             <div className="ui-form-grid">
                                 <div className="ui-input-group">
                                     <label>First Name <span className="req" style={{color: '#ef4444'}}>*</span></label>
@@ -986,11 +1018,13 @@ export default function Profile() {
                                     {isSaving ? 'SAVING...' : 'SAVE & CONTINUE'}
                                 </button>
                             </div>
+                            </fieldset>
                         </form>
                     </div>
                     ) : activeTab === 'CONTACT_DETAILS' && activeSidebar === 'CONTACT_DETAILS' ? (
                         <div className="profile-form-wrapper">
                             <form id="ui-profile-form" onSubmit={handleSaveContact}>
+                                <fieldset disabled={isProfileLocked} style={{ border: 'none', padding: 0, margin: 0 }}>
                                 <div className="ui-form-grid" style={{ gridTemplateColumns: '1fr' }}>
                                     
                                     <div className="ui-input-group">
@@ -1045,11 +1079,13 @@ export default function Profile() {
                                         {isSaving ? 'SAVING...' : 'SAVE & CONTINUE'}
                                     </button>
                                 </div>
+                                </fieldset>
                             </form>
                         </div>
                     ) : activeTab === 'IDENTITY' ? (
                         <div className="profile-form-wrapper">
                             <form id="ui-profile-form" onSubmit={handleSaveIdentity}>
+                                <fieldset disabled={isProfileLocked} style={{ border: 'none', padding: 0, margin: 0 }}>
                                 <div className="ui-form-grid" style={{ gridTemplateColumns: '1fr', gap: '30px' }}>
                                     
                                     <div className="ui-input-group">
@@ -1057,7 +1093,29 @@ export default function Profile() {
                                         <div style={{ display: 'flex', gap: '10px' }}>
                                             <div className="input-wrapper" style={{ flex: 1, border: aadhaarVerified ? '1px solid #22c55e' : '' }}>
                                                 <i className="fa-solid fa-id-card" style={{ color: aadhaarVerified ? '#22c55e' : '' }}></i>
-                                                <input type="text" placeholder="12 Digit Aadhaar Number" required pattern="\d{12}" title="12-digit Aadhaar number" value={identityData.aadhaarNumber} onChange={e => setIdentityData({...identityData, aadhaarNumber: e.target.value})} disabled={aadhaarVerified} maxLength="12" />
+                                                <input 
+                                                    type={showAadhaar || !aadhaarVerified ? "text" : "password"} 
+                                                    placeholder="12 Digit Aadhaar Number" 
+                                                    required 
+                                                    pattern="\d{12}" 
+                                                    title="12-digit Aadhaar number" 
+                                                    value={aadhaarVerified && !showAadhaar ? `XXXX-XXXX-${identityData.aadhaarNumber.slice(-4)}` : identityData.aadhaarNumber} 
+                                                    onChange={e => {
+                                                        if (!aadhaarVerified) {
+                                                            setIdentityData({...identityData, aadhaarNumber: e.target.value});
+                                                        }
+                                                    }} 
+                                                    disabled={aadhaarVerified} 
+                                                    maxLength="12" 
+                                                />
+                                                {aadhaarVerified && (
+                                                    <i 
+                                                        className={`fa-solid ${showAadhaar ? 'fa-eye-slash' : 'fa-eye'}`} 
+                                                        style={{ cursor: 'pointer', position: 'absolute', right: '15px', color: '#64748b' }}
+                                                        onClick={() => setShowAadhaar(!showAadhaar)}
+                                                        title={showAadhaar ? "Hide Aadhaar" : "Show Aadhaar"}
+                                                    ></i>
+                                                )}
                                             </div>
                                             {!aadhaarVerified && !isAadhaarOtpSent && (
                                                 <button type="button" className="btn-primary" onClick={handleVerifyAadhaar} disabled={aadhaarLoadingText !== ""} style={{ whiteSpace: 'nowrap' }}>
@@ -1130,6 +1188,7 @@ export default function Profile() {
                                         {isSaving ? 'SAVING...' : 'SAVE & CONTINUE'}
                                     </button>
                                 </div>
+                                </fieldset>
                             </form>
                         </div>
                     ) : activeSidebar === 'UPLOAD_DOCUMENTS' ? (
@@ -1149,7 +1208,7 @@ export default function Profile() {
                                     const hasFile = !!(fileData?.url || fileData?.file);
                                     
                                     return (
-                                        <div key={doc.type} className="doc-card" onClick={() => openDocModal(doc.type)}>
+                                        <div key={doc.type} className="doc-card" onClick={() => !isProfileLocked && openDocModal(doc.type)} style={{ opacity: isProfileLocked ? 0.6 : 1, cursor: isProfileLocked ? 'not-allowed' : 'pointer' }}>
                                             <div className="doc-card-preview">
                                                 {fileData?.url ? (
                                                     (fileData.url.toLowerCase().endsWith('.pdf') ? (
@@ -1183,7 +1242,7 @@ export default function Profile() {
                             </div>
 
                             <div className="profile-form-footer" style={{ marginTop: '40px' }}>
-                                <button type="button" className="btn-primary" disabled={isUploadingDocs} onClick={handleUploadAllDocuments}>
+                                <button type="button" className="btn-primary" disabled={isUploadingDocs || isProfileLocked} onClick={handleUploadAllDocuments}>
                                     {isUploadingDocs ? 'UPLOADING...' : 'UPLOAD ALL DOCUMENTS'}
                                 </button>
                             </div>
@@ -1208,9 +1267,12 @@ export default function Profile() {
                                 <i className="fa-solid fa-cloud-arrow-up upload-icon" style={{ fontSize: '2rem', color: '#94a3b8', marginBottom: '10px' }}></i>
                                 <div className="upload-text" style={{ fontSize: '0.9rem', color: '#475569' }}>
                                     {docFormData.file ? (
-                                        <span style={{ fontWeight: 'bold', color: '#2563eb' }}>{docFormData.file.name}</span>
+                                        <span style={{ fontWeight: 'bold', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                            {docFormData.file.name}
+                                            <i className="fa-solid fa-check-circle" style={{ color: '#22c55e', fontSize: '1.2rem' }} title="Valid file size"></i>
+                                        </span>
                                     ) : (
-                                        <span>Drag & Drop or <span style={{ color: '#2563eb', textDecoration: 'underline' }}>Browse</span></span>
+                                        <span>Drag & Drop or <span style={{ color: '#2563eb', textDecoration: 'underline' }}>Browse</span> (Max 10MB)</span>
                                     )}
                                 </div>
                                 <input type="file" className="file-upload-input" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocFormChange(e, 'file')} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
@@ -1454,6 +1516,7 @@ export default function Profile() {
                     </div>
                 </div>
             )}
+
         </div>
     );
 }

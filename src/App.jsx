@@ -3,6 +3,7 @@ import MainLayout from './components/MainLayout';
 import Home from './pages/Home';
 import About from './pages/About';
 import Schemes from './pages/Schemes';
+import SchemeDetails from './pages/SchemeDetails';
 import Services from './pages/Services';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Applications from './pages/Dashboard/Applications';
@@ -11,22 +12,26 @@ import AIAssistant from './pages/Dashboard/AIAssistant';
 import VirtualIdCard from './pages/Dashboard/VirtualIdCard';
 import DashboardOverview from './pages/Dashboard/DashboardOverview';
 import SchemeApplication from './pages/Dashboard/SchemeApplication';
+
 import Login from './pages/Login';
 import MockSite from './pages/Demo/MockSite';
 import MockSiteSSO from './pages/Demo/MockSiteSSO';
 import MockSiteLookup from './pages/Demo/MockSiteLookup';
 import { AuthProvider } from './context/AuthContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import './index.css';
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <ErrorBoundary>
+        <Router>
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Home />} />
             <Route path="about" element={<About />} />
             <Route path="schemes" element={<Schemes />} />
+            <Route path="schemes/:schemeId" element={<SchemeDetails />} />
             <Route path="services" element={<Services />} />
             <Route path="login" element={<Login />} />
             
@@ -39,6 +44,8 @@ function App() {
               <Route path="apply/:schemeId" element={<SchemeApplication />} />
             </Route>
 
+
+
             {/* Mock Sites Demo Routes */}
             <Route path="mock-b" element={<MockSite siteName="Mock Site B" collectionName="mock_site_b" />} />
             <Route path="mock-c" element={<MockSiteLookup siteName="Mock Site C" />} />
@@ -46,6 +53,7 @@ function App() {
           </Route>
         </Routes>
       </Router>
+      </ErrorBoundary>
     </AuthProvider>
   );
 }

@@ -197,24 +197,44 @@
 
 /* Upload Zone */
 .upload-zone {
-    border: 2px dashed #cbd5e1;
+    border: 2px dashed #2563eb;
     border-radius: 12px;
     padding: 40px 20px;
     text-align: center;
-    background: #f8fafc;
+    background: #f3fcf8; /* Light green tint */
     transition: all 0.2s;
     position: relative;
 }
 
 .upload-zone:hover {
-    border-color: #2563eb;
-    background: #f0fdf4; /* Light green tint on hover */
+    border-color: #1d4ed8;
+    background: #e6f9ed;
 }
 
 .upload-icon {
     font-size: 3rem;
     color: #94a3b8;
     margin-bottom: 16px;
+}
+
+.upload-zone .btn-outline {
+    background-color: #ffffff;
+    border: 1px solid #2563eb;
+    color: #2563eb;
+}
+
+.upload-zone .btn-outline:hover {
+    background-color: #f8fafc;
+}
+
+.upload-zone .btn-primary {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+}
+
+.upload-zone .btn-primary:hover {
+    background-color: #1d4ed8;
 }
 
 .upload-zone h4 {

@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { db, auth } from '../../firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { AuthContext } from '../../context/AuthContext';
 import './VirtualIdCard.css';
 
 export default function VirtualIdCard() {
+    const { user } = useContext(AuthContext);
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -60,7 +62,11 @@ export default function VirtualIdCard() {
                     {/* Body */}
                     <div className="id-card-body">
                         <div className="id-card-photo">
-                            <img src="https://ui-avatars.com/api/?name=Bhushan+Kolte&background=0D8ABC&color=fff&size=120" alt="Student Photo" />
+                            {user?.photoURL ? (
+                                <img src={user.photoURL} alt="Student Photo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(userData?.personalDetails?.firstName || user?.name || 'Student')}&background=0D8ABC&color=fff&size=120`} alt="Student Photo" />
+                            )}
                         </div>
                         
                         <div className="id-card-details">

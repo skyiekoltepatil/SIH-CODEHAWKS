@@ -95,12 +95,46 @@
     border: 4px solid #eff6ff;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     flex-shrink: 0;
+    position: relative;
+    cursor: pointer;
 }
 
 .profile-avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    gap: 4px;
+}
+
+.avatar-overlay i {
+    font-size: 2rem !important;
+    color: white !important;
+}
+
+.avatar-overlay span {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.profile-avatar:hover .avatar-overlay {
+    opacity: 1;
+}
+
+.avatar-upload-input {
+    display: none;
 }
 
 .profile-avatar i {
@@ -703,3 +737,56 @@
     font-size: 0.8rem;
     color: #64748b;
 }
+
+.hover-label {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.label-circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.hover-label:hover .label-circle {
+    transform: scale(1.2);
+}
+
+.label-text {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.label-text::after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 4px 4px 0;
+    border-style: solid;
+    border-color: #1e293b transparent transparent transparent;
+}
+
+.hover-label:hover .label-text {
+    opacity: 1;
+    top: -35px;
+}
+

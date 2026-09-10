@@ -1,8 +1,11 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
+import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { schemesData } from '../../data';
+
+import { uploadDocument } from '../../utils/fileUpload';
 import './SchemeApplication.css';
 
 export default function SchemeApplication() {
@@ -13,6 +16,8 @@ export default function SchemeApplication() {
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [isDeclared, setIsDeclared] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState('');
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -20,8 +25,13 @@ export default function SchemeApplication() {
         email: '',
         phone: '',
         aadhaar: '',
-        documents: []
+        documents: [] // Array of File objects or { name, url, isFromProfile: true }
     });
+
+    const [profileDocuments, setProfileDocuments] = useState(null);
+    const [isFetchModalOpen, setIsFetchModalOpen] = useState(false);
+    const [selectedDocsForFetch, setSelectedDocsForFetch] = useState([]);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         const fetchProfileData = async () => {
@@ -39,6 +49,9 @@ export default function SchemeApplication() {
                             phone: data.contactDetails?.phoneNumber || '',
                             aadhaar: data.identityDetails?.aadhaarNumber || '',
                         }));
+                        if (data.documents) {
+                            setProfileDocuments(data.documents);
+                        }
                     }
                 } catch (err) {
                     console.error("Error prefilling form:", err);
@@ -48,17 +61,175 @@ export default function SchemeApplication() {
         fetchProfileData();
     }, [user]);
 
-    const handleNext = () => setCurrentStep(prev => prev + 1);
+    const handleNext = () => {
+        if (currentStep === 2 && formData.documents.length === 0) {
+            alert("It is mandatory to upload at least 1 document.");
+            return;
+        }
+        setCurrentStep(prev => prev + 1);
+    };
     const handlePrev = () => setCurrentStep(prev => prev - 1);
+
+    const handleFileSelect = (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const newFiles = Array.from(e.target.files);
+            const validFiles = [];
+            
+            for (let file of newFiles) {
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`Warning: File "${file.name}" exceeds the 10MB limit. Please upload a smaller file.`);
+                } else {
+                    validFiles.push(file);
+                }
+            }
+
+            if (validFiles.length > 0) {
+                setFormData(prev => ({
+                    ...prev,
+                    documents: [...prev.documents, ...validFiles]
+                }));
+            }
+        }
+    };
+
+    const removeFile = (indexToRemove) => {
+        setFormData(prev => ({
+            ...prev,
+            documents: prev.documents.filter((_, i) => i !== indexToRemove)
+        }));
+    };
+
+    const toggleFetchSelection = (docObj) => {
+        setSelectedDocsForFetch(prev => {
+            const isSelected = prev.some(d => d.url === docObj.url);
+            if (isSelected) {
+                return prev.filter(d => d.url !== docObj.url);
+            } else {
+                return [...prev, docObj];
+            }
+        });
+    };
+
+    const handleConfirmFetch = () => {
+        if (selectedDocsForFetch.length === 0) {
+            setIsFetchModalOpen(false);
+            return;
+        }
+        const newDocs = selectedDocsForFetch.map(docObj => {
+            // Find key in profileDocuments to get the correct label
+            const entry = Object.entries(profileDocuments || {}).find(([_, val]) => val.url === docObj.url);
+            const docKey = entry ? entry[0] : '';
+            const docLabels = {
+                aadhaar: "Aadhaar Card",
+                pan: "PAN Card",
+                income: "Income Certificate",
+                passbook: "Bank Passbook / Cheque",
+                photo: "Passport Size Photograph"
+            };
+            const label = docLabels[docKey] || docObj.docName || docObj.name || 'Profile Document';
+            
+            return {
+                name: label,
+                originalFilename: docObj.name,
+                url: docObj.url,
+                isFromProfile: true
+            };
+        });
+        
+        setFormData(prev => ({
+            ...prev,
+            documents: [...prev.documents, ...newDocs]
+        }));
+        
+        setSelectedDocsForFetch([]);
+        setIsFetchModalOpen(false);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (!user?.uid) {
+            alert("Please log in to submit an application.");
+            return;
+        }
+
+        if (formData.documents.length === 0) {
+            alert("It is mandatory to upload at least 1 document.");
+            setCurrentStep(2);
+            return;
+        }
+
+        if (!isDeclared) {
+            alert("Please declare that the information is correct by checking the box.");
+            return;
+        }
+
         setIsSubmitting(true);
-        // Simulate API call for application submission
-        setTimeout(() => {
+        setUploadProgress('Uploading documents...');
+        
+        try {
+            // Upload documents with multi-tier storage (Cloudinary + Firestore Cloud fallback)
+            const uploadedDocumentUrls = [];
+
+            for (let i = 0; i < formData.documents.length; i++) {
+                const item = formData.documents[i];
+                
+                if (item.isFromProfile) {
+                    // Already uploaded, just push the reference
+                    uploadedDocumentUrls.push({
+                        name: item.name,
+                        url: item.url
+                    });
+                } else {
+                    setUploadProgress(`Processing document ${i + 1} of ${formData.documents.length}...`);
+                    const uploadedDoc = await uploadDocument(item);
+                    uploadedDocumentUrls.push({
+                        name: uploadedDoc.name,
+                        url: uploadedDoc.url
+                    });
+                }
+            }
+
+            setUploadProgress('Saving application...');
+
+            const scheme = schemesData.find(s => s.id === schemeId) || { name: 'Unknown Scheme' };
+            
+            const applicationData = {
+                userId: user.uid,
+                schemeId: schemeId,
+                schemeName: scheme.name,
+                dateApplied: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+                timestamp: serverTimestamp(),
+                status: 'Pending',
+                desc: 'Application submitted and under review',
+                currentStep: 1,
+                totalSteps: 4,
+                applicantName: `${formData.firstName} ${formData.lastName}`.trim() || user.displayName || 'Applicant',
+                applicantEmail: formData.email || user.email || '',
+                applicantPhone: formData.phone || '',
+                applicantAadhaar: formData.aadhaar || '',
+                documents: uploadedDocumentUrls
+            };
+
+            await addDoc(collection(db, 'users', user.uid, 'applications'), applicationData);
+            
+            // Create a notification for the submission
+            await addDoc(collection(db, 'users', user.uid, 'notifications'), {
+                type: 'info',
+                message: `Your application for ${scheme.name} was successfully submitted.`,
+                timestamp: serverTimestamp(),
+                read: false
+            });
+            
             setIsSubmitting(false);
+            setUploadProgress('');
             setIsSuccess(true);
-        }, 1500);
+        } catch (error) {
+            console.error("Error submitting application:", error);
+            alert(`Application submission failed: ${error.message || 'Please check your connection and try again.'}`);
+            setIsSubmitting(false);
+            setUploadProgress('');
+        }
     };
 
     if (isSuccess) {
@@ -132,14 +303,61 @@ export default function SchemeApplication() {
                 {currentStep === 2 && (
                     <div className="step-content form-slide-in">
                         <h3>Upload Documents</h3>
-                        <p className="step-desc">Please upload the required documents for verification.</p>
-                        <div className="upload-zone">
-                            <i className="fa-solid fa-cloud-arrow-up upload-icon"></i>
-                            <h4>Drag & drop files here</h4>
-                            <p>or click to browse (PDF, JPG, PNG)</p>
-                            <input type="file" multiple className="file-input-hidden" />
-                            <button className="btn-outline">Browse Files</button>
+                        <p className="step-desc">Please upload the required documents for verification. At least 1 document is mandatory.</p>
+                        
+                        <div style={{ display: 'flex', gap: '15px', marginTop: '20px', marginBottom: '30px' }}>
+                            <input 
+                                type="file" 
+                                multiple 
+                                onChange={handleFileSelect}
+                                ref={fileInputRef}
+                                style={{ display: 'none' }}
+                            />
+                            <button 
+                                type="button"
+                                className="btn-outline" 
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileInputRef.current?.click(); }}
+                                style={{ padding: '12px 24px', fontSize: '1rem' }}
+                            >
+                                Browse Files
+                            </button>
+                            <button 
+                                type="button"
+                                className="btn-primary" 
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsFetchModalOpen(true); }}
+                                style={{ padding: '12px 24px', fontSize: '1rem' }}
+                            >
+                                Fetch from Profile
+                            </button>
                         </div>
+
+                        {formData.documents.length > 0 && (
+                            <div className="selected-files-list" style={{ marginTop: '20px' }}>
+                                <h4>Selected Documents</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                                    {formData.documents.map((file, idx) => (
+                                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 15px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                                                <i className="fa-solid fa-file-lines" style={{ color: '#3b82f6' }}></i>
+                                                <span style={{ fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>{file.name}</span>
+                                                <i className="fa-solid fa-check-circle" style={{ color: '#22c55e' }} title="Valid file size"></i>
+                                                {file.isFromProfile && <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#dbeafe', color: '#1d4ed8', borderRadius: '4px', marginLeft: '5px' }}>From Profile</span>}
+                                            </div>
+                                            <button 
+                                                type="button"
+                                                onClick={() => removeFile(idx)} 
+                                                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}
+                                                title="Remove file"
+                                            >
+                                                <i className="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+
                     </div>
                 )}
 
@@ -164,9 +382,18 @@ export default function SchemeApplication() {
                                 <span className="review-label">Aadhaar:</span>
                                 <strong>{formData.aadhaar || 'Not provided'}</strong>
                             </div>
+                            <div className="review-item">
+                                <span className="review-label">Documents:</span>
+                                <strong>{formData.documents.length} uploaded</strong>
+                            </div>
                         </div>
                         <div className="declaration-box">
-                            <input type="checkbox" id="declare" required />
+                            <input 
+                                type="checkbox" 
+                                id="declare" 
+                                checked={isDeclared}
+                                onChange={(e) => setIsDeclared(e.target.checked)}
+                            />
                             <label htmlFor="declare">I declare that all the information provided is correct to the best of my knowledge.</label>
                         </div>
                     </div>
@@ -174,18 +401,76 @@ export default function SchemeApplication() {
 
                 <div className="step-footer">
                     {currentStep > 1 ? (
-                        <button className="btn-outline" onClick={handlePrev}>Back</button>
+                        <button type="button" className="btn-outline" onClick={handlePrev}>Back</button>
                     ) : <div></div>}
                     
                     {currentStep < 3 ? (
-                        <button className="btn-primary" onClick={handleNext}>Next Step</button>
+                        <button type="button" className="btn-primary" onClick={handleNext}>Next Step</button>
                     ) : (
                         <button className="btn-primary" onClick={handleSubmit} disabled={isSubmitting}>
-                            {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                            {isSubmitting ? (uploadProgress || 'Submitting...') : 'Submit Application'}
                         </button>
                     )}
                 </div>
             </div>
+
+            {isFetchModalOpen && (
+                <div className="modal-overlay active" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <div className="modal-content" style={{ background: '#fff', padding: '24px', borderRadius: '12px', width: '90%', maxWidth: '500px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h3 style={{ margin: 0 }}>Select Required Documents</h3>
+                            <button type="button" onClick={() => setIsFetchModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}><i className="fa-solid fa-xmark"></i></button>
+                        </div>
+                        
+                        {!profileDocuments || Object.keys(profileDocuments).length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '20px 0', color: '#64748b' }}>
+                                <p>No documents found in your profile.</p>
+                                <button type="button" className="btn-outline" style={{ marginTop: '10px' }} onClick={() => setIsFetchModalOpen(false)}>Close</button>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto' }}>
+                                {Object.entries(profileDocuments).map(([key, docObj]) => {
+                                    const docLabels = {
+                                        aadhaar: "Aadhaar Card",
+                                        pan: "PAN Card",
+                                        income: "Income Certificate",
+                                        passbook: "Bank Passbook / Cheque",
+                                        photo: "Passport Size Photograph"
+                                    };
+                                    const displayName = docLabels[key] || docObj.docName || docObj.name || key || 'Document';
+                                    
+                                    return docObj?.url ? (
+                                        <label 
+                                            key={key} 
+                                            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }}
+                                        >
+                                            <input 
+                                                type="checkbox" 
+                                                checked={selectedDocsForFetch.some(d => d.url === docObj.url)}
+                                                onChange={() => toggleFetchSelection(docObj)}
+                                                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#2563eb' }}
+                                            />
+                                            <span style={{ fontSize: '1rem', color: '#1e293b', fontWeight: '500', textTransform: 'capitalize' }}>
+                                                {displayName}
+                                            </span>
+                                            <span style={{ fontSize: '0.8rem', color: '#64748b', marginLeft: 'auto', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px', whiteSpace: 'nowrap' }}>
+                                                {docObj.name || 'File'}
+                                            </span>
+                                        </label>
+                                    ) : null;
+                                })}
+                            </div>
+                        )}
+                        
+                        {profileDocuments && Object.keys(profileDocuments).length > 0 && (
+                            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                <button type="button" className="btn-outline" onClick={() => setIsFetchModalOpen(false)}>Cancel</button>
+                                <button type="button" className="btn-primary" onClick={handleConfirmFetch}>Add Selected</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

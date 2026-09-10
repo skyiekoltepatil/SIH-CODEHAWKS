@@ -1,6 +1,8 @@
 import { useContext, useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { db } from '../firebase';
+import { collection, onSnapshot, query, orderBy, writeBatch, doc } from 'firebase/firestore';
 import AuthModal from './AuthModal';
 
 export default function Navbar() {
@@ -8,7 +10,8 @@ export default function Navbar() {
     const location = useLocation();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(3);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [notifications, setNotifications] = useState([]);
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -23,6 +26,50 @@ export default function Navbar() {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, []);
+
+    useEffect(() => {
+        if (!user) {
+            setNotifications([]);
+            setUnreadCount(0);
+            return;
+        }
+
+        const q = query(
+            collection(db, 'users', user.uid, 'notifications'),
+            orderBy('timestamp', 'desc')
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const notifs = [];
+            let unread = 0;
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                notifs.push({ id: docSnap.id, ...data });
+                if (!data.read) unread++;
+            });
+            setNotifications(notifs);
+            setUnreadCount(unread);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+
+    const handleMarkAllRead = async () => {
+        if (!user || unreadCount === 0) return;
+        
+        try {
+            const batch = writeBatch(db);
+            notifications.forEach(notif => {
+                if (!notif.read) {
+                    const ref = doc(db, 'users', user.uid, 'notifications', notif.id);
+                    batch.update(ref, { read: true });
+                }
+            });
+            await batch.commit();
+        } catch (error) {
+            console.error("Error marking read:", error);
+        }
+    };
 
     const isActive = (path) => location.pathname === path ? 'nav-link active' : 'nav-link';
 
@@ -39,6 +86,7 @@ export default function Navbar() {
                     <Link to="/dashboard" className={isActive('/dashboard')}>Dashboard</Link>
                     <Link to="/schemes" className={isActive('/schemes')}>Schemes</Link>
                     <Link to="/services" className={isActive('/services')}>Services</Link>
+
                 </nav>
                 <div className="navbar-actions" ref={dropdownRef}>
                     {!isLoggedIn ? (
@@ -61,35 +109,66 @@ export default function Navbar() {
                                 <div className="notification-dropdown" style={{ position: 'absolute', top: '50px', right: '50px', width: '320px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', zIndex: 100, overflow: 'hidden', textAlign: 'left' }}>
                                     <div style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <h4 style={{ margin: 0, fontSize: '1rem', color: '#1e293b' }}>Notifications</h4>
-                                        <span onClick={() => setUnreadCount(0)} style={{ fontSize: '0.75rem', color: '#3b82f6', cursor: 'pointer' }}>Mark all as read</span>
+                                        <span onClick={handleMarkAllRead} style={{ fontSize: '0.75rem', color: '#3b82f6', cursor: 'pointer' }}>Mark all as read</span>
                                     </div>
                                     <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                        <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.2s' }}>
-                                            <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#334155', fontWeight: '500' }}>Your application for <strong style={{color: '#2563eb'}}>PM-KISAN</strong> was approved.</p>
-                                            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>2 hours ago</span>
-                                        </div>
-                                        <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.2s' }}>
-                                            <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#334155', fontWeight: '500' }}>Please update your <strong style={{color: '#2563eb'}}>Bank Details</strong> to receive funds.</p>
-                                            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>1 day ago</span>
-                                        </div>
-                                        <div style={{ padding: '15px', cursor: 'pointer', transition: 'background 0.2s' }}>
-                                            <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#334155', fontWeight: '500' }}>New scheme matches your profile: <strong style={{color: '#2563eb'}}>Mudra Yojana</strong>.</p>
-                                            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>3 days ago</span>
-                                        </div>
+                                        {notifications.length === 0 ? (
+                                            <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem' }}>
+                                                No notifications yet.
+                                            </div>
+                                        ) : (
+                                            notifications.map(notif => (
+                                                <div key={notif.id} style={{ 
+                                                    padding: '15px', 
+                                                    borderBottom: '1px solid #f1f5f9', 
+                                                    background: notif.read ? 'white' : '#f0f9ff',
+                                                    cursor: 'pointer', 
+                                                    transition: 'background 0.2s' 
+                                                }}>
+                                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                                                        <i className={
+                                                            notif.type === 'success' ? "fa-solid fa-circle-check" :
+                                                            notif.type === 'error' ? "fa-solid fa-circle-xmark" :
+                                                            "fa-solid fa-circle-info"
+                                                        } style={{ 
+                                                            color: notif.type === 'success' ? '#10b981' : 
+                                                                   notif.type === 'error' ? '#ef4444' : '#3b82f6',
+                                                            marginTop: '3px'
+                                                        }}></i>
+                                                        <div>
+                                                            <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#334155', fontWeight: notif.read ? '400' : '600' }}>
+                                                                {notif.message}
+                                                            </p>
+                                                            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                                                                {notif.timestamp ? new Date(notif.timestamp.seconds * 1000).toLocaleString() : 'Just now'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
                                 </div>
                             )}
 
-                            <div className="avatar" style={{ cursor: 'pointer', background: '#1d4ed8' }} onClick={() => { setIsAuthModalOpen(!isAuthModalOpen); setIsNotificationOpen(false); }}>
-                                {user?.name?.charAt(0).toUpperCase() || 'U'}
+                            <div className="avatar" style={{ cursor: 'pointer', background: user?.photoURL ? 'transparent' : '#1d4ed8', overflow: 'hidden' }} onClick={() => { setIsAuthModalOpen(!isAuthModalOpen); setIsNotificationOpen(false); }}>
+                                {user?.photoURL ? (
+                                    <img src={user.photoURL} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    user?.name?.charAt(0).toUpperCase() || 'U'
+                                )}
                             </div>
                             
                             {isAuthModalOpen && (
                                 <div className="profile-dropdown">
                                     <div className="dropdown-header">
                                         <div className="dropdown-avatar-img">
-                                            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.2rem', fontWeight: 'bold' }}>
-                                                {user?.name?.charAt(0).toUpperCase() || 'U'}
+                                            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: user?.photoURL ? 'transparent' : '#3b82f6', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                                                {user?.photoURL ? (
+                                                    <img src={user.photoURL} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    user?.name?.charAt(0).toUpperCase() || 'U'
+                                                )}
                                             </div>
                                         </div>
                                         <div className="dropdown-user-info">
