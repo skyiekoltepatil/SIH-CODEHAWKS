@@ -29,12 +29,12 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
 
 // Initialize App Check (using reCAPTCHA Enterprise)
 let appCheck;
-const recaptchaKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+const recaptchaKey = import.meta.env.VITE_RECAPTCHA_V2_SITE_KEY || import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 const appCheckDebugToken = import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN;
 
-if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && appCheckDebugToken) {
-  // Enable debug token for localhost development only if provided
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken;
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  // Use the env token if available, otherwise set to true to generate a new one in the console
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken || true;
 }
 
 if (recaptchaKey) {

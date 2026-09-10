@@ -115,6 +115,7 @@ const MockSiteLookup = ({ siteName }) => {
                             const pd = data.personalDetails || {};
                             const cd = data.contactDetails || {};
                             const id = data.identityDetails || {};
+                            const docs = data.documents || {};
 
                             return (
                                 <>
@@ -240,6 +241,30 @@ const MockSiteLookup = ({ siteName }) => {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {Object.keys(docs).length > 0 && (
+                                        <>
+                                            <div style={{ marginTop: '40px', marginBottom: '25px', fontSize: '0.9rem', textTransform: 'uppercase', fontWeight: 700, color: '#94a3b8', borderBottom: '1px dashed #e2e8f0', paddingBottom: '5px' }}>Uploaded Documents</div>
+                                            <div className="ui-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}>
+                                                {Object.entries(docs).map(([key, file]) => {
+                                                    if (!file || !file.url) return null;
+                                                    return (
+                                                        <div key={key} className="ui-input-group">
+                                                            <label style={{ textTransform: 'capitalize' }}>{key}</label>
+                                                            <a href={file.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#f8fafc', padding: '12px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', textDecoration: 'none', color: '#0f172a' }}>
+                                                                <i className="fa-solid fa-file-pdf" style={{ color: '#ef4444', fontSize: '1.5rem' }}></i>
+                                                                <div style={{ flex: 1, overflow: 'hidden' }}>
+                                                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{file.name || `${key} Document`}</div>
+                                                                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Click to view</div>
+                                                                </div>
+                                                                <i className="fa-solid fa-external-link-alt" style={{ color: '#94a3b8' }}></i>
+                                                            </a>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </>
+                                    )}
                                 </>
                             );
                         })()}

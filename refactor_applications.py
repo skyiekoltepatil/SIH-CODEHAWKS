@@ -1,129 +1,10 @@
-import { useLocation } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
-import { applicationsData } from '../../data';
-import './Applications.css';
+import re
 
-export default function Applications() {
-    const location = useLocation();
-    const [filter, setFilter] = useState('All');
-    const [search, setSearch] = useState('');
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [expandedRowId, setExpandedRowId] = useState(null);
-    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-    const [helpDrawerAppId, setHelpDrawerAppId] = useState(null);
+with open('src/pages/Dashboard/Applications.jsx', 'r') as f:
+    jsx_content = f.read()
 
-    const toggleRow = (id) => {
-        setExpandedRowId(expandedRowId === id ? null : id);
-    };
-
-    const handleSort = (key) => {
-        let direction = 'asc';
-        if (sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const getSortIcon = (key) => {
-        if (sortConfig.key !== key) return "fa-solid fa-sort";
-        return sortConfig.direction === 'asc' ? "fa-solid fa-sort-up" : "fa-solid fa-sort-down";
-    };
-
-    useEffect(() => {
-        if (location.state?.filter) {
-            setFilter(location.state.filter);
-        }
-    }, [location.state]);
-
-    let displayedApplications = applicationsData.filter(app => {
-        if (filter !== 'All' && app.status !== filter) return false;
-        if (search && !app.schemeName?.toLowerCase().includes(search.toLowerCase()) && !app.name?.toLowerCase().includes(search.toLowerCase())) return false;
-        return true;
-    });
-
-    if (sortConfig.key) {
-        displayedApplications.sort((a, b) => {
-            let valA = a[sortConfig.key];
-            let valB = b[sortConfig.key];
-            
-            if (sortConfig.key === 'schemeName') {
-                valA = (a.schemeName || a.name || '').toLowerCase();
-                valB = (b.schemeName || b.name || '').toLowerCase();
-            } else if (sortConfig.key === 'dateApplied') {
-                valA = new Date(a.dateApplied || a.date || '12 Oct 2023').getTime();
-                valB = new Date(b.dateApplied || b.date || '12 Oct 2023').getTime();
-            }
-
-            if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-            if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-            return 0;
-        });
-    }
-
-    return (
-        <div className="applications-container">
-            <div className="section-header">
-                <h3>Schemes Applied & Details</h3>
-                <select value={filter} onChange={(e) => setFilter(e.target.value)} className="filter-select">
-                    <option value="All">All Applications</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Rejected">Rejected</option>
-                </select>
-            </div>
-
-            <div className="table-card">
-                <div className="table-toolbar">
-                    <div className="search-box">
-                        <i className="fa-solid fa-magnifying-glass"></i>
-                        <input 
-                            type="text" 
-                            placeholder="Search" 
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                <div className="table-responsive">
-                    <table className="applications-table">
-                        <thead>
-                            <tr>
-                                <th onClick={() => handleSort('schemeName')} style={{ cursor: 'pointer', userSelect: 'none' }}>Scheme Name <i className={getSortIcon('schemeName')}></i></th>
-                                <th onClick={() => handleSort('id')} style={{ cursor: 'pointer', userSelect: 'none' }}>Application ID <i className={getSortIcon('id')}></i></th>
-                                <th onClick={() => handleSort('dateApplied')} style={{ cursor: 'pointer', userSelect: 'none' }}>Application Date <i className={getSortIcon('dateApplied')}></i></th>
-                                <th onClick={() => handleSort('status')} style={{ cursor: 'pointer', userSelect: 'none' }}>Status <i className={getSortIcon('status')}></i></th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {displayedApplications.slice(0, rowsPerPage).map(app => {
-                                let badgeClass = 'status-pending-soft';
-                                if (app.status === 'Approved') badgeClass = 'status-approved-soft';
-                                if (app.status === 'Rejected') badgeClass = 'status-rejected-soft';
-                                
-                                return (
-                                    <React.Fragment key={app.id}>
-                                        <tr onClick={() => toggleRow(app.id)} style={{ cursor: 'pointer' }} className={expandedRowId === app.id ? 'active-row' : ''}>
-                                            <td className="fw-600">{app.schemeName || app.name}</td>
-                                            <td>{app.id < 1000 ? `APP-2023-894${app.id}` : app.id}</td>
-                                            <td>{app.dateApplied || app.date || '12 Oct 2023'}</td>
-                                            <td>
-                                                <span className={`status-badge-soft ${badgeClass}`}>
-                                                    {app.status}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                                    <button className="btn-view-details">View Details</button>
-                                                    <i className={`fa-solid fa-chevron-${expandedRowId === app.id ? 'up' : 'down'}`} style={{ color: '#94a3b8' }}></i>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {expandedRowId === app.id && (
-                                            <tr className="expanded-row-container">
-                                                <td colSpan="5" style={{ padding: 0 }}>
-                                                    <div className="expanded-card">
+# Replace the adaptive-card-summary with the new one
+new_jsx = """
                                                         <div className="adaptive-card-summary-v2">
                                                             <div className="acs2-header-section">
                                                                 <span className={`acs2-status-badge ${app.status === 'Approved' ? 'disbursed' : app.status.toLowerCase()}`}>
@@ -162,13 +43,7 @@ export default function Applications() {
                                                                     <div className="acs2-stepper-box">
                                                                         <div className="acs2-box-header">
                                                                             <h5 className="acs2-title">Inline Timeline Stepper</h5>
-                                                                            <button className="acs2-help-btn" onClick={(e) => { e.stopPropagation(); setHelpDrawerAppId(app.id); }}>
-                                                                                <i className="fa-regular fa-circle-question"></i> Help
-                                                                                <div className="help-popover">
-                                                                                    <strong>Post-Audit Action Required</strong>
-                                                                                    <p>Your PM-KISAN funds have been successfully disbursed. However, a routine post-disbursal audit flagged a missing or unreadable Aadhar document. Please upload a clear copy of your Aadhar card to clear this dependency and prevent holds on future disbursals.</p>
-                                                                                </div>
-                                                                            </button>
+                                                                            <button className="acs2-help-btn"><i className="fa-regular fa-circle-question"></i> Help</button>
                                                                         </div>
                                                                         <div className="inline-stepper">
                                                                             <div className="stepper-track"></div>
@@ -262,13 +137,7 @@ export default function Applications() {
                                                                             <div className="acs2-inner-col">
                                                                                 <div className="acs2-box-header" style={{marginBottom: '12px'}}>
                                                                                     <h5 className="acs2-title" style={{margin: 0}}>Resolve Conflict & Quick Actions</h5>
-                                                                                    <button className="acs2-help-btn" onClick={(e) => { e.stopPropagation(); setHelpDrawerAppId(app.id); }}>
-                                                                                        <i className="fa-regular fa-circle-question"></i> Help
-                                                                                        <div className="help-popover">
-                                                                                            <strong>Post-Audit Action Required</strong>
-                                                                                            <p>Your PM-KISAN funds have been successfully disbursed. However, a routine post-disbursal audit flagged a missing or unreadable Aadhar document. Please upload a clear copy of your Aadhar card to clear this dependency and prevent holds on future disbursals.</p>
-                                                                                        </div>
-                                                                                    </button>
+                                                                                    <button className="acs2-help-btn"><i className="fa-regular fa-circle-question"></i> Help</button>
                                                                                 </div>
                                                                                 <p className="acs2-review-summary">Review Summary: Post-Disbursal Review conditional dependencies found</p>
                                                                                 <button className="acs2-btn-primary">Upload Missing Doc</button>
@@ -285,54 +154,415 @@ export default function Applications() {
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </React.Fragment>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
+"""
 
-                <div className="table-footer">
-                    <div className="pagination-info">
-                        Rows per page: 
-                        <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))} className="rows-select">
-                            <option value={5}>5</option>
-                            <option value={10}>10</option>
-                            <option value={20}>20</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+start_str = '<div className="adaptive-card-summary">'
+end_str = '</div>\\n                                                    </div>\\n                                                </td>'
 
-            {helpDrawerAppId && (
-                <div className="help-modal-overlay" onClick={() => setHelpDrawerAppId(null)}>
-                    <div className="help-drawer-content" onClick={e => e.stopPropagation()}>
-                        <div className="help-drawer-header">
-                            <h3>Help: Application {helpDrawerAppId < 1000 ? `APP-2023-894${helpDrawerAppId}` : helpDrawerAppId}</h3>
-                            <button onClick={() => setHelpDrawerAppId(null)}><i className="fa-solid fa-xmark"></i></button>
-                        </div>
-                        <div className="help-drawer-body">
-                            <h4>What does 'Conditional Disbursal' mean?</h4>
-                            <p>"You have received your funds, but your application is under temporary review. Our internal audit requires re-verification of your identity documents."</p>
-                            
-                            <h4>Steps to Resolve</h4>
-                            <ul>
-                                <li><i className="fa-solid fa-circle-check"></i> <div><strong>Step 1:</strong> Click the <strong>Upload Missing Doc</strong> button on your dashboard.</div></li>
-                                <li><i className="fa-solid fa-circle-check"></i> <div><strong>Step 2:</strong> Provide a high-resolution scan (PDF or JPG, max 5MB) of your linked Aadhar Card.</div></li>
-                                <li><i className="fa-solid fa-circle-check"></i> <div><strong>Step 3:</strong> Submit the document. The audit team will review it within 48 hours.</div></li>
-                            </ul>
+idx1 = jsx_content.find(start_str)
+idx2 = jsx_content.find(end_str, idx1)
 
-                            <h4>Need more help?</h4>
-                            <p>"Audit Officer S. Sharma is assigned to your case. If you have questions about the specific rejection reason, you can contact them directly."</p>
-                            <button className="acs2-btn-outline"><i className="fa-solid fa-phone"></i> Contact Audit Officer</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+modified_jsx = jsx_content[:idx1] + new_jsx.strip() + '\\n                                                    ' + jsx_content[idx2:]
+
+with open('src/pages/Dashboard/Applications.jsx', 'w') as f:
+    f.write(modified_jsx)
+
+
+with open('src/pages/Dashboard/Applications.css', 'r') as f:
+    css_content = f.read()
+
+# Add the new CSS
+new_css = """
+/* V2 Adaptive Card Summary (Matches Image) */
+.adaptive-card-summary-v2 {
+    background: #f8fafc;
+    padding: 0;
 }
+
+.acs2-header-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.acs2-status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid transparent;
+}
+
+.acs2-status-badge.disbursed, .acs2-status-badge.approved {
+    background-color: #dcfce7;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+.acs2-status-badge.pending {
+    background-color: #fef9c3;
+    color: #854d0e;
+    border-color: #fef08a;
+}
+
+.acs2-status-badge.rejected {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.acs2-header-titles h4 {
+    margin: 0 0 4px 0;
+    font-size: 1.15rem;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.acs2-subtitle {
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.acs2-main-layout {
+    display: flex;
+    gap: 24px;
+    align-items: stretch;
+}
+
+.acs2-left-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.acs2-title {
+    margin: 0 0 16px 0;
+    font-size: 0.95rem;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.acs2-profile-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.acs2-profile-img {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.acs2-profile-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.acs2-profile-text strong {
+    color: #0f172a;
+    font-size: 0.9rem;
+}
+
+.acs2-profile-text span {
+    font-size: 0.75rem;
+    color: #475569;
+}
+
+.acs2-status-alert {
+    background: #ffedd5;
+    color: #9a3412;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+.acs2-status-alert.approved { background: #dcfce7; color: #166534; }
+.acs2-status-alert.rejected { background: #fee2e2; color: #991b1b; }
+
+.acs2-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 16px 0;
+}
+
+.acs2-summary-text {
+    font-size: 0.8rem;
+    color: #475569;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.acs2-right-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.acs2-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.acs2-box-header h5 {
+    margin: 0;
+}
+
+.acs2-help-btn {
+    background: #f1f5f9;
+    border: none;
+    color: #475569;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.acs2-stepper-box {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px 24px;
+}
+
+.acs2-bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+}
+
+.acs2-col-box {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.acs2-col-box.transparent-col {
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.acs2-inner-col {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.acs2-doc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.acs2-doc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.acs2-doc-item.verified {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.acs2-doc-item.pending {
+    background: white;
+}
+
+.doc-name {
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.doc-status {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.acs2-doc-item.verified .doc-status { color: #16a34a; }
+.acs2-doc-item.pending .doc-status { color: #64748b; }
+.doc-light { color: #86efac; font-weight: 400; }
+
+.acs2-file-drop {
+    border: 1px dashed #cbd5e1;
+    border-radius: 6px;
+    padding: 16px;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.85rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    background: #f8fafc;
+}
+
+.acs2-notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.acs2-note-card {
+    padding: 12px 16px;
+    border-radius: 6px;
+    border-left: 4px solid transparent;
+}
+
+.acs2-note-card.yellow {
+    background: #fef3c7;
+    border-left-color: #f59e0b;
+}
+
+.acs2-note-card.blue {
+    background: #eff6ff;
+    border-left-color: #3b82f6;
+}
+
+.note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+}
+
+.note-header strong { color: #1e293b; }
+.note-header span { color: #64748b; }
+
+.acs2-note-card p {
+    margin: 0 0 8px 0;
+    font-size: 0.85rem;
+    color: #334155;
+    line-height: 1.4;
+}
+
+.note-footer {
+    font-size: 0.75rem;
+    color: #475569;
+    text-align: right;
+}
+
+.acs2-review-summary {
+    font-size: 0.85rem;
+    color: #334155;
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+}
+
+.acs2-btn-primary {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-align: center;
+    width: 100%;
+}
+
+.acs2-btn-warning {
+    background: white;
+    color: #d97706;
+    border: 1px solid #fcd34d;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-align: center;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.acs2-btn-outline {
+    background: white;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-align: center;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Tooltip for stepper */
+.stepper-step.hoverable {
+    position: relative;
+    cursor: pointer;
+}
+
+.step-tooltip {
+    position: absolute;
+    top: 40px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 12px;
+    width: 200px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.stepper-step.hoverable:hover .step-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.step-tooltip strong { display: block; font-size: 0.85rem; color: #0f172a; margin-bottom: 2px; }
+.step-tooltip span { display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 8px; }
+.step-tooltip p { margin: 0; font-size: 0.8rem; color: #475569; line-height: 1.4; }
+"""
+
+with open('src/pages/Dashboard/Applications.css', 'a') as f:
+    f.write(new_css)

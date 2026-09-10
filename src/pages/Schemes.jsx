@@ -1,6 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import { schemesData } from '../data';
 
 export default function Schemes() {
+    const navigate = useNavigate();
     return (
         <section className="page active">
             <div className="page-container">
@@ -31,7 +33,7 @@ export default function Schemes() {
                                 </div>
                                 <div className="scheme-actions">
                                     <button className="btn-outline">View Details</button>
-                                    <button className="btn-primary">Apply Now</button>
+                                    <button className="btn-primary" onClick={() => navigate(`/dashboard/apply/${scheme.id}`)}>Apply Now</button>
                                 </div>
                             </div>
                         </div>

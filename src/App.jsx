@@ -9,6 +9,8 @@ import Applications from './pages/Dashboard/Applications';
 import Profile from './pages/Dashboard/Profile';
 import AIAssistant from './pages/Dashboard/AIAssistant';
 import VirtualIdCard from './pages/Dashboard/VirtualIdCard';
+import DashboardOverview from './pages/Dashboard/DashboardOverview';
+import SchemeApplication from './pages/Dashboard/SchemeApplication';
 import Login from './pages/Login';
 import MockSite from './pages/Demo/MockSite';
 import MockSiteSSO from './pages/Demo/MockSiteSSO';
@@ -29,11 +31,12 @@ function App() {
             <Route path="login" element={<Login />} />
             
             <Route path="dashboard" element={<Dashboard />}>
-              <Route index element={<Navigate to="applications" replace />} />
+              <Route index element={<DashboardOverview />} />
               <Route path="applications" element={<Applications />} />
               <Route path="profile" element={<Profile />} />
               <Route path="ai-assistant" element={<AIAssistant />} />
               <Route path="id-card" element={<VirtualIdCard />} />
+              <Route path="apply/:schemeId" element={<SchemeApplication />} />
             </Route>
 
             {/* Mock Sites Demo Routes */}

@@ -1128,21 +1128,124 @@ body {
     .home-stat-item {
         border-right: none;
         border-bottom: 1px solid var(--border-color);
+        padding: 1.5rem;
     }
     .home-stat-item:last-child {
         border-bottom: none;
     }
+    .navbar {
+        padding: 1rem 1.5rem;
+    }
+    .page-container {
+        padding: 0 1.5rem;
+    }
 }
 
 @media (max-width: 768px) {
+    /* Navbar Adjustments */
+    .navbar {
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1rem;
+    }
+    .navbar-brand h1 {
+        font-size: 1.25rem;
+    }
     .navbar-links {
-        display: none;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+    }
+    .nav-link {
+        font-size: 0.85rem;
+    }
+    .navbar-actions {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Layout Adjustments */
+    .page-container {
+        padding: 0 1rem;
+        margin: 1rem auto;
     }
     .content-page {
-        padding: 1.5rem;
+        padding: 1.5rem 1rem;
     }
     .profile-extended-form {
-        padding: 1.5rem;
+        padding: 1.5rem 1rem;
+    }
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .schemes-grid {
+        grid-template-columns: 1fr;
+    }
+    .stats-container {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+    .dashboard-main {
+        padding: 0 1rem 1rem 1rem;
+    }
+    
+    /* Typography Adjustments */
+    .page-header h2, .whats-new-section h2 {
+        font-size: 1.5rem;
+    }
+    .page-header p, .whats-new-subtitle {
+        font-size: 0.9rem;
+    }
+    
+    /* Auth Modal Adjustments */
+    .modal {
+        width: 95%;
+        margin: 1rem;
+    }
+    .auth-tabs {
+        padding: 0 0.5rem;
+    }
+    .auth-tab-btn {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Cards and Elements */
+    .scheme-card {
+        padding: 1rem;
+    }
+    .stat-card {
+        padding: 1rem;
+    }
+    .whats-new-grid {
+        flex-direction: column;
+        align-items: center;
+    }
+    .whats-new-card {
+        width: 100%;
+        max-width: 350px;
+    }
+    
+    /* Notification Dropdown Adjustments */
+    .notification-dropdown, .profile-dropdown {
+        width: 280px;
+    }
+}
+
+@media (max-width: 480px) {
+    .notification-dropdown, .profile-dropdown {
+        position: fixed !important;
+        top: 60px !important;
+        left: 5% !important;
+        right: 5% !important;
+        width: 90% !important;
+        z-index: 1050;
+    }
+    .home-stat-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
     }
 }
 

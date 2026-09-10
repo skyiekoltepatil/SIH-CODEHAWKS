@@ -24,7 +24,23 @@ export default function Profile() {
         caste: '',
         subCaste: '',
         nationality: '',
-        domicile: ''
+        domicile: '',
+        mobileNumber: '',
+        birthPlace: '',
+        birthCountry: '',
+        birthState: '',
+        birthDistrict: '',
+        nativePlace: '',
+        nativeCountry: '',
+        nativeState: '',
+        nativeDistrict: '',
+        primaryEmail: '',
+        alternateEmail: '',
+        bloodGroup: '',
+        parentName: '',
+        parentRelation: '',
+        careerChoice: '',
+        alumniInstitute: ''
     });
     const [isSaving, setIsSaving] = useState(false);
     const [isPushing, setIsPushing] = useState(false);
@@ -111,6 +127,129 @@ export default function Profile() {
     const [isPanOtpSent, setIsPanOtpSent] = useState(false);
     const [expectedPanOtp, setExpectedPanOtp] = useState('');
 
+    // Uploaded Documents State
+    const [uploadedFiles, setUploadedFiles] = useState({
+        aadhaar: null,
+        pan: null,
+        income: null,
+        passbook: null,
+        photo: null
+    });
+
+    const [docModal, setDocModal] = useState({ isOpen: false, type: null });
+    const [docFormData, setDocFormData] = useState({ file: null, docName: '', subjectText: '' });
+
+    const openDocModal = (type) => {
+        const existing = uploadedFiles[type];
+        setDocModal({ isOpen: true, type });
+        setDocFormData({
+            file: null,
+            docName: existing?.docName || '',
+            subjectText: existing?.subjectText || ''
+        });
+    };
+
+    const closeDocModal = () => {
+        setDocModal({ isOpen: false, type: null });
+    };
+
+    const handleDocFormChange = (e, field) => {
+        if (field === 'file') {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                if (file.size > 5 * 1024 * 1024) {
+                    alert("File size exceeds 5MB limit");
+                    return;
+                }
+                setDocFormData(prev => ({ ...prev, file }));
+            }
+        } else {
+            setDocFormData(prev => ({ ...prev, [field]: e.target.value }));
+        }
+    };
+
+    const handleSaveDocModal = () => {
+        const type = docModal.type;
+        const existing = uploadedFiles[type] || {};
+        
+        const updatedDoc = {
+            ...existing,
+            docName: docFormData.docName,
+            subjectText: docFormData.subjectText
+        };
+        
+        if (docFormData.file) {
+            updatedDoc.file = docFormData.file;
+        }
+
+        setUploadedFiles(prev => ({ ...prev, [type]: updatedDoc }));
+        closeDocModal();
+    };
+
+    const [isUploadingDocs, setIsUploadingDocs] = useState(false);
+
+    const handleUploadAllDocuments = async () => {
+        if (!user?.uid) return;
+        
+        setIsUploadingDocs(true);
+        try {
+            const newDocUrls = {};
+            
+            // Loop through uploadedFiles and upload any new File objects to Cloudinary
+            for (const [docType, docObj] of Object.entries(uploadedFiles)) {
+                if (!docObj) continue;
+                
+                if (docObj.file instanceof File) {
+                    const fileObj = docObj.file;
+                    const formData = new FormData();
+                    formData.append('file', fileObj);
+                    formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'documents database');
+                    formData.append('cloud_name', import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'elh1llzh');
+
+                    const response = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'elh1llzh'}/auto/upload`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Cloudinary error response:', errorText);
+                        throw new Error(`Cloudinary upload failed for ${docType}: ${errorText}`);
+                    }
+
+                    const data = await response.json();
+                    newDocUrls[docType] = { 
+                        name: fileObj.name, 
+                        url: data.secure_url, 
+                        size: fileObj.size,
+                        docName: docObj.docName || '',
+                        subjectText: docObj.subjectText || ''
+                    };
+                } else if (docObj.url) {
+                    // Keep existing URL object but update metadata if changed
+                    newDocUrls[docType] = {
+                        ...docObj,
+                        docName: docObj.docName || '',
+                        subjectText: docObj.subjectText || ''
+                    };
+                    delete newDocUrls[docType].file; // Cleanup just in case
+                }
+            }
+
+            // Save references to Firestore
+            await setDoc(doc(db, 'users', user.uid), { documents: newDocUrls }, { merge: true });
+            
+            // Update local state to be the URL objects instead of File objects
+            setUploadedFiles(prev => ({ ...prev, ...newDocUrls }));
+            alert('Documents uploaded successfully!');
+        } catch (error) {
+            console.error("Error uploading documents: ", error);
+            alert("Failed to upload some documents. Please try again.");
+        } finally {
+            setIsUploadingDocs(false);
+        }
+    };
+
     useEffect(() => {
         if (location.state?.tab) {
             setActiveSidebar(location.state.tab);
@@ -138,6 +277,9 @@ export default function Profile() {
                             setIdentityData(prev => ({ ...prev, ...data.identityDetails }));
                             if (data.identityDetails.aadhaarVerified) setAadhaarVerified(true);
                             if (data.identityDetails.panVerified) setPanVerified(true);
+                        }
+                        if (data.documents) {
+                            setUploadedFiles(prev => ({ ...prev, ...data.documents }));
                         }
                     }
                 } catch (error) {
@@ -180,6 +322,7 @@ export default function Profile() {
                     aadhaarVerified,
                     panVerified
                 },
+                documents: uploadedFiles,
                 timestamp: Date.now()
             };
 
@@ -554,7 +697,7 @@ export default function Profile() {
                 {/* Right Content Area */}
                 <main className="profile-content-area">
                     {/* Horizontal Tabs */}
-                    {activeSidebar !== 'CHANGE_PASSWORD' && (
+                    {activeSidebar === 'PERSONAL_DETAILS' && (
                     <div className="profile-top-tabs">
                         <button className={`profile-top-tab-btn ${activeTab === 'PERSONAL_DETAILS' ? 'active' : ''}`} onClick={() => setActiveTab('PERSONAL_DETAILS')}>PERSONAL DETAILS</button>
                         <button className={`profile-top-tab-btn ${activeTab === 'IDENTITY' ? 'active' : ''}`} onClick={() => setActiveTab('IDENTITY')}>IDENTITY</button>
@@ -638,10 +781,10 @@ export default function Profile() {
                         <form id="ui-profile-form" onSubmit={handleSave}>
                             <div className="ui-form-grid">
                                 <div className="ui-input-group">
-                                    <label>First Name</label>
+                                    <label>First Name <span className="req" style={{color: '#ef4444'}}>*</span></label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-pen"></i>
-                                        <input type="text" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+                                        <input type="text" required value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
                                     </div>
                                 </div>
                                 <div className="ui-input-group">
@@ -652,20 +795,20 @@ export default function Profile() {
                                     </div>
                                 </div>
                                 <div className="ui-input-group">
-                                    <label>Last Name</label>
+                                    <label>Last Name <span className="req" style={{color: '#ef4444'}}>*</span></label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-pen"></i>
-                                        <input type="text" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+                                        <input type="text" required value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
                                     </div>
                                 </div>
                             </div>
 
                             <div className="ui-form-grid" style={{ marginTop: '24px' }}>
                                 <div className="ui-input-group">
-                                    <label>Official Email</label>
+                                    <label>Official Email <span className="req" style={{color: '#ef4444'}}>*</span></label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-envelope"></i>
-                                        <input type="text" value={formData.officialEmail} onChange={e => setFormData({...formData, officialEmail: e.target.value})} />
+                                        <input type="email" required value={formData.officialEmail} onChange={e => setFormData({...formData, officialEmail: e.target.value})} />
                                     </div>
                                 </div>
                                 <div className="ui-input-group">
@@ -713,21 +856,21 @@ export default function Profile() {
                                     <label>Mobile Number</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-phone"></i>
-                                        <input type="tel" />
+                                        <input type="tel" pattern="\d{10}" title="10-digit mobile number" maxLength="10" value={formData.mobileNumber} onChange={e => setFormData({...formData, mobileNumber: e.target.value})} />
                                     </div>
                                 </div>
                                 <div className="ui-input-group">
                                     <label>Birth Place</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-map-marker-alt"></i>
-                                        <input type="text" />
+                                        <input type="text" value={formData.birthPlace} onChange={e => setFormData({...formData, birthPlace: e.target.value})} />
                                     </div>
                                 </div>
                                 <div className="ui-input-group">
                                     <label>Birth Country</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-globe"></i>
-                                        <input type="text" />
+                                        <input type="text" value={formData.birthCountry} onChange={e => setFormData({...formData, birthCountry: e.target.value})} />
                                     </div>
                                 </div>
                             </div>
@@ -737,21 +880,21 @@ export default function Profile() {
                                     <label>Birth State</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-map"></i>
-                                        <input type="text" />
+                                        <input type="text" value={formData.birthState} onChange={e => setFormData({...formData, birthState: e.target.value})} />
                                     </div>
                                 </div>
                                 <div className="ui-input-group">
                                     <label>Birth District</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-map-pin"></i>
-                                        <input type="text" />
+                                        <input type="text" value={formData.birthDistrict} onChange={e => setFormData({...formData, birthDistrict: e.target.value})} />
                                     </div>
                                 </div>
                                 <div className="ui-input-group">
                                     <label>Native Place</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-home"></i>
-                                        <input type="text" />
+                                        <input type="text" value={formData.nativePlace} onChange={e => setFormData({...formData, nativePlace: e.target.value})} />
                                     </div>
                                 </div>
                             </div>
@@ -761,45 +904,45 @@ export default function Profile() {
                                     <label>Native Country</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-globe"></i>
-                                        <input type="text" />
+                                        <input type="text" value={formData.nativeCountry} onChange={e => setFormData({...formData, nativeCountry: e.target.value})} />
                                     </div>
                                 </div>
                                 <div className="ui-input-group">
                                     <label>Native State</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-map"></i>
-                                        <input type="text" />
+                                        <input type="text" value={formData.nativeState} onChange={e => setFormData({...formData, nativeState: e.target.value})} />
                                     </div>
                                 </div>
                                 <div className="ui-input-group">
                                     <label>Native District</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-map-pin"></i>
-                                        <input type="text" />
+                                        <input type="text" value={formData.nativeDistrict} onChange={e => setFormData({...formData, nativeDistrict: e.target.value})} />
                                     </div>
                                 </div>
                             </div>
 
                             <div className="ui-form-grid" style={{ marginTop: '24px' }}>
                                 <div className="ui-input-group">
-                                    <label>Primary_Email (Personal)</label>
+                                    <label>Primary_Email (Personal) <span className="req" style={{color: '#ef4444'}}>*</span></label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-envelope"></i>
-                                        <input type="text" />
+                                        <input type="email" required value={formData.primaryEmail} onChange={e => setFormData({...formData, primaryEmail: e.target.value})} />
                                     </div>
                                 </div>
                                 <div className="ui-input-group">
                                     <label>Alternate_Email</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-envelope"></i>
-                                        <input type="text" />
+                                        <input type="email" value={formData.alternateEmail} onChange={e => setFormData({...formData, alternateEmail: e.target.value})} />
                                     </div>
                                 </div>
                                 <div className="ui-input-group">
                                     <label>Blood Group</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-tint"></i>
-                                        <input type="text" />
+                                        <input type="text" value={formData.bloodGroup} onChange={e => setFormData({...formData, bloodGroup: e.target.value})} />
                                     </div>
                                 </div>
                             </div>
@@ -809,21 +952,21 @@ export default function Profile() {
                                     <label>Earning Parent Name</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-user-tie"></i>
-                                        <input type="text" />
+                                        <input type="text" value={formData.parentName} onChange={e => setFormData({...formData, parentName: e.target.value})} />
                                     </div>
                                 </div>
                                 <div className="ui-input-group">
                                     <label>Earning Parent Relation</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-users"></i>
-                                        <input type="text" />
+                                        <input type="text" value={formData.parentRelation} onChange={e => setFormData({...formData, parentRelation: e.target.value})} />
                                     </div>
                                 </div>
                                 <div className="ui-input-group">
                                     <label>Career Choice</label>
                                     <div className="input-wrapper">
                                         <i className="fa-solid fa-briefcase"></i>
-                                        <input type="text" />
+                                        <input type="text" value={formData.careerChoice} onChange={e => setFormData({...formData, careerChoice: e.target.value})} />
                                     </div>
                                 </div>
                             </div>
@@ -851,11 +994,11 @@ export default function Profile() {
                                 <div className="ui-form-grid" style={{ gridTemplateColumns: '1fr' }}>
                                     
                                     <div className="ui-input-group">
-                                        <label>Phone Number (with country code)</label>
+                                        <label>Phone Number (10 digits) <span className="req" style={{color: '#ef4444'}}>*</span></label>
                                         <div style={{ display: 'flex', gap: '10px' }}>
                                             <div className="input-wrapper" style={{ flex: 1, border: phoneVerified ? '1px solid #22c55e' : '' }}>
                                                 <i className="fa-solid fa-phone" style={{ color: phoneVerified ? '#22c55e' : '' }}></i>
-                                                <input type="text" placeholder="+919876543210" value={contactData.phoneNumber} onChange={e => setContactData({...contactData, phoneNumber: e.target.value})} disabled={phoneVerified || isOtpSent} />
+                                                <input type="text" placeholder="9876543210" required pattern="\d{10}" title="10-digit mobile number" value={contactData.phoneNumber} onChange={e => setContactData({...contactData, phoneNumber: e.target.value})} disabled={phoneVerified || isOtpSent} maxLength="10" />
                                             </div>
                                             {!phoneVerified && !isOtpSent && (
                                                 <button type="button" className="btn-primary" onClick={handleSendOTP} disabled={isVerifyingPhone} style={{ whiteSpace: 'nowrap' }}>
@@ -886,10 +1029,10 @@ export default function Profile() {
                                     )}
 
                                     <div className="ui-input-group" style={{ marginTop: '20px' }}>
-                                        <label>Full Residential Address</label>
+                                        <label>Full Residential Address <span className="req" style={{color: '#ef4444'}}>*</span></label>
                                         <div className="input-wrapper" style={{ height: 'auto', alignItems: 'flex-start' }}>
                                             <i className="fa-solid fa-map-location-dot" style={{ marginTop: '14px' }}></i>
-                                            <textarea rows="4" style={{ flex: 1, border: 'none', outline: 'none', padding: '12px 10px', width: '100%', resize: 'vertical', background: 'transparent' }} placeholder="Enter your full address" value={contactData.address} onChange={e => setContactData({...contactData, address: e.target.value})}></textarea>
+                                            <textarea required rows="4" style={{ flex: 1, border: 'none', outline: 'none', padding: '12px 10px', width: '100%', resize: 'vertical', background: 'transparent' }} placeholder="Enter your full address" value={contactData.address} onChange={e => setContactData({...contactData, address: e.target.value})}></textarea>
                                         </div>
                                     </div>
 
@@ -910,11 +1053,11 @@ export default function Profile() {
                                 <div className="ui-form-grid" style={{ gridTemplateColumns: '1fr', gap: '30px' }}>
                                     
                                     <div className="ui-input-group">
-                                        <label>Aadhaar Card Number</label>
+                                        <label>Aadhaar Card Number <span className="req" style={{color: '#ef4444'}}>*</span></label>
                                         <div style={{ display: 'flex', gap: '10px' }}>
                                             <div className="input-wrapper" style={{ flex: 1, border: aadhaarVerified ? '1px solid #22c55e' : '' }}>
                                                 <i className="fa-solid fa-id-card" style={{ color: aadhaarVerified ? '#22c55e' : '' }}></i>
-                                                <input type="text" placeholder="12 Digit Aadhaar Number" value={identityData.aadhaarNumber} onChange={e => setIdentityData({...identityData, aadhaarNumber: e.target.value})} disabled={aadhaarVerified} maxLength="12" />
+                                                <input type="text" placeholder="12 Digit Aadhaar Number" required pattern="\d{12}" title="12-digit Aadhaar number" value={identityData.aadhaarNumber} onChange={e => setIdentityData({...identityData, aadhaarNumber: e.target.value})} disabled={aadhaarVerified} maxLength="12" />
                                             </div>
                                             {!aadhaarVerified && !isAadhaarOtpSent && (
                                                 <button type="button" className="btn-primary" onClick={handleVerifyAadhaar} disabled={aadhaarLoadingText !== ""} style={{ whiteSpace: 'nowrap' }}>
@@ -946,11 +1089,11 @@ export default function Profile() {
                                     )}
 
                                     <div className="ui-input-group">
-                                        <label>PAN Card Number</label>
+                                        <label>PAN Card Number <span className="req" style={{color: '#ef4444'}}>*</span></label>
                                         <div style={{ display: 'flex', gap: '10px' }}>
                                             <div className="input-wrapper" style={{ flex: 1, border: panVerified ? '1px solid #22c55e' : '' }}>
                                                 <i className="fa-solid fa-address-card" style={{ color: panVerified ? '#22c55e' : '' }}></i>
-                                                <input type="text" placeholder="ABCDE1234F" style={{ textTransform: 'uppercase' }} value={identityData.panNumber} onChange={e => setIdentityData({...identityData, panNumber: e.target.value.toUpperCase()})} disabled={panVerified} maxLength="10" />
+                                                <input type="text" placeholder="ABCDE1234F" style={{ textTransform: 'uppercase' }} required pattern="[a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}" title="Format: ABCDE1234F" value={identityData.panNumber} onChange={e => setIdentityData({...identityData, panNumber: e.target.value.toUpperCase()})} disabled={panVerified} maxLength="10" />
                                             </div>
                                             {!panVerified && !isPanOtpSent && (
                                                 <button type="button" className="btn-primary" onClick={handleVerifyPan} disabled={panLoadingText !== ""} style={{ whiteSpace: 'nowrap' }}>
@@ -989,6 +1132,62 @@ export default function Profile() {
                                 </div>
                             </form>
                         </div>
+                    ) : activeSidebar === 'UPLOAD_DOCUMENTS' ? (
+                        <div className="profile-form-wrapper" style={{ minHeight: '500px', background: 'white' }}>
+                            <h3 style={{ marginBottom: '30px', color: '#1e293b', fontSize: '1.4rem' }}>Upload Required Documents</h3>
+                            <p style={{ color: '#64748b', marginBottom: '30px', fontSize: '0.9rem' }}>Please upload clear, legible copies of the original documents. Max file size: 5MB per document.</p>
+                            
+                            <div className="doc-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px', marginTop: '10px' }}>
+                                {[
+                                    { type: 'aadhaar', label: 'Aadhaar Card (Front & Back)', required: true },
+                                    { type: 'pan', label: 'PAN Card', required: true },
+                                    { type: 'income', label: 'Income Certificate', required: true },
+                                    { type: 'passbook', label: 'Bank Passbook / Cheque', required: true },
+                                    { type: 'photo', label: 'Passport Size Photograph', required: true }
+                                ].map((doc) => {
+                                    const fileData = uploadedFiles[doc.type];
+                                    const hasFile = !!(fileData?.url || fileData?.file);
+                                    
+                                    return (
+                                        <div key={doc.type} className="doc-card" onClick={() => openDocModal(doc.type)}>
+                                            <div className="doc-card-preview">
+                                                {fileData?.url ? (
+                                                    (fileData.url.toLowerCase().endsWith('.pdf') ? (
+                                                        <div className="pdf-preview">
+                                                            <i className="fa-solid fa-file-pdf"></i>
+                                                            <span>PDF Document</span>
+                                                        </div>
+                                                    ) : <img src={fileData.url} alt="preview" />)
+                                                ) : fileData?.file ? (
+                                                    <div className="file-preview-ready">
+                                                        <i className="fa-solid fa-file-circle-check"></i>
+                                                        <span>Ready to Upload</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="doc-card-empty">
+                                                        <i className="fa-solid fa-cloud-arrow-up"></i>
+                                                        <span>Upload {doc.label}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="doc-card-info">
+                                                <h4 style={{ textTransform: 'none' }}>
+                                                    {fileData?.docName || doc.label} {doc.required && !fileData?.docName && <span className="req">*</span>}
+                                                </h4>
+                                                <p>{fileData?.subjectText || 'No subject provided'}</p>
+                                                {hasFile && <div className="status-badge success">Ready</div>}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="profile-form-footer" style={{ marginTop: '40px' }}>
+                                <button type="button" className="btn-primary" disabled={isUploadingDocs} onClick={handleUploadAllDocuments}>
+                                    {isUploadingDocs ? 'UPLOADING...' : 'UPLOAD ALL DOCUMENTS'}
+                                </button>
+                            </div>
+                        </div>
                     ) : (
                         <div className="profile-form-wrapper" style={{ minHeight: '500px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <p style={{ color: '#94a3b8', fontSize: '1.2rem' }}>Blank Page for {activeTab.replace(/_/g, ' ')}</p>
@@ -996,6 +1195,57 @@ export default function Profile() {
                     )}
                 </main>
             </div>
+
+            {/* Document Upload Modal */}
+            {docModal.isOpen && (
+                <div className="modal-overlay active" style={{ zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.65)' }}>
+                    <div className="modal-content" style={{ maxWidth: '500px', width: '100%', background: 'white', padding: '24px', borderRadius: '12px' }}>
+                        <h3 style={{ marginBottom: '20px', color: '#1e293b' }}>Upload Document</h3>
+                        
+                        <div className="ui-input-group" style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>File <span className="req">*</span></label>
+                            <div className="file-upload-wrapper" style={{ border: '2px dashed #cbd5e1', padding: '20px', textAlign: 'center', borderRadius: '8px', cursor: 'pointer', position: 'relative' }}>
+                                <i className="fa-solid fa-cloud-arrow-up upload-icon" style={{ fontSize: '2rem', color: '#94a3b8', marginBottom: '10px' }}></i>
+                                <div className="upload-text" style={{ fontSize: '0.9rem', color: '#475569' }}>
+                                    {docFormData.file ? (
+                                        <span style={{ fontWeight: 'bold', color: '#2563eb' }}>{docFormData.file.name}</span>
+                                    ) : (
+                                        <span>Drag & Drop or <span style={{ color: '#2563eb', textDecoration: 'underline' }}>Browse</span></span>
+                                    )}
+                                </div>
+                                <input type="file" className="file-upload-input" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocFormChange(e, 'file')} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
+                            </div>
+                        </div>
+
+                        <div className="ui-input-group" style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Document Name</label>
+                            <input 
+                                type="text" 
+                                value={docFormData.docName} 
+                                onChange={(e) => handleDocFormChange(e, 'docName')} 
+                                placeholder="E.g. Aadhaar Card Front" 
+                                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                            />
+                        </div>
+
+                        <div className="ui-input-group" style={{ marginBottom: '25px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Subject Text</label>
+                            <textarea 
+                                rows="3" 
+                                value={docFormData.subjectText} 
+                                onChange={(e) => handleDocFormChange(e, 'subjectText')} 
+                                placeholder="Any additional details or subject..." 
+                                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', resize: 'vertical' }}
+                            ></textarea>
+                        </div>
+
+                        <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                            <button type="button" onClick={closeDocModal} style={{ padding: '10px 20px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f1f5f9', cursor: 'pointer' }}>Cancel</button>
+                            <button type="button" onClick={handleSaveDocModal} style={{ padding: '10px 20px', borderRadius: '6px', border: 'none', background: '#2563eb', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>Save to Profile</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Permission Pop-up Confirmation Modal */}
             {pushModal.isOpen && (
