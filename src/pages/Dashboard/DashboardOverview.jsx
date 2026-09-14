@@ -408,8 +408,8 @@ export default function DashboardOverview() {
                                 </div>
                             </div>
                             <div className="rec-actions">
-                                <button className="btn-sm btn-primary-sm">Apply Now</button>
-                                <button className="btn-sm btn-outline">Learn More</button>
+                                <button className="btn-sm btn-primary-sm" onClick={() => navigate('/dashboard/apply/SCH-007')}>Apply Now</button>
+                                <button className="btn-sm btn-outline" onClick={() => navigate('/schemes/SCH-007')}>Learn More</button>
                             </div>
                         </div>
                         <div className="rec-card">
@@ -421,8 +421,8 @@ export default function DashboardOverview() {
                                 </div>
                             </div>
                             <div className="rec-actions">
-                                <button className="btn-sm btn-primary-sm">Apply Now</button>
-                                <button className="btn-sm btn-outline">Learn More</button>
+                                <button className="btn-sm btn-primary-sm" onClick={() => navigate('/dashboard/apply/SCH-008')}>Apply Now</button>
+                                <button className="btn-sm btn-outline" onClick={() => navigate('/schemes/SCH-008')}>Learn More</button>
                             </div>
                         </div>
                     </div>
@@ -439,7 +439,7 @@ export default function DashboardOverview() {
                                 <span>Income Certificate.pdf</span>
                             </div>
                         </div>
-                        <button className="btn-outline" style={{ width: '100%', padding: '10px' }}>Manage Documents</button>
+                        <button className="btn-outline" onClick={() => navigate('/dashboard/profile', { state: { tab: 'UPLOAD_DOCUMENTS' } })} style={{ width: '100%', padding: '10px' }}>Manage Documents</button>
                     </div>
 
                     <div className="sidebar-card">

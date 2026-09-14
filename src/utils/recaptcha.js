@@ -9,12 +9,7 @@ export async function verifyRecaptcha(token, action = 'login') {
         throw new Error('Please complete the reCAPTCHA challenge.');
     }
 
-    // Bypass backend verification if running locally in Vite (dev mode)
-    // since Vercel serverless functions in /api/ don't run automatically with npm run dev
-    if (import.meta.env.DEV) {
-        console.warn(`[reCAPTCHA DEV BYPASS] Skipped backend verification for token.`);
-        return true;
-    }
+    // The Vite proxy middleware handles /api calls locally now, so we can verify the token!
 
     try {
         const res = await fetch('/api/verify-captcha', {

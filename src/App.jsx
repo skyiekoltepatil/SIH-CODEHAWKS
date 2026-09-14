@@ -17,6 +17,7 @@ import Login from './pages/Login';
 import MockSite from './pages/Demo/MockSite';
 import MockSiteSSO from './pages/Demo/MockSiteSSO';
 import MockSiteLookup from './pages/Demo/MockSiteLookup';
+import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './index.css';
@@ -35,7 +36,11 @@ function App() {
             <Route path="services" element={<Services />} />
             <Route path="login" element={<Login />} />
             
-            <Route path="dashboard" element={<Dashboard />}>
+            <Route path="dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }>
               <Route index element={<DashboardOverview />} />
               <Route path="applications" element={<Applications />} />
               <Route path="profile" element={<Profile />} />
