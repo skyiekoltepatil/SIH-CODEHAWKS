@@ -4,6 +4,7 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 // Web app's Firebase configuration loaded from environment variables
 const firebaseConfig = {
@@ -28,4 +29,26 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
   connectFunctionsEmulator(functions, "localhost", 5001);
 }
 
-export { app, auth, db, storage, functions };
+// Initialize App Check (using reCAPTCHA v3)
+let appCheck;
+const recaptchaKey = import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY || import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+const appCheckDebugToken = import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN;
+
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  // Use the env token if available, otherwise set to true to generate a new one in the console
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken || true;
+}
+
+if (recaptchaKey) {
+  try {
+    appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(recaptchaKey),
+      isTokenAutoRefreshEnabled: true
+    });
+    console.log("App Check initialized.");
+  } catch (error) {
+    console.warn("App Check failed to initialize.", error);
+  }
+}
+
+export { app, auth, db, storage, appCheck, functions };
