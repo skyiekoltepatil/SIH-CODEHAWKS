@@ -74,7 +74,7 @@ export default function VirtualIdCard() {
                                 <p>Loading ID...</p>
                             ) : userData ? (
                                 <>
-                                    <h4 className="reg-no">UID: {userData.uid}</h4>
+                                    <h4 className="reg-no">UID: {userData.uid.substring(0, 8).toUpperCase()}</h4>
                                     <h3 className="student-name">
                                         {userData.personalDetails?.firstName || ''} {userData.personalDetails?.lastName || 'STUDENT'}
                                     </h3>
@@ -102,7 +102,7 @@ export default function VirtualIdCard() {
                             <div className="bar wide"></div><div className="bar wide"></div><div className="bar narrow"></div><div className="bar narrow"></div>
                         </div>
                         <div className="barcode-text">
-                            {loading ? '...' : userData ? userData.uid : 'INVALID'}
+                            {loading ? '...' : userData ? userData.uid.substring(0, 8).toUpperCase() : 'INVALID'}
                         </div>
                     </div>
                 </div>

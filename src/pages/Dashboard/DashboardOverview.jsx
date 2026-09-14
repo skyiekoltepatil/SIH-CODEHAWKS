@@ -219,7 +219,7 @@ export default function DashboardOverview() {
                                 />
                             </label>
                             <div className="profile-info">
-                                <h2>{user?.name || 'John Doe'} <span className="farmer-id">(Farmer ID: 7890)</span></h2>
+                                <h2>{user?.name || 'John Doe'} <span className="farmer-id">(User ID: {user?.uid ? user.uid.substring(0, 8).toUpperCase() : '7890'})</span></h2>
                                 
                                 <div className="progress-section">
                                     <div className="progress-header">
