@@ -1,0 +1,360 @@
+/* =========================================
+   Scheme Application Multi-Step Form UI
+   ========================================= */
+
+.scheme-application-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.application-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.application-header .back-btn {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    background: transparent;
+    border: none;
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s;
+}
+
+.application-header .back-btn:hover {
+    color: #0f172a;
+}
+
+.application-header h2 {
+    color: #0f172a;
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.application-header p {
+    color: #64748b;
+    font-size: 1.05rem;
+}
+
+/* Stepper UI */
+.stepper-ui {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    position: relative;
+    padding: 0 20px;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    z-index: 2;
+}
+
+.step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #94a3b8;
+    transition: all 0.3s;
+}
+
+.step span {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    transition: all 0.3s;
+}
+
+.step.active .step-circle {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: white;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+}
+
+.step.active span {
+    color: #0f172a;
+}
+
+.step-line {
+    flex: 1;
+    height: 2px;
+    background: #cbd5e1;
+    margin: 0 15px;
+    position: relative;
+    top: -10px;
+    transition: background 0.3s;
+}
+
+.step-line.active {
+    background: #2563eb;
+}
+
+/* Application Card */
+.application-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    padding: 40px;
+    overflow: hidden;
+    position: relative;
+}
+
+.step-content {
+    animation: slideIn 0.4s ease forwards;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.step-content h3 {
+    font-size: 1.5rem;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.step-desc {
+    color: #64748b;
+    margin-bottom: 30px;
+    font-size: 0.95rem;
+}
+
+/* Floating Input Forms */
+.app-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.app-floating-input {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.app-floating-input input {
+    width: 100%;
+    padding: 16px 16px 12px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 1rem;
+    color: #1e293b;
+    background: transparent;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.app-floating-input input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.app-floating-input label {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: white;
+    padding: 0 4px;
+    color: #64748b;
+    transition: all 0.2s ease-out;
+    pointer-events: none;
+    font-size: 1rem;
+}
+
+.app-floating-input input:focus ~ label,
+.app-floating-input input:not(:placeholder-shown) ~ label {
+    top: 0;
+    font-size: 0.8rem;
+    color: #2563eb;
+    font-weight: 600;
+}
+
+.app-floating-input input:not(:placeholder-shown):not(:focus) ~ label {
+    color: #64748b;
+}
+
+/* Upload Zone */
+.upload-zone {
+    border: 2px dashed #2563eb;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    background: #f3fcf8; /* Light green tint */
+    transition: all 0.2s;
+    position: relative;
+}
+
+.upload-zone:hover {
+    border-color: #1d4ed8;
+    background: #e6f9ed;
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: #94a3b8;
+    margin-bottom: 16px;
+}
+
+.upload-zone .btn-outline {
+    background-color: #ffffff;
+    border: 1px solid #2563eb;
+    color: #2563eb;
+}
+
+.upload-zone .btn-outline:hover {
+    background-color: #f8fafc;
+}
+
+.upload-zone .btn-primary {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+}
+
+.upload-zone .btn-primary:hover {
+    background-color: #1d4ed8;
+}
+
+.upload-zone h4 {
+    color: #1e293b;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+}
+
+.upload-zone p {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+.file-input-hidden {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Review Box */
+.review-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+.review-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.review-item:last-child {
+    border-bottom: none;
+}
+
+.review-label {
+    color: #64748b;
+}
+
+.review-item strong {
+    color: #0f172a;
+}
+
+.declaration-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    color: #92400e;
+}
+
+.declaration-box input[type="checkbox"] {
+    margin-top: 4px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* Footer */
+.step-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.step-footer button {
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Success View */
+.application-success {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    max-width: 600px;
+    margin: 80px auto;
+}
+
+.success-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    background: #d1fae5;
+    color: #059669;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    margin: 0 auto 24px auto;
+}
+
+.application-success h2 {
+    color: #0f172a;
+    font-size: 2rem;
+    margin-bottom: 16px;
+}
+
+.application-success p {
+    color: #64748b;
+    font-size: 1.1rem;
+    margin-bottom: 32px;
+}

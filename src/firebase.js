@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
@@ -20,6 +21,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 const functions = getFunctions(app);
 
 // Connect to local emulator if running locally
@@ -29,12 +31,12 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
 
 // Initialize App Check (using reCAPTCHA Enterprise)
 let appCheck;
-const recaptchaKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+const recaptchaKey = import.meta.env.VITE_RECAPTCHA_V2_SITE_KEY || import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 const appCheckDebugToken = import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN;
 
-if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && appCheckDebugToken) {
-  // Enable debug token for localhost development only if provided
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken;
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  // Use the env token if available, otherwise set to true to generate a new one in the console
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken || true;
 }
 
 if (recaptchaKey) {
@@ -49,4 +51,4 @@ if (recaptchaKey) {
   }
 }
 
-export { app, auth, db, appCheck, functions };
+export { app, auth, db, storage, appCheck, functions };
