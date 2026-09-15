@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Group } from '@visx/group';
 import { Pie } from '@visx/shape';
 import { ParentSize } from '@visx/responsive';
 import { PieChartProvider } from './PieChartContext';
-import { PieSlice } from './PieSlice';
-import { PieCenter } from './PieCenter';
 
 export function PieChart({
   data,
@@ -28,11 +26,7 @@ export function PieChart({
     const calculatedInnerRadius = innerRadius > 0 ? (innerRadius / 100) * radius : 0;
 
     return (
-      <PieChartProvider
-        data={data}
-        innerRadius={calculatedInnerRadius}
-        outerRadius={radius}
-      >
+      <PieChartProvider data={data} innerRadius={calculatedInnerRadius} outerRadius={radius}>
         <div className={`relative ${className}`} style={{ width: dimension, height: dimension }}>
           <svg width={dimension} height={dimension} style={{ overflow: 'visible' }}>
             <Group top={centerY} left={centerX}>
@@ -61,7 +55,7 @@ export function PieChart({
             </Group>
           </svg>
           {React.Children.map(children, (child) => {
-             // If it doesn't have an index prop, it's the PieCenter
+            // If it doesn't have an index prop, it's the PieCenter
             if (React.isValidElement(child) && child.props.index === undefined) {
               return child;
             }

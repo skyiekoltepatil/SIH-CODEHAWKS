@@ -13,11 +13,7 @@ export function PieChartProvider({ children, data, innerRadius, outerRadius }) {
     outerRadius,
   };
 
-  return (
-    <PieChartContext.Provider value={value}>
-      {children}
-    </PieChartContext.Provider>
-  );
+  return <PieChartContext.Provider value={value}>{children}</PieChartContext.Provider>;
 }
 
 export function usePieChart() {

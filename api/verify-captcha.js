@@ -48,12 +48,13 @@ export default async function handler(req, res) {
     'http://127.0.0.1:5173',
     'https://sih-codehawks.vercel.app',
     'https://sih-codehawks.firebaseapp.com',
-    'https://sih-codehawks.web.app'
+    'https://sih-codehawks.web.app',
   ];
   const origin = req.headers?.origin || req.headers?.referer || '';
-  const isAllowedOrigin = allowedOrigins.some(allowed => origin.startsWith(allowed)) ||
-                          origin.includes('sih-codehawks') ||
-                          origin.includes('vercel.app');
+  const isAllowedOrigin =
+    allowedOrigins.some((allowed) => origin.startsWith(allowed)) ||
+    origin.includes('sih-codehawks') ||
+    origin.includes('vercel.app');
 
   if (origin && !isAllowedOrigin) {
     console.warn(`[BLOCKED] Request from unauthorized origin: ${origin}`);
@@ -61,16 +62,17 @@ export default async function handler(req, res) {
   }
 
   // --- Rate limiting ---
-  const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-                   req.headers['x-real-ip'] ||
-                   req.socket?.remoteAddress ||
-                   'unknown';
+  const clientIp =
+    req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+    req.headers['x-real-ip'] ||
+    req.socket?.remoteAddress ||
+    'unknown';
 
   if (isRateLimited(clientIp)) {
     console.warn(`[RATE LIMITED] IP: ${clientIp}`);
     return res.status(429).json({
       success: false,
-      error: 'Too many attempts. Please wait 15 minutes before trying again.'
+      error: 'Too many attempts. Please wait 15 minutes before trying again.',
     });
   }
 
@@ -107,9 +109,9 @@ export default async function handler(req, res) {
     const response = await fetch(verificationUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: `secret=${encodeURIComponent(secretKey)}&response=${encodeURIComponent(token)}&remoteip=${encodeURIComponent(clientIp)}`
+      body: `secret=${encodeURIComponent(secretKey)}&response=${encodeURIComponent(token)}&remoteip=${encodeURIComponent(clientIp)}`,
     });
 
     const data = await response.json();
@@ -118,7 +120,7 @@ export default async function handler(req, res) {
       console.warn(`[reCAPTCHA v2 BLOCKED] IP: ${clientIp}, Errors:`, data['error-codes']);
       return res.status(403).json({
         success: false,
-        error: 'Security check failed. Please solve the captcha and try again.'
+        error: 'Security check failed. Please solve the captcha and try again.',
       });
     }
 
@@ -126,7 +128,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      version: 'v2'
+      version: 'v2',
     });
   } catch (error) {
     console.error('Error verifying reCAPTCHA token:', error);

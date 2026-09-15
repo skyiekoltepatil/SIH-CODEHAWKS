@@ -1,5 +1,5 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -12,7 +12,7 @@ export default defineConfig({
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ success: true, score: 1.0, note: 'Local dev bypass' }));
         });
-      }
-    }
+      },
+    },
   ],
-})
+});
