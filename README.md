@@ -115,6 +115,8 @@ npm install
 4. Go to **Project Settings > General**, scroll down, and add a **Web App**.
 5. Copy `.env.example` to `.env` and fill in the Firebase web app values.
 6. Add your reCAPTCHA v2 **site key** to `VITE_RECAPTCHA_V2_SITE_KEY`.
+7. If Firebase App Check is enforced for Authentication, add the separate invisible reCAPTCHA v3
+   site key to `VITE_RECAPTCHA_V3_SITE_KEY`.
 
 Never commit `.env`. It is already excluded by `.gitignore`.
 
