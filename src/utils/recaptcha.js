@@ -6,56 +6,56 @@
  * @returns {Promise<boolean>}
  */
 export async function verifyRecaptcha(token, action = 'login') {
-    if (!token) {
-        throw new Error('Please complete the reCAPTCHA challenge.');
-    }
+  if (!token) {
+    throw new Error('Please complete the reCAPTCHA challenge.');
+  }
 
-    // If running on localhost or 127.0.0.1, bypass backend verification since dev server doesn't host serverless /api
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        console.log('[reCAPTCHA v2] Local development detected — bypassing API verification.');
-        return true;
-    }
+  // If running on localhost or 127.0.0.1, bypass backend verification since dev server doesn't host serverless /api
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('[reCAPTCHA v2] Local development detected — bypassing API verification.');
+    return true;
+  }
+
+  try {
+    const res = await fetch('/api/verify-captcha', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, version: 'v2' }),
+    });
+
+    // Use text() first to avoid "Failed to execute 'json' on 'Response': Unexpected end of JSON input"
+    const text = await res.text();
+    let result = {};
 
     try {
-        const res = await fetch('/api/verify-captcha', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, version: 'v2' })
-        });
-
-        // Use text() first to avoid "Failed to execute 'json' on 'Response': Unexpected end of JSON input"
-        const text = await res.text();
-        let result = {};
-
-        try {
-            result = text ? JSON.parse(text) : {};
-        } catch {
-            console.warn('[reCAPTCHA v2] Non-JSON response received from server, bypassing:', text);
-            return true;
-        }
-
-        if (!res.ok || !result.success) {
-            // If the failure was due to server misconfiguration or backend error, do not block login
-            if (result.error?.includes('misconfiguration') || result.error?.includes('Server error')) {
-                return true;
-            }
-            const errorMsg = result.error || 'Security check failed. Please try again.';
-            console.warn('[reCAPTCHA v2 Failed]:', errorMsg);
-            throw new Error(errorMsg);
-        }
-
-        console.log(`[reCAPTCHA v2 Verified] Action: ${action}`);
-        return true;
-    } catch (err) {
-        if (
-            err.name === 'SyntaxError' ||
-            err.message?.toLowerCase().includes('json') ||
-            err.message?.toLowerCase().includes('failed to fetch')
-        ) {
-            console.warn('[reCAPTCHA v2] Gracefully bypassed due to network/parsing issue:', err.message);
-            return true;
-        }
-        console.error('[reCAPTCHA v2 Error]:', err);
-        throw err;
+      result = text ? JSON.parse(text) : {};
+    } catch {
+      console.warn('[reCAPTCHA v2] Non-JSON response received from server, bypassing:', text);
+      return true;
     }
+
+    if (!res.ok || !result.success) {
+      // If the failure was due to server misconfiguration or backend error, do not block login
+      if (result.error?.includes('misconfiguration') || result.error?.includes('Server error')) {
+        return true;
+      }
+      const errorMsg = result.error || 'Security check failed. Please try again.';
+      console.warn('[reCAPTCHA v2 Failed]:', errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    console.log(`[reCAPTCHA v2 Verified] Action: ${action}`);
+    return true;
+  } catch (err) {
+    if (
+      err.name === 'SyntaxError' ||
+      err.message?.toLowerCase().includes('json') ||
+      err.message?.toLowerCase().includes('failed to fetch')
+    ) {
+      console.warn('[reCAPTCHA v2] Gracefully bypassed due to network/parsing issue:', err.message);
+      return true;
+    }
+    console.error('[reCAPTCHA v2 Error]:', err);
+    throw err;
+  }
 }

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainLayout from './components/MainLayout';
 import Home from './pages/Home';
 import About from './pages/About';
@@ -27,37 +27,41 @@ function App() {
     <AuthProvider>
       <ErrorBoundary>
         <Router>
-        <Routes>
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Home />} />
-            <Route path="about" element={<About />} />
-            <Route path="schemes" element={<Schemes />} />
-            <Route path="schemes/:schemeId" element={<SchemeDetails />} />
-            <Route path="services" element={<Services />} />
-            <Route path="login" element={<Login />} />
-            
-            <Route path="dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }>
-              <Route index element={<DashboardOverview />} />
-              <Route path="applications" element={<Applications />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="ai-assistant" element={<AIAssistant />} />
-              <Route path="id-card" element={<VirtualIdCard />} />
-              <Route path="apply/:schemeId" element={<SchemeApplication />} />
+          <Routes>
+            <Route path="/" element={<MainLayout />}>
+              <Route index element={<Home />} />
+              <Route path="about" element={<About />} />
+              <Route path="schemes" element={<Schemes />} />
+              <Route path="schemes/:schemeId" element={<SchemeDetails />} />
+              <Route path="services" element={<Services />} />
+              <Route path="login" element={<Login />} />
+
+              <Route
+                path="dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<DashboardOverview />} />
+                <Route path="applications" element={<Applications />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="ai-assistant" element={<AIAssistant />} />
+                <Route path="id-card" element={<VirtualIdCard />} />
+                <Route path="apply/:schemeId" element={<SchemeApplication />} />
+              </Route>
+
+              {/* Mock Sites Demo Routes */}
+              <Route
+                path="mock-b"
+                element={<MockSite siteName="Mock Site B" collectionName="mock_site_b" />}
+              />
+              <Route path="mock-c" element={<MockSiteLookup siteName="Mock Site C" />} />
+              <Route path="mock-d" element={<MockSiteSSO siteName="Mock Site D" />} />
             </Route>
-
-
-
-            {/* Mock Sites Demo Routes */}
-            <Route path="mock-b" element={<MockSite siteName="Mock Site B" collectionName="mock_site_b" />} />
-            <Route path="mock-c" element={<MockSiteLookup siteName="Mock Site C" />} />
-            <Route path="mock-d" element={<MockSiteSSO siteName="Mock Site D" />} />
-          </Route>
-        </Routes>
-      </Router>
+          </Routes>
+        </Router>
       </ErrorBoundary>
     </AuthProvider>
   );
