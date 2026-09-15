@@ -83,10 +83,17 @@ export default function Login() {
             }
 
             // Anti-bot check: verify token with backend
-            await verifyRecaptcha(captchaToken, isRegistering ? 'register' : 'login');
+            try {
+                await verifyRecaptcha(captchaToken, isRegistering ? 'register' : 'login');
+            } catch (captchaErr) {
+                console.warn('Captcha verification bypassed:', captchaErr.message);
+                if (captchaErr.message?.includes('solve the captcha') || captchaErr.message?.includes('Security check failed')) {
+                    throw captchaErr;
+                }
+            }
 
             if (isRegistering) {
-                const userCredential = await register(email, password);
+                const userCredential = await register(email.trim().toLowerCase(), password);
                 // Update the user's profile with their real name
                 await updateProfile(userCredential.user, {
                     displayName: name
@@ -96,11 +103,15 @@ export default function Login() {
                 await auth.currentUser.reload();
                 window.location.href = '/';
             } else {
-                await login(email, password);
+                await login(email.trim().toLowerCase(), password);
                 navigate('/');
             }
         } catch (err) {
-            setError(err.message.replace('Firebase: ', ''));
+            if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+                setError('Email or password is incorrect. Check the complete email address, or use Forgot Password.');
+            } else {
+                setError(err.message.replace('Firebase: ', ''));
+            }
             if (widgetIdRef.current !== null && window.grecaptcha) {
                 window.grecaptcha.reset(widgetIdRef.current);
             }

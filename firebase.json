@@ -24,6 +24,13 @@
     ],
     "rewrites": [
       {
+        "source": "/api/verify-captcha",
+        "function": {
+          "functionId": "verifyCaptcha",
+          "region": "asia-south1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

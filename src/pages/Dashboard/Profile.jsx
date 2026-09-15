@@ -7,6 +7,7 @@ import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, RecaptchaVerifier, linkWithPhoneNumber, sendPasswordResetEmail } from 'firebase/auth';
 
 import { uploadDocument } from '../../utils/fileUpload';
+import { verifyRecaptcha } from '../../utils/recaptcha';
 import './Profile.css';
 
 export default function Profile() {
@@ -413,16 +414,8 @@ export default function Profile() {
 
         setIsUpdatingPassword(true);
         try {
-            // Verify reCAPTCHA v2 token with backend
-            const verifyRes = await fetch('/api/verify-captcha', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: passwordCaptchaToken, version: 'v2' })
-            });
-            const verifyResult = await verifyRes.json();
-            if (!verifyRes.ok || !verifyResult.success) {
-                throw new Error(verifyResult.error || "Security check failed. Please verify the captcha again.");
-            }
+            // Verify reCAPTCHA v2 token with backend safely
+            await verifyRecaptcha(passwordCaptchaToken, 'change_password');
 
             const currentUser = auth.currentUser;
             if (!currentUser) throw new Error("User not logged in");
