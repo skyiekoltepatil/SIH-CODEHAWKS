@@ -5,6 +5,16 @@ const MAX_ATTEMPTS = 5;
 
 function isRateLimited(ip) {
   const now = Date.now();
+
+  // Lazy cleanup of expired entries
+  if (rateLimitMap.size > 200) {
+    for (const [key, entry] of rateLimitMap) {
+      if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+        rateLimitMap.delete(key);
+      }
+    }
+  }
+
   const entry = rateLimitMap.get(ip);
 
   if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
@@ -18,16 +28,6 @@ function isRateLimited(ip) {
   }
   return false;
 }
-
-// Periodically clean up stale entries to prevent memory leaks
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, entry] of rateLimitMap) {
-    if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
-      rateLimitMap.delete(ip);
-    }
-  }
-}, 5 * 60 * 1000); // Clean every 5 minutes
 
 export default async function handler(req, res) {
   // --- Security Headers ---
