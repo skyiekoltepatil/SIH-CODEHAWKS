@@ -119,6 +119,10 @@ export default function Login() {
         setError(
           'Email or password is incorrect. Check the complete email address, or use Forgot Password.'
         );
+      } else if (err.code === 'auth/firebase-app-check-token-is-invalid') {
+        setError(
+          'Security configuration is not valid yet. Refresh once, then ask the project owner to verify Firebase App Check.'
+        );
       } else {
         setError(err.message.replace('Firebase: ', ''));
       }
