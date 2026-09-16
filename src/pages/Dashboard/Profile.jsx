@@ -8,13 +8,10 @@ import {
   updatePassword,
   EmailAuthProvider,
   reauthenticateWithCredential,
-  RecaptchaVerifier,
-  linkWithPhoneNumber,
   sendPasswordResetEmail,
 } from 'firebase/auth';
 
 import { uploadDocument } from '../../utils/fileUpload';
-import { verifyRecaptcha } from '../../utils/recaptcha';
 import './Profile.css';
 
 export default function Profile() {
@@ -71,42 +68,6 @@ export default function Profile() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordCaptchaToken, setPasswordCaptchaToken] = useState(null);
-  const passwordCaptchaRef = useRef(null);
-  const passwordWidgetIdRef = useRef(null);
-
-  // Initialize reCAPTCHA v2 checkbox for Change Password
-  useEffect(() => {
-    if (activeSidebar === 'CHANGE_PASSWORD') {
-      const initCaptcha = () => {
-        if (window.grecaptcha && window.grecaptcha.render && passwordCaptchaRef.current) {
-          if (passwordWidgetIdRef.current !== null) {
-            try {
-              window.grecaptcha.reset(passwordWidgetIdRef.current);
-              setPasswordCaptchaToken(null);
-            } catch {}
-            return;
-          }
-          try {
-            const siteKey =
-              import.meta.env.VITE_RECAPTCHA_V2_SITE_KEY || import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-            if (siteKey) {
-              passwordWidgetIdRef.current = window.grecaptcha.render(passwordCaptchaRef.current, {
-                sitekey: siteKey,
-                callback: (token) => setPasswordCaptchaToken(token),
-                'expired-callback': () => setPasswordCaptchaToken(null),
-              });
-            }
-          } catch (err) {
-            console.warn('reCAPTCHA v2 render error:', err);
-          }
-        }
-      };
-
-      const timer = setTimeout(initCaptcha, 250);
-      return () => clearTimeout(timer);
-    }
-  }, [activeSidebar]);
 
   // Contact Details & Phone Auth State
   const [contactData, setContactData] = useState({
@@ -424,16 +385,9 @@ export default function Profile() {
       alert('Password should be at least 6 characters.');
       return;
     }
-    if (!passwordCaptchaToken) {
-      alert("Please complete the 'I'm not a robot' security check before changing your password.");
-      return;
-    }
 
     setIsUpdatingPassword(true);
     try {
-      // Verify reCAPTCHA v2 token with backend safely
-      await verifyRecaptcha(passwordCaptchaToken, 'change_password');
-
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error('User not logged in');
 
@@ -448,10 +402,6 @@ export default function Profile() {
       await updatePassword(currentUser, passwordData.newPassword);
       alert('Password updated successfully!');
       setPasswordData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
-      setPasswordCaptchaToken(null);
-      if (passwordWidgetIdRef.current !== null && window.grecaptcha) {
-        window.grecaptcha.reset(passwordWidgetIdRef.current);
-      }
     } catch (error) {
       console.error('Error updating password:', error);
       if (
@@ -463,78 +413,12 @@ export default function Profile() {
       } else {
         alert('Failed to update password: ' + error.message);
       }
-      if (passwordWidgetIdRef.current !== null && window.grecaptcha) {
-        window.grecaptcha.reset(passwordWidgetIdRef.current);
-      }
-      setPasswordCaptchaToken(null);
     } finally {
       setIsUpdatingPassword(false);
     }
   };
 
-  const setupRecaptcha = () => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-      });
-    }
-  };
 
-  const handleSendOTP = async () => {
-    if (!auth.currentUser) {
-      alert('You must be logged in to verify your phone number!');
-      return;
-    }
-    if (!contactData.phoneNumber || contactData.phoneNumber.length < 10) {
-      alert('Please enter a valid phone number with country code (e.g., +919876543210)');
-      return;
-    }
-    setIsVerifyingPhone(true);
-    try {
-      setupRecaptcha();
-      const appVerifier = window.recaptchaVerifier;
-      const confirmation = await linkWithPhoneNumber(
-        auth.currentUser,
-        contactData.phoneNumber,
-        appVerifier
-      );
-      setConfirmationResult(confirmation);
-      setIsOtpSent(true);
-      alert('OTP sent to your phone!');
-    } catch (error) {
-      console.error('Error sending OTP:', error);
-      alert('Failed to send OTP: ' + error.message);
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = null;
-      }
-    } finally {
-      setIsVerifyingPhone(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (!otp) return;
-    setIsVerifyingPhone(true);
-    try {
-      await confirmationResult.confirm(otp);
-      setPhoneVerified(true);
-      if (user?.uid) {
-        const docRef = doc(db, 'users', user.uid);
-        await setDoc(
-          docRef,
-          { contactDetails: { ...contactData, phoneVerified: true } },
-          { merge: true }
-        );
-      }
-      alert('Phone Number Verified Successfully!');
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
-      alert('Invalid OTP: ' + error.message);
-    } finally {
-      setIsVerifyingPhone(false);
-    }
-  };
 
   const handleSaveContact = async (e) => {
     e.preventDefault();
@@ -1035,9 +919,6 @@ export default function Profile() {
                         ></i>
                       </div>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0 10px' }}>
-                    <div ref={passwordCaptchaRef}></div>
                   </div>
                   <div
                     className="profile-form-footer"
@@ -1566,76 +1447,11 @@ export default function Profile() {
                             onChange={(e) =>
                               setContactData({ ...contactData, phoneNumber: e.target.value })
                             }
-                            disabled={phoneVerified || isOtpSent}
                             maxLength="10"
                           />
                         </div>
-                        {!phoneVerified && !isOtpSent && (
-                          <button
-                            type="button"
-                            className="btn-primary"
-                            onClick={handleSendOTP}
-                            disabled={isVerifyingPhone}
-                            style={{ whiteSpace: 'nowrap' }}
-                          >
-                            {isVerifyingPhone ? 'SENDING...' : 'VERIFY PHONE'}
-                          </button>
-                        )}
-                        {phoneVerified && (
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              background: '#dcfce7',
-                              color: '#166534',
-                              padding: '0 15px',
-                              borderRadius: '6px',
-                              fontWeight: '600',
-                            }}
-                          >
-                            <i
-                              className="fa-solid fa-check-circle"
-                              style={{ marginRight: '8px' }}
-                            ></i>{' '}
-                            VERIFIED
-                          </div>
-                        )}
                       </div>
                     </div>
-
-                    {isOtpSent && !phoneVerified && (
-                      <div
-                        className="ui-input-group"
-                        style={{
-                          background: '#f8fafc',
-                          padding: '20px',
-                          borderRadius: '8px',
-                          border: '1px solid #cbd5e1',
-                          marginTop: '10px',
-                        }}
-                      >
-                        <label style={{ color: '#2563eb' }}>Enter 6-Digit OTP</label>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                          <div className="input-wrapper" style={{ flex: 1 }}>
-                            <i className="fa-solid fa-key"></i>
-                            <input
-                              type="text"
-                              placeholder="123456"
-                              value={otp}
-                              onChange={(e) => setOtp(e.target.value)}
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            className="btn-primary"
-                            onClick={handleVerifyOTP}
-                            disabled={isVerifyingPhone}
-                          >
-                            {isVerifyingPhone ? 'VERIFYING...' : 'SUBMIT OTP'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
 
                     <div className="ui-input-group" style={{ marginTop: '20px' }}>
                       <label>
@@ -1673,8 +1489,6 @@ export default function Profile() {
                       </div>
                     </div>
                   </div>
-
-                  <div id="recaptcha-container"></div>
 
                   <div className="profile-form-footer">
                     <button type="submit" className="btn-primary" disabled={isSaving}>
