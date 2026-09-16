@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth';
 
 import { uploadDocument } from '../../utils/fileUpload';
+import emailjs from '@emailjs/browser';
 import './Profile.css';
 
 export default function Profile() {
@@ -474,14 +475,44 @@ export default function Profile() {
   const [panLoadingText, setPanLoadingText] = useState('');
 
   const sendEmailOTP = async (otp, type) => {
-    // Simulated OTP without EmailJS
-    console.warn(`[DEV MODE] Simulated OTP for ${type} is: ${otp}`);
-    return true;
+    try {
+      const toEmail = user?.email;
+      
+      if (!toEmail) {
+        alert("No registered email address found. Please ensure you are properly logged in.");
+        return false;
+      }
+
+      await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        {
+          to_name: formData.firstName || user?.name || 'User',
+          to_email: toEmail,
+          user_email: toEmail,
+          email: toEmail,
+          reply_to: toEmail,
+          otp: otp,
+          type: type,
+          verification_type: type,
+          doc_type: type,
+          message: `Your OTP for ${type} verification is ${otp}`,
+        },
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+      
+      return true;
+    } catch (err) {
+      console.error('EmailJS Error:', err);
+      alert('Failed to send OTP to your email. Please check your EmailJS configuration or network connection.');
+      return false;
+    }
   };
 
   const handleVerifyAadhaar = async () => {
     if (!identityData.aadhaarNumber) return;
     setAadhaarLoadingText('Connecting to UIDAI...');
+    setAadhaarVerified(false);
 
     setTimeout(async () => {
       if (validateAadhaar(identityData.aadhaarNumber)) {
@@ -528,9 +559,55 @@ export default function Profile() {
     }
   };
 
+  const handleVerifyPhone = async () => {
+    if (!contactData.phoneNumber) return;
+    setIsVerifyingPhone(true);
+    setPhoneVerified(false);
+    setTimeout(async () => {
+      if (contactData.phoneNumber.length === 10) {
+        const generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+        const emailSent = await sendEmailOTP(generatedOTP, 'Phone');
+
+        if (emailSent) {
+          setConfirmationResult(generatedOTP);
+          setIsOtpSent(true);
+        } else {
+          alert('Failed to send OTP to your email. Please check your EmailJS configuration.');
+        }
+      } else {
+        alert('Invalid Phone Number! Must be 10 digits.');
+      }
+      setIsVerifyingPhone(false);
+    }, 1000);
+  };
+
+  const handleSubmitPhoneOtp = async () => {
+    if (!otp) return;
+    if (otp === confirmationResult) {
+      setIsVerifyingPhone(true);
+      setTimeout(async () => {
+        setPhoneVerified(true);
+        setIsOtpSent(false);
+        setIsVerifyingPhone(false);
+        alert('Phone Verified Successfully!');
+        if (user?.uid) {
+          const docRef = doc(db, 'users', user.uid);
+          await setDoc(
+            docRef,
+            { contactDetails: { ...contactData, phoneVerified: true } },
+            { merge: true }
+          );
+        }
+      }, 1000);
+    } else {
+      alert('Verification cancelled or invalid OTP.');
+    }
+  };
+
   const handleVerifyPan = async () => {
     if (!identityData.panNumber) return;
     setPanLoadingText('Connecting to NSDL...');
+    setPanVerified(false);
     setTimeout(async () => {
       const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
       if (panRegex.test(identityData.panNumber.toUpperCase())) {
@@ -1444,14 +1521,95 @@ export default function Profile() {
                             pattern="\d{10}"
                             title="10-digit mobile number"
                             value={contactData.phoneNumber}
-                            onChange={(e) =>
-                              setContactData({ ...contactData, phoneNumber: e.target.value })
-                            }
+                            onChange={(e) => {
+                              setContactData({ ...contactData, phoneNumber: e.target.value });
+                              setPhoneVerified(false);
+                              setIsOtpSent(false);
+                            }}
                             maxLength="10"
                           />
                         </div>
+                        {!isOtpSent && (
+                          <button
+                            type="button"
+                            className="btn-primary"
+                            onClick={handleVerifyPhone}
+                            disabled={isVerifyingPhone}
+                            style={{ whiteSpace: 'nowrap' }}
+                          >
+                            {isVerifyingPhone ? 'SENDING OTP...' : (phoneVerified ? 'RE-VERIFY' : 'VERIFY PHONE')}
+                          </button>
+                        )}
+                        {phoneVerified && (
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              background: '#dcfce7',
+                              color: '#166534',
+                              padding: '0 15px',
+                              borderRadius: '6px',
+                              fontWeight: '600',
+                            }}
+                          >
+                            <i
+                              className="fa-solid fa-check-circle"
+                              style={{ marginRight: '8px' }}
+                            ></i>{' '}
+                            VERIFIED
+                          </div>
+                        )}
                       </div>
+                      <small style={{ color: '#64748b', marginTop: '5px', display: 'block' }}>
+                        We will send an OTP to your email for phone verification.
+                      </small>
                     </div>
+
+                    {isOtpSent && !phoneVerified && (
+                      <div
+                        className="ui-input-group"
+                        style={{
+                          background: '#f8fafc',
+                          padding: '20px',
+                          borderRadius: '8px',
+                          border: '1px solid #cbd5e1',
+                          marginTop: '20px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <label style={{ color: '#2563eb', margin: 0 }}>
+                            Enter 6-Digit OTP sent to your email
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleVerifyPhone}
+                            disabled={isVerifyingPhone}
+                            style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: '500', padding: 0, fontSize: '0.85rem', textDecoration: 'underline' }}
+                          >
+                            Resend OTP
+                          </button>
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <div className="input-wrapper" style={{ flex: 1 }}>
+                            <i className="fa-solid fa-key"></i>
+                            <input
+                              type="text"
+                              placeholder="123456"
+                              value={otp}
+                              onChange={(e) => setOtp(e.target.value)}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-primary"
+                            onClick={handleSubmitPhoneOtp}
+                            disabled={isVerifyingPhone}
+                          >
+                            {isVerifyingPhone ? 'VERIFYING...' : 'SUBMIT OTP'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="ui-input-group" style={{ marginTop: '20px' }}>
                       <label>
@@ -1534,11 +1692,10 @@ export default function Profile() {
                                 : identityData.aadhaarNumber
                             }
                             onChange={(e) => {
-                              if (!aadhaarVerified) {
-                                setIdentityData({ ...identityData, aadhaarNumber: e.target.value });
-                              }
+                              setIdentityData({ ...identityData, aadhaarNumber: e.target.value });
+                              setAadhaarVerified(false);
+                              setIsAadhaarOtpSent(false);
                             }}
-                            disabled={aadhaarVerified}
                             maxLength="12"
                           />
                           {aadhaarVerified && (
@@ -1555,7 +1712,7 @@ export default function Profile() {
                             ></i>
                           )}
                         </div>
-                        {!aadhaarVerified && !isAadhaarOtpSent && (
+                        {!isAadhaarOtpSent && (
                           <button
                             type="button"
                             className="btn-primary"
@@ -1563,7 +1720,7 @@ export default function Profile() {
                             disabled={aadhaarLoadingText !== ''}
                             style={{ whiteSpace: 'nowrap' }}
                           >
-                            {aadhaarLoadingText !== '' ? aadhaarLoadingText : 'VERIFY AADHAAR'}
+                            {aadhaarLoadingText !== '' ? aadhaarLoadingText : (aadhaarVerified ? 'RE-VERIFY' : 'VERIFY AADHAAR')}
                           </button>
                         )}
                         {aadhaarVerified && (
@@ -1603,9 +1760,19 @@ export default function Profile() {
                           marginBottom: '20px',
                         }}
                       >
-                        <label style={{ color: '#2563eb' }}>
-                          Enter 6-Digit OTP sent to your email
-                        </label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <label style={{ color: '#2563eb', margin: 0 }}>
+                            Enter 6-Digit OTP sent to your email
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleVerifyAadhaar}
+                            disabled={aadhaarLoadingText !== ''}
+                            style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: '500', padding: 0, fontSize: '0.85rem', textDecoration: 'underline' }}
+                          >
+                            Resend OTP
+                          </button>
+                        </div>
                         <div style={{ display: 'flex', gap: '10px' }}>
                           <div className="input-wrapper" style={{ flex: 1 }}>
                             <i className="fa-solid fa-key"></i>
@@ -1652,17 +1819,18 @@ export default function Profile() {
                             pattern="[a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}"
                             title="Format: ABCDE1234F"
                             value={identityData.panNumber}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setIdentityData({
                                 ...identityData,
                                 panNumber: e.target.value.toUpperCase(),
-                              })
-                            }
-                            disabled={panVerified}
+                              });
+                              setPanVerified(false);
+                              setIsPanOtpSent(false);
+                            }}
                             maxLength="10"
                           />
                         </div>
-                        {!panVerified && !isPanOtpSent && (
+                        {!isPanOtpSent && (
                           <button
                             type="button"
                             className="btn-primary"
@@ -1670,7 +1838,7 @@ export default function Profile() {
                             disabled={panLoadingText !== ''}
                             style={{ whiteSpace: 'nowrap' }}
                           >
-                            {panLoadingText !== '' ? panLoadingText : 'VERIFY PAN'}
+                            {panLoadingText !== '' ? panLoadingText : (panVerified ? 'RE-VERIFY' : 'VERIFY PAN')}
                           </button>
                         )}
                         {panVerified && (
@@ -1706,9 +1874,19 @@ export default function Profile() {
                           marginTop: '-10px',
                         }}
                       >
-                        <label style={{ color: '#2563eb' }}>
-                          Enter 6-Digit OTP sent to your email
-                        </label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <label style={{ color: '#2563eb', margin: 0 }}>
+                            Enter 6-Digit OTP sent to your email
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleVerifyPan}
+                            disabled={panLoadingText !== ''}
+                            style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: '500', padding: 0, fontSize: '0.85rem', textDecoration: 'underline' }}
+                          >
+                            Resend OTP
+                          </button>
+                        </div>
                         <div style={{ display: 'flex', gap: '10px' }}>
                           <div className="input-wrapper" style={{ flex: 1 }}>
                             <i className="fa-solid fa-key"></i>

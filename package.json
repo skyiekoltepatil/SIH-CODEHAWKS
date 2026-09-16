@@ -12,6 +12,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@visx/gradient": "^4.0.0",
     "@visx/group": "^4.0.0",
     "@visx/pattern": "^4.0.0",
