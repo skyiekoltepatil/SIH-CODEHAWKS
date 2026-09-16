@@ -4,7 +4,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
-import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
 // Web app's Firebase configuration loaded from environment variables
 const firebaseConfig = {
@@ -31,7 +31,7 @@ if (isLocalHost && import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN) {
 let appCheck;
 if (appCheckSiteKey) {
   appCheck = initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(appCheckSiteKey),
+    provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
     isTokenAutoRefreshEnabled: true,
   });
 } else {
