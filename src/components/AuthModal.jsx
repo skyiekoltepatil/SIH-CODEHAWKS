@@ -1,6 +1,5 @@
 import { useState, useContext, useRef, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { verifyRecaptcha } from '../utils/recaptcha';
 
 export default function AuthModal({ onClose }) {
   const { login } = useContext(AuthContext);
@@ -8,62 +7,16 @@ export default function AuthModal({ onClose }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const [captchaToken, setCaptchaToken] = useState(null);
-  const captchaRef = useRef(null);
-  const widgetIdRef = useRef(null);
-
-  useEffect(() => {
-    const initCaptcha = () => {
-      if (window.grecaptcha && window.grecaptcha.render && captchaRef.current) {
-        if (widgetIdRef.current !== null) {
-          try {
-            window.grecaptcha.reset(widgetIdRef.current);
-            setCaptchaToken(null);
-          } catch {}
-          return;
-        }
-        try {
-          const siteKey =
-            import.meta.env.VITE_RECAPTCHA_V2_SITE_KEY || import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-          if (siteKey) {
-            widgetIdRef.current = window.grecaptcha.render(captchaRef.current, {
-              sitekey: siteKey,
-              callback: (token) => setCaptchaToken(token),
-              'expired-callback': () => setCaptchaToken(null),
-            });
-          }
-        } catch (err) {
-          console.warn('reCAPTCHA v2 render error:', err);
-        }
-      }
-    };
-
-    // Delay to ensure the modal DOM is fully painted
-    const timer = setTimeout(initCaptcha, 250);
-    return () => clearTimeout(timer);
-  }, [tab]); // Re-initialize if they switch tabs and the ref remounts
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      if (!captchaToken) {
-        setError('Please verify that you are not a robot.');
-        setIsLoading(false);
-        return;
-      }
-      // Anti-bot check: verify token with backend
-      await verifyRecaptcha(captchaToken, 'login');
       await login();
       onClose();
     } catch (err) {
       setError(err.message || 'Security verification failed.');
-      if (widgetIdRef.current !== null && window.grecaptcha) {
-        window.grecaptcha.reset(widgetIdRef.current);
-      }
-      setCaptchaToken(null);
     } finally {
       setIsLoading(false);
     }
@@ -75,21 +28,10 @@ export default function AuthModal({ onClose }) {
     setIsLoading(true);
 
     try {
-      if (!captchaToken) {
-        setError('Please verify that you are not a robot.');
-        setIsLoading(false);
-        return;
-      }
-      // Anti-bot check: verify token with backend
-      await verifyRecaptcha(captchaToken, 'register');
       await login();
       onClose();
     } catch (err) {
       setError(err.message || 'Security verification failed.');
-      if (widgetIdRef.current !== null && window.grecaptcha) {
-        window.grecaptcha.reset(widgetIdRef.current);
-      }
-      setCaptchaToken(null);
     } finally {
       setIsLoading(false);
     }
@@ -163,9 +105,6 @@ export default function AuthModal({ onClose }) {
                   Forgot Password?
                 </a>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-                <div ref={captchaRef}></div>
-              </div>
               <button type="submit" className="btn-primary full-width" disabled={isLoading}>
                 {isLoading ? 'Verifying Security...' : 'Secure Login'}
               </button>
@@ -183,9 +122,6 @@ export default function AuthModal({ onClose }) {
               <div className="form-group">
                 <label>Create Password</label>
                 <input type="password" placeholder="Min 8 characters" required />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-                <div ref={captchaRef}></div>
               </div>
               <button type="submit" className="btn-primary full-width" disabled={isLoading}>
                 {isLoading ? 'Verifying Security...' : 'Register Now'}

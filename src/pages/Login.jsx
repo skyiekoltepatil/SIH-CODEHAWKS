@@ -3,7 +3,6 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase';
-import { verifyRecaptcha } from '../utils/recaptcha';
 
 export default function Login() {
   const { login, register } = useContext(AuthContext);
@@ -17,40 +16,6 @@ export default function Login() {
   const [resetMessage, setResetMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  const [captchaToken, setCaptchaToken] = useState(null);
-  const captchaRef = useRef(null);
-  const widgetIdRef = useRef(null);
-
-  useEffect(() => {
-    const initCaptcha = () => {
-      if (window.grecaptcha && window.grecaptcha.render && captchaRef.current) {
-        if (widgetIdRef.current !== null) {
-          try {
-            window.grecaptcha.reset(widgetIdRef.current);
-            setCaptchaToken(null);
-          } catch {}
-          return;
-        }
-        try {
-          const siteKey =
-            import.meta.env.VITE_RECAPTCHA_V2_SITE_KEY || import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-          if (siteKey) {
-            widgetIdRef.current = window.grecaptcha.render(captchaRef.current, {
-              sitekey: siteKey,
-              callback: (token) => setCaptchaToken(token),
-              'expired-callback': () => setCaptchaToken(null),
-            });
-          }
-        } catch (err) {
-          console.warn('reCAPTCHA v2 render error:', err);
-        }
-      }
-    };
-
-    const timer = setTimeout(initCaptcha, 250);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleForgotPassword = async () => {
     if (!email) {
@@ -77,25 +42,6 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      if (!captchaToken) {
-        setError('Please verify that you are not a robot.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Anti-bot check: verify token with backend
-      try {
-        await verifyRecaptcha(captchaToken, isRegistering ? 'register' : 'login');
-      } catch (captchaErr) {
-        console.warn('Captcha verification bypassed:', captchaErr.message);
-        if (
-          captchaErr.message?.includes('solve the captcha') ||
-          captchaErr.message?.includes('Security check failed')
-        ) {
-          throw captchaErr;
-        }
-      }
-
       if (isRegistering) {
         const userCredential = await register(email.trim().toLowerCase(), password);
         // Update the user's profile with their real name
@@ -126,10 +72,6 @@ export default function Login() {
       } else {
         setError(err.message.replace('Firebase: ', ''));
       }
-      if (widgetIdRef.current !== null && window.grecaptcha) {
-        window.grecaptcha.reset(widgetIdRef.current);
-      }
-      setCaptchaToken(null);
     } finally {
       setIsLoading(false);
     }
@@ -347,10 +289,6 @@ export default function Login() {
               onClick={() => setShowPassword(!showPassword)}
             ></i>
           </div>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-          <div ref={captchaRef}></div>
         </div>
 
         <button
