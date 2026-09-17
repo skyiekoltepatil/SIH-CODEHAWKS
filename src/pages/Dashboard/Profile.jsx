@@ -163,6 +163,8 @@ export default function Profile() {
   };
 
   const [isUploadingDocs, setIsUploadingDocs] = useState(false);
+  const [showLockConfirmModal, setShowLockConfirmModal] = useState(false);
+  const [showUnlockConfirmModal, setShowUnlockConfirmModal] = useState(false);
 
   const handleUploadAllDocuments = async () => {
     if (!user?.uid) return;
@@ -206,18 +208,11 @@ export default function Profile() {
   };
 
   const handleLockProfile = async () => {
-    if (
-      !window.confirm(
-        'Are you sure you want to lock your profile? You will not be able to edit any details after locking.'
-      )
-    ) {
-      return;
-    }
     setIsLockingProfile(true);
     try {
       await setDoc(doc(db, 'users', user.uid), { isProfileLocked: true }, { merge: true });
       setIsProfileLocked(true);
-      alert('Profile successfully locked and verified!');
+      setShowLockConfirmModal(false);
     } catch (error) {
       console.error('Error locking profile:', error);
       alert('Failed to lock profile. Please try again.');
@@ -227,18 +222,11 @@ export default function Profile() {
   };
 
   const handleUnlockProfile = async () => {
-    if (
-      !window.confirm(
-        'Are you sure you want to unlock your profile? You will be able to edit your details again.'
-      )
-    ) {
-      return;
-    }
     setIsLockingProfile(true);
     try {
       await setDoc(doc(db, 'users', user.uid), { isProfileLocked: false }, { merge: true });
       setIsProfileLocked(false);
-      alert('Profile successfully unlocked!');
+      setShowUnlockConfirmModal(false);
     } catch (error) {
       console.error('Error unlocking profile:', error);
       alert('Failed to unlock profile. Please try again.');
@@ -793,7 +781,7 @@ export default function Profile() {
             </div>
             {isProfileLocked ? (
               <button
-                onClick={handleUnlockProfile}
+                onClick={() => setShowUnlockConfirmModal(true)}
                 disabled={isLockingProfile}
                 style={{
                   padding: '10px 20px',
@@ -809,7 +797,7 @@ export default function Profile() {
               </button>
             ) : (
               <button
-                onClick={handleLockProfile}
+                onClick={() => setShowLockConfirmModal(true)}
                 disabled={isLockingProfile}
                 style={{
                   padding: '10px 20px',
@@ -2458,6 +2446,66 @@ export default function Profile() {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lock Profile Confirmation Modal */}
+      {showLockConfirmModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ background: '#fef3c7', color: '#d97706', padding: '8px', borderRadius: '8px', display: 'flex' }}>
+                  <i className="fa-solid fa-lock" style={{ fontSize: '1.25rem' }}></i>
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>Lock Profile</h3>
+              </div>
+              <button type="button" onClick={() => setShowLockConfirmModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.1rem' }}>
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <p style={{ color: '#475569', marginBottom: '32px', lineHeight: '1.6' }}>
+              Are you sure you want to lock your profile? You will <strong style={{ color: '#1e293b' }}>not be able to edit any details</strong> after locking.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button type="button" onClick={() => setShowLockConfirmModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f1f5f9', color: '#475569', fontWeight: '600', cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button type="button" onClick={handleLockProfile} disabled={isLockingProfile} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#d97706', color: 'white', fontWeight: '600', cursor: isLockingProfile ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isLockingProfile ? <><i className="fa-solid fa-spinner fa-spin"></i> Locking...</> : <><i className="fa-solid fa-lock"></i> Yes, Lock</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unlock Profile Confirmation Modal */}
+      {showUnlockConfirmModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ background: '#d1fae5', color: '#059669', padding: '8px', borderRadius: '8px', display: 'flex' }}>
+                  <i className="fa-solid fa-lock-open" style={{ fontSize: '1.25rem' }}></i>
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>Unlock Profile</h3>
+              </div>
+              <button type="button" onClick={() => setShowUnlockConfirmModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.1rem' }}>
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <p style={{ color: '#475569', marginBottom: '32px', lineHeight: '1.6' }}>
+              Are you sure you want to unlock your profile? You will be able to edit your details again.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button type="button" onClick={() => setShowUnlockConfirmModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f1f5f9', color: '#475569', fontWeight: '600', cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button type="button" onClick={handleUnlockProfile} disabled={isLockingProfile} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#059669', color: 'white', fontWeight: '600', cursor: isLockingProfile ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isLockingProfile ? <><i className="fa-solid fa-spinner fa-spin"></i> Unlocking...</> : <><i className="fa-solid fa-unlock"></i> Yes, Unlock</>}
+              </button>
             </div>
           </div>
         </div>

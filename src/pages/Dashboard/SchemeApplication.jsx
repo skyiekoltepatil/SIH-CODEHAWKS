@@ -20,17 +20,41 @@ export default function SchemeApplication() {
   const [uploadProgress, setUploadProgress] = useState('');
 
   const [formData, setFormData] = useState({
+    // Personal Details (Step 3)
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
     aadhaar: '',
-    documents: [], // Array of File objects or { name, url, isFromProfile: true }
+    dob: '',
+    address: '',
+    
+    // Academic Details (Step 4)
+    collegeName: '',
+    courseName: '',
+    currentYear: '',
+    enrollmentNumber: '',
+    previousMarks: '',
+
+    // Family & Income Details (Step 5)
+    familyIncome: '',
+    fatherOccupation: '',
+    motherOccupation: '',
+
+    // Documents (Step 6)
+    documents: [],
+
+    // Bank Details (Step 7)
+    accountHolderName: '',
+    accountNumber: '',
+    ifscCode: '',
+    bankName: '',
   });
 
   const [profileDocuments, setProfileDocuments] = useState(null);
   const [isFetchModalOpen, setIsFetchModalOpen] = useState(false);
   const [selectedDocsForFetch, setSelectedDocsForFetch] = useState([]);
+  const [formError, setFormError] = useState('');
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -62,13 +86,39 @@ export default function SchemeApplication() {
   }, [user]);
 
   const handleNext = () => {
-    if (currentStep === 2 && formData.documents.length === 0) {
-      alert('It is mandatory to upload at least 1 document.');
-      return;
+    setFormError('');
+    if (currentStep === 1) {
+      if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.aadhaar || !formData.dob || !formData.address) {
+        setFormError('Please fill all the personal details before proceeding.');
+        return;
+      }
+    } else if (currentStep === 2) {
+      if (!formData.collegeName || !formData.courseName || !formData.currentYear || !formData.enrollmentNumber || !formData.previousMarks) {
+        setFormError('Please fill all the academic details before proceeding.');
+        return;
+      }
+    } else if (currentStep === 3) {
+      if (!formData.familyIncome || !formData.fatherOccupation || !formData.motherOccupation) {
+        setFormError('Please fill all the family & income details before proceeding.');
+        return;
+      }
+    } else if (currentStep === 4) {
+      if (formData.documents.length === 0) {
+        setFormError('It is mandatory to upload at least 1 document.');
+        return;
+      }
+    } else if (currentStep === 5) {
+      if (!formData.accountHolderName || !formData.bankName || !formData.accountNumber || !formData.ifscCode) {
+        setFormError('Please fill all the bank details before proceeding.');
+        return;
+      }
     }
     setCurrentStep((prev) => prev + 1);
   };
-  const handlePrev = () => setCurrentStep((prev) => prev - 1);
+  const handlePrev = () => {
+    setFormError('');
+    setCurrentStep((prev) => prev - 1);
+  };
 
   const handleFileSelect = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -152,19 +202,20 @@ export default function SchemeApplication() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    setFormError('');
     if (!user?.uid) {
-      alert('Please log in to submit an application.');
+      setFormError('Please log in to submit an application.');
       return;
     }
 
     if (formData.documents.length === 0) {
-      alert('It is mandatory to upload at least 1 document.');
-      setCurrentStep(2);
+      setFormError('It is mandatory to upload at least 1 document.');
+      setCurrentStep(4);
       return;
     }
 
     if (!isDeclared) {
-      alert('Please declare that the information is correct by checking the box.');
+      setFormError('Please declare that the information is correct by checking the box.');
       return;
     }
 
@@ -211,12 +262,36 @@ export default function SchemeApplication() {
         status: 'Pending',
         desc: 'Application submitted and under review',
         currentStep: 1,
-        totalSteps: 4,
+        totalSteps: 6,
         applicantName:
           `${formData.firstName} ${formData.lastName}`.trim() || user.displayName || 'Applicant',
         applicantEmail: formData.email || user.email || '',
         applicantPhone: formData.phone || '',
         applicantAadhaar: formData.aadhaar || '',
+        applicantDob: formData.dob || '',
+        applicantAddress: formData.address || '',
+        
+        academicDetails: {
+          collegeName: formData.collegeName,
+          courseName: formData.courseName,
+          currentYear: formData.currentYear,
+          enrollmentNumber: formData.enrollmentNumber,
+          previousMarks: formData.previousMarks,
+        },
+        
+        familyIncomeDetails: {
+          familyIncome: formData.familyIncome,
+          fatherOccupation: formData.fatherOccupation,
+          motherOccupation: formData.motherOccupation,
+        },
+        
+        bankDetails: {
+          accountHolderName: formData.accountHolderName,
+          accountNumber: formData.accountNumber,
+          ifscCode: formData.ifscCode,
+          bankName: formData.bankName,
+        },
+        
         documents: uploadedDocumentUrls,
       };
 
@@ -271,20 +346,36 @@ export default function SchemeApplication() {
         <p>Complete the steps below to submit your application.</p>
       </div>
 
-      <div className="stepper-ui">
+      <div className="application-main-content">
+        <div className="stepper-ui vertical-stepper">
         <div className={`step ${currentStep >= 1 ? 'active' : ''}`}>
-          <div className="step-circle">1</div>
-          <span>Basic Details</span>
+          <div className="step-circle">{currentStep > 1 ? <i className="fa-solid fa-check"></i> : 1}</div>
+          <span>Personal Details</span>
         </div>
         <div className={`step-line ${currentStep >= 2 ? 'active' : ''}`}></div>
         <div className={`step ${currentStep >= 2 ? 'active' : ''}`}>
-          <div className="step-circle">2</div>
-          <span>Documents</span>
+          <div className="step-circle">{currentStep > 2 ? <i className="fa-solid fa-check"></i> : 2}</div>
+          <span>Academic</span>
         </div>
         <div className={`step-line ${currentStep >= 3 ? 'active' : ''}`}></div>
         <div className={`step ${currentStep >= 3 ? 'active' : ''}`}>
-          <div className="step-circle">3</div>
-          <span>Review & Submit</span>
+          <div className="step-circle">{currentStep > 3 ? <i className="fa-solid fa-check"></i> : 3}</div>
+          <span>Family</span>
+        </div>
+        <div className={`step-line ${currentStep >= 4 ? 'active' : ''}`}></div>
+        <div className={`step ${currentStep >= 4 ? 'active' : ''}`}>
+          <div className="step-circle">{currentStep > 4 ? <i className="fa-solid fa-check"></i> : 4}</div>
+          <span>Documents</span>
+        </div>
+        <div className={`step-line ${currentStep >= 5 ? 'active' : ''}`}></div>
+        <div className={`step ${currentStep >= 5 ? 'active' : ''}`}>
+          <div className="step-circle">{currentStep > 5 ? <i className="fa-solid fa-check"></i> : 5}</div>
+          <span>Bank Details</span>
+        </div>
+        <div className={`step-line ${currentStep >= 6 ? 'active' : ''}`}></div>
+        <div className={`step ${currentStep >= 6 ? 'active' : ''}`}>
+          <div className="step-circle">6</div>
+          <span>Review</span>
         </div>
       </div>
 
@@ -344,17 +435,178 @@ export default function SchemeApplication() {
                 />
                 <label htmlFor="aadhaar">Aadhaar Number</label>
               </div>
+              <div className="app-floating-input">
+                <input
+                  type="date"
+                  id="dob"
+                  value={formData.dob}
+                  onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="dob">Date of Birth</label>
+              </div>
+              <div className="app-floating-input" style={{ gridColumn: '1 / -1' }}>
+                <input
+                  type="text"
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="address">Permanent Address</label>
+              </div>
             </div>
           </div>
         )}
 
         {currentStep === 2 && (
           <div className="step-content form-slide-in">
+            <h3>Academic Details</h3>
+            <p className="step-desc">Provide your current and previous academic records.</p>
+            <div className="app-form-grid">
+              <div className="app-floating-input" style={{ gridColumn: '1 / -1' }}>
+                <input
+                  type="text"
+                  id="collegeName"
+                  value={formData.collegeName}
+                  onChange={(e) => setFormData({ ...formData, collegeName: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="collegeName">College / Institute Name</label>
+              </div>
+              <div className="app-floating-input">
+                <input
+                  type="text"
+                  id="courseName"
+                  value={formData.courseName}
+                  onChange={(e) => setFormData({ ...formData, courseName: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="courseName">Course Name</label>
+              </div>
+              <div className="app-floating-input">
+                <input
+                  type="text"
+                  id="currentYear"
+                  value={formData.currentYear}
+                  onChange={(e) => setFormData({ ...formData, currentYear: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="currentYear">Current Year (e.g. 1st, 2nd)</label>
+              </div>
+              <div className="app-floating-input">
+                <input
+                  type="text"
+                  id="enrollmentNumber"
+                  value={formData.enrollmentNumber}
+                  onChange={(e) => setFormData({ ...formData, enrollmentNumber: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="enrollmentNumber">Enrollment Number</label>
+              </div>
+              <div className="app-floating-input">
+                <input
+                  type="text"
+                  id="previousMarks"
+                  value={formData.previousMarks}
+                  onChange={(e) => setFormData({ ...formData, previousMarks: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="previousMarks">Previous Year Marks (%)</label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 3 && (
+          <div className="step-content form-slide-in">
+            <h3>Family & Income Details</h3>
+            <p className="step-desc">Provide details regarding your family income.</p>
+            <div className="app-form-grid">
+              <div className="app-floating-input">
+                <input
+                  type="number"
+                  id="familyIncome"
+                  value={formData.familyIncome}
+                  onChange={(e) => setFormData({ ...formData, familyIncome: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="familyIncome">Annual Family Income (₹)</label>
+              </div>
+              <div className="app-floating-input">
+                <input
+                  type="text"
+                  id="fatherOccupation"
+                  value={formData.fatherOccupation}
+                  onChange={(e) => setFormData({ ...formData, fatherOccupation: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="fatherOccupation">Father's Occupation</label>
+              </div>
+              <div className="app-floating-input">
+                <input
+                  type="text"
+                  id="motherOccupation"
+                  value={formData.motherOccupation}
+                  onChange={(e) => setFormData({ ...formData, motherOccupation: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="motherOccupation">Mother's Occupation</label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 4 && (
+          <div className="step-content form-slide-in">
             <h3>Upload Documents</h3>
             <p className="step-desc">
               Please upload the required documents for verification. At least 1 document is
               mandatory.
             </p>
+
+            <div style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '24px'
+            }}>
+              <h4 style={{ margin: '0 0 12px 0', color: '#1e293b', fontSize: '1rem' }}>Documents Needed:</h4>
+              <ul style={{ margin: 0, paddingLeft: '0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[
+                  'Aadhaar Card',
+                  'PAN Card',
+                  'Income Certificate',
+                  'Bank Passbook / Cheque',
+                  'Passport Size Photograph'
+                ].map(docName => {
+                  const isUploaded = formData.documents.some(d => {
+                     const fName = (d.name || '').toLowerCase();
+                     const oName = (d.originalFilename || '').toLowerCase();
+                     if (docName === 'Aadhaar Card') return fName.includes('aadhaar') || oName.includes('aadhaar');
+                     if (docName === 'PAN Card') return fName.includes('pan') || oName.includes('pan');
+                     if (docName === 'Income Certificate') return fName.includes('income') || oName.includes('income');
+                     if (docName === 'Bank Passbook / Cheque') return fName.includes('bank') || fName.includes('passbook') || fName.includes('cheque') || oName.includes('bank') || oName.includes('passbook') || oName.includes('cheque');
+                     if (docName === 'Passport Size Photograph') return fName.includes('photo') || fName.includes('passport') || oName.includes('photo') || oName.includes('passport');
+                     return false;
+                  });
+                  return (
+                    <li key={docName} style={{ 
+                      color: isUploaded ? '#16a34a' : '#64748b', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '10px',
+                      listStyle: 'none',
+                      fontWeight: isUploaded ? '600' : '400'
+                    }}>
+                      <i className={`fa-solid ${isUploaded ? 'fa-circle-check' : 'fa-circle'}`} style={{ fontSize: '1.1rem' }}></i>
+                      {docName}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
 
             <div style={{ display: 'flex', gap: '15px', marginTop: '20px', marginBottom: '30px' }}>
               <input
@@ -454,19 +706,54 @@ export default function SchemeApplication() {
                           </span>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFile(idx)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#ef4444',
-                          cursor: 'pointer',
-                        }}
-                        title="Remove file"
-                      >
-                        <i className="fa-solid fa-xmark"></i>
-                      </button>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            try {
+                              const url = file.url || (file.size ? URL.createObjectURL(file) : '');
+                              if (url) {
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.target = '_blank';
+                                a.rel = 'noopener noreferrer';
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                              } else {
+                                alert("Cannot preview this file.");
+                              }
+                            } catch (e) {
+                              console.error('Preview error:', e);
+                              alert('Could not preview file.');
+                            }
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#3b82f6',
+                            cursor: 'pointer',
+                            padding: '4px'
+                          }}
+                          title="Preview file"
+                        >
+                          <i className="fa-solid fa-eye"></i>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeFile(idx)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            padding: '4px'
+                          }}
+                          title="Remove file"
+                        >
+                          <i className="fa-solid fa-xmark"></i>
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -475,16 +762,64 @@ export default function SchemeApplication() {
           </div>
         )}
 
-        {currentStep === 3 && (
+        {currentStep === 5 && (
+          <div className="step-content form-slide-in">
+            <h3>Bank Details</h3>
+            <p className="step-desc">Enter bank details for Direct Benefit Transfer (DBT).</p>
+            <div className="app-form-grid">
+              <div className="app-floating-input">
+                <input
+                  type="text"
+                  id="accountHolderName"
+                  value={formData.accountHolderName}
+                  onChange={(e) => setFormData({ ...formData, accountHolderName: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="accountHolderName">Account Holder Name</label>
+              </div>
+              <div className="app-floating-input">
+                <input
+                  type="text"
+                  id="bankName"
+                  value={formData.bankName}
+                  onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="bankName">Bank Name</label>
+              </div>
+              <div className="app-floating-input">
+                <input
+                  type="text"
+                  id="accountNumber"
+                  value={formData.accountNumber}
+                  onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="accountNumber">Account Number</label>
+              </div>
+              <div className="app-floating-input">
+                <input
+                  type="text"
+                  id="ifscCode"
+                  value={formData.ifscCode}
+                  onChange={(e) => setFormData({ ...formData, ifscCode: e.target.value })}
+                  placeholder=" "
+                />
+                <label htmlFor="ifscCode">IFSC Code</label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 6 && (
           <div className="step-content form-slide-in">
             <h3>Review Application</h3>
             <p className="step-desc">Please review your details before final submission.</p>
-            <div className="review-box">
+            <div className="review-section-box">
+              <h4><i className="fa-solid fa-user"></i> Personal Details</h4>
               <div className="review-item">
                 <span className="review-label">Name:</span>
-                <strong>
-                  {formData.firstName} {formData.lastName}
-                </strong>
+                <strong>{formData.firstName} {formData.lastName}</strong>
               </div>
               <div className="review-item">
                 <span className="review-label">Email:</span>
@@ -492,16 +827,90 @@ export default function SchemeApplication() {
               </div>
               <div className="review-item">
                 <span className="review-label">Phone:</span>
-                <strong>{formData.phone || 'Not provided'}</strong>
+                <strong>{formData.phone}</strong>
               </div>
               <div className="review-item">
                 <span className="review-label">Aadhaar:</span>
-                <strong>{formData.aadhaar || 'Not provided'}</strong>
+                <strong>{formData.aadhaar}</strong>
               </div>
               <div className="review-item">
-                <span className="review-label">Documents:</span>
-                <strong>{formData.documents.length} uploaded</strong>
+                <span className="review-label">Date of Birth:</span>
+                <strong>{formData.dob}</strong>
               </div>
+              <div className="review-item">
+                <span className="review-label">Address:</span>
+                <strong>{formData.address}</strong>
+              </div>
+            </div>
+
+            <div className="review-section-box">
+              <h4><i className="fa-solid fa-graduation-cap"></i> Academic Details</h4>
+              <div className="review-item">
+                <span className="review-label">College:</span>
+                <strong>{formData.collegeName}</strong>
+              </div>
+              <div className="review-item">
+                <span className="review-label">Course:</span>
+                <strong>{formData.courseName}</strong>
+              </div>
+              <div className="review-item">
+                <span className="review-label">Current Year:</span>
+                <strong>{formData.currentYear}</strong>
+              </div>
+              <div className="review-item">
+                <span className="review-label">Enrollment No:</span>
+                <strong>{formData.enrollmentNumber}</strong>
+              </div>
+              <div className="review-item">
+                <span className="review-label">Previous Marks:</span>
+                <strong>{formData.previousMarks}%</strong>
+              </div>
+            </div>
+
+            <div className="review-section-box">
+              <h4><i className="fa-solid fa-users"></i> Family & Income Details</h4>
+              <div className="review-item">
+                <span className="review-label">Family Income:</span>
+                <strong>₹{formData.familyIncome}</strong>
+              </div>
+              <div className="review-item">
+                <span className="review-label">Father's Occupation:</span>
+                <strong>{formData.fatherOccupation}</strong>
+              </div>
+              <div className="review-item">
+                <span className="review-label">Mother's Occupation:</span>
+                <strong>{formData.motherOccupation}</strong>
+              </div>
+            </div>
+
+            <div className="review-section-box">
+              <h4><i className="fa-solid fa-building-columns"></i> Bank Details</h4>
+              <div className="review-item">
+                <span className="review-label">Account Holder:</span>
+                <strong>{formData.accountHolderName}</strong>
+              </div>
+              <div className="review-item">
+                <span className="review-label">Bank Name:</span>
+                <strong>{formData.bankName}</strong>
+              </div>
+              <div className="review-item">
+                <span className="review-label">Account No:</span>
+                <strong>{formData.accountNumber}</strong>
+              </div>
+              <div className="review-item">
+                <span className="review-label">IFSC Code:</span>
+                <strong>{formData.ifscCode}</strong>
+              </div>
+            </div>
+
+            <div className="review-section-box">
+              <h4><i className="fa-solid fa-file-lines"></i> Uploaded Documents</h4>
+              {formData.documents.map((doc, idx) => (
+                <div className="review-item" key={idx}>
+                  <span className="review-label">Document {idx + 1}:</span>
+                  <strong>{doc.name}</strong>
+                </div>
+              ))}
             </div>
             <div className="declaration-box">
               <input
@@ -517,6 +926,13 @@ export default function SchemeApplication() {
           </div>
         )}
 
+        {formError && (
+          <div style={{ color: '#ef4444', background: '#fee2e2', padding: '12px', borderRadius: '8px', marginTop: '20px', border: '1px solid #fca5a5' }}>
+            <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: '8px' }}></i>
+            {formError}
+          </div>
+        )}
+
         <div className="step-footer">
           {currentStep > 1 ? (
             <button type="button" className="btn-outline" onClick={handlePrev}>
@@ -526,7 +942,7 @@ export default function SchemeApplication() {
             <div></div>
           )}
 
-          {currentStep < 3 ? (
+          {currentStep < 6 ? (
             <button type="button" className="btn-primary" onClick={handleNext}>
               Next Step
             </button>
@@ -536,6 +952,7 @@ export default function SchemeApplication() {
             </button>
           )}
         </div>
+      </div>
       </div>
 
       {isFetchModalOpen && (
