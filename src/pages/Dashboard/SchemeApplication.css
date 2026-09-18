@@ -3,7 +3,8 @@
    ========================================= */
 
 .scheme-application-container {
-  max-width: 800px;
+  max-width: 1200px;
+  width: 95%;
   margin: 40px auto;
   padding: 0 20px;
 }
@@ -109,8 +110,88 @@
   background: #2563eb;
 }
 
+.application-main-content {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+.stepper-ui.vertical-stepper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0;
+  margin-bottom: 0;
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 120px;
+}
+
+.stepper-ui.vertical-stepper .step {
+  flex-direction: row;
+  gap: 15px;
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.stepper-ui.vertical-stepper .step span {
+  font-size: 0.95rem;
+  line-height: 40px;
+  margin: 0;
+}
+
+.stepper-ui.vertical-stepper .step-line {
+  width: 2px;
+  height: 30px;
+  margin: 5px 0 5px 19px;
+  flex: none;
+  top: 0;
+  background: #cbd5e1;
+}
+
+@media (max-width: 768px) {
+  .application-main-content {
+    flex-direction: column;
+  }
+  .stepper-ui.vertical-stepper {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 15px;
+    position: relative;
+    top: 0;
+  }
+  .stepper-ui.vertical-stepper .step {
+    flex-direction: column;
+    width: auto;
+    gap: 8px;
+  }
+  .stepper-ui.vertical-stepper .step span {
+    font-size: 0.75rem;
+    line-height: 1.2;
+    text-align: center;
+  }
+  .stepper-ui.vertical-stepper .step-line {
+    width: auto;
+    flex: 1;
+    height: 2px;
+    margin: 0 15px;
+    top: -10px;
+    min-width: 30px;
+  }
+  .stepper-ui.vertical-stepper::-webkit-scrollbar {
+    height: 6px;
+  }
+  .stepper-ui.vertical-stepper::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+  }
+}
+
 /* Application Card */
 .application-card {
+  flex: 1;
   background: white;
   border-radius: 16px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
@@ -266,12 +347,29 @@
 }
 
 /* Review Box */
-.review-box {
+.review-section-box {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 24px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+}
+
+.review-section-box h4 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #1e293b;
+  font-size: 1.15rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.review-section-box h4 i {
+  color: #3b82f6;
+  font-size: 1.1rem;
 }
 
 .review-item {
@@ -363,4 +461,39 @@
   color: #64748b;
   font-size: 1.1rem;
   margin-bottom: 32px;
+}
+
+/* Comprehensive Responsive Adjustments */
+@media (max-width: 768px) {
+  .application-card {
+    padding: 24px;
+  }
+
+  .app-form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .step-content h3 {
+    font-size: 1.25rem;
+  }
+
+  .review-section-box {
+    padding: 16px;
+  }
+
+  .review-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .step-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .step-footer button {
+    width: 100%;
+  }
 }

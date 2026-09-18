@@ -126,6 +126,93 @@ export default function SchemeDetails() {
             </div>
           </div>
         );
+      case 'Apply Process':
+        return (
+          <div className="tab-content apply-process-content dark-theme-timeline">
+            <h3>1. Complete application workflow</h3>
+            <div className="app-timeline-card">
+              <div className="app-timeline-header">
+                <h4>Scholarship application</h4>
+                <span className="step-count-badge">8 steps</span>
+              </div>
+              <p className="app-timeline-desc">Students complete each stage in order. The next stage unlocks only after successful validation.</p>
+              
+              <div className="app-timeline">
+                <div className="app-timeline-item">
+                  <div className="timeline-marker">1</div>
+                  <div className="timeline-content">
+                    <h5>Register / Login</h5>
+                    <p>Create an account or sign in using a verified student identity.</p>
+                    <span className="timeline-status success-text">Account verified → Unlock Step 2</span>
+                  </div>
+                </div>
+
+                <div className="app-timeline-item">
+                  <div className="timeline-marker">2</div>
+                  <div className="timeline-content">
+                    <h5>Select Scholarship Scheme</h5>
+                    <p>Choose the scholarship and check eligibility, income limits, course requirements, and deadlines.</p>
+                    <span className="timeline-status success-text">Eligibility checked → Unlock Step 3</span>
+                  </div>
+                </div>
+
+                <div className="app-timeline-item">
+                  <div className="timeline-marker">3</div>
+                  <div className="timeline-content">
+                    <h5>Enter Personal Details</h5>
+                    <p>Name, date of birth, contact details, address, and required identity information.</p>
+                    <span className="timeline-status success-text">Required fields validated → Unlock Step 4</span>
+                  </div>
+                </div>
+
+                <div className="app-timeline-item">
+                  <div className="timeline-marker">4</div>
+                  <div className="timeline-content">
+                    <h5>Enter Academic Details</h5>
+                    <p>College, course, current year, enrollment number, previous marks, and academic records.</p>
+                    <span className="timeline-status success-text">Academic details verified → Unlock Step 5</span>
+                  </div>
+                </div>
+
+                <div className="app-timeline-item">
+                  <div className="timeline-marker">5</div>
+                  <div className="timeline-content">
+                    <h5>Enter Family & Income Details</h5>
+                    <p>Family income, occupation, and other scheme-specific information.</p>
+                    <span className="timeline-status success-text">Required details validated → Unlock Step 6</span>
+                  </div>
+                </div>
+
+                <div className="app-timeline-item">
+                  <div className="timeline-marker">6</div>
+                  <div className="timeline-content">
+                    <h5>Upload Documents</h5>
+                    <p>Upload required certificates and records, such as income certificate, marksheet, admission proof, and other scheme-specific documents.</p>
+                    <span className="timeline-status success-text">Documents checked → Unlock Step 7</span>
+                  </div>
+                </div>
+
+                <div className="app-timeline-item">
+                  <div className="timeline-marker">7</div>
+                  <div className="timeline-content">
+                    <h5>Bank Details & Verification</h5>
+                    <p>Enter required bank account information and complete any prescribed verification.</p>
+                    <span className="timeline-status success-text">Verification passed → Unlock Step 8</span>
+                  </div>
+                </div>
+
+                <div className="app-timeline-item">
+                  <div className="timeline-marker">8</div>
+                  <div className="timeline-content">
+                    <h5>Review & Final Submission</h5>
+                    <p>Display all entered information, allow corrections, obtain consent/declaration, and submit the application.</p>
+                    <span className="timeline-status success-text">Submitted → Generate application ID</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
       default:
         return (
           <div className="tab-content empty-content">
