@@ -57,6 +57,8 @@ export default function Profile() {
     isOpen: false,
     collectionName: '',
     siteName: '',
+    status: 'idle',
+    message: '',
   });
 
   // Password Form State
@@ -283,6 +285,8 @@ export default function Profile() {
       isOpen: true,
       collectionName,
       siteName,
+      status: 'idle',
+      message: '',
     });
   };
 
@@ -291,6 +295,8 @@ export default function Profile() {
       isOpen: false,
       collectionName: '',
       siteName: '',
+      status: 'idle',
+      message: '',
     });
   };
 
@@ -317,11 +323,18 @@ export default function Profile() {
       await addDoc(collection(db, pushModal.collectionName), payload);
 
       const targetSite = pushModal.siteName;
-      setPushModal({ isOpen: false, collectionName: '', siteName: '' });
-      alert(`Profile securely submitted to ${targetSite}!`);
+      setPushModal((prev) => ({
+        ...prev,
+        status: 'success',
+        message: `Profile securely submitted to ${targetSite}!`,
+      }));
     } catch (error) {
       console.error('Error pushing profile:', error);
-      alert('Failed to submit profile: ' + error.message);
+      setPushModal((prev) => ({
+        ...prev,
+        status: 'error',
+        message: 'Failed to submit profile: ' + error.message,
+      }));
     } finally {
       setIsPushing(false);
     }
@@ -2271,14 +2284,30 @@ export default function Profile() {
 
             {/* Body */}
             <div style={{ padding: '24px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '16px',
-                  marginBottom: '20px',
-                }}
-              >
+              {pushModal.status === 'success' ? (
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <i className="fa-solid fa-circle-check" style={{ fontSize: '48px', color: '#16a34a', marginBottom: '16px' }}></i>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '1.2rem', color: '#166534' }}>Success!</h4>
+                  <p style={{ color: '#15803d', margin: '0 0 24px 0' }}>{pushModal.message}</p>
+                  <button onClick={handleCancelPush} style={{ padding: '10px 24px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>OK</button>
+                </div>
+              ) : pushModal.status === 'error' ? (
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <i className="fa-solid fa-circle-xmark" style={{ fontSize: '48px', color: '#dc2626', marginBottom: '16px' }}></i>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '1.2rem', color: '#991b1b' }}>Error</h4>
+                  <p style={{ color: '#b91c1c', margin: '0 0 24px 0' }}>{pushModal.message}</p>
+                  <button onClick={handleCancelPush} style={{ padding: '10px 24px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Close</button>
+                </div>
+              ) : (
+                <>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '16px',
+                      marginBottom: '20px',
+                    }}
+                  >
                 <div
                   style={{
                     background: '#eff6ff',
@@ -2446,6 +2475,8 @@ export default function Profile() {
                   )}
                 </button>
               </div>
+              </>
+              )}
             </div>
           </div>
         </div>

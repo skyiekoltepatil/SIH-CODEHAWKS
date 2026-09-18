@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { db } from '../../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import '../Dashboard/Profile.css';
 
 const MockSiteLookup = ({ siteName }) => {
@@ -24,12 +24,32 @@ const MockSiteLookup = ({ siteName }) => {
     setData(null);
 
     try {
-      // Fetch data directly from central database using the UID
-      const docRef = doc(db, 'users', searchUid.trim());
-      const docSnap = await getDoc(docRef);
+      // Remove any trailing parentheses or special characters the user might have accidentally pasted
+      const trimmedUid = searchUid.trim().replace(/[^a-zA-Z0-9]/g, '');
+      let foundData = null;
+      let foundId = null;
 
-      if (docSnap.exists()) {
-        setData({ id: docSnap.id, ...docSnap.data() });
+      if (trimmedUid.length < 20) {
+        // Fetch all users and find the one matching the short UID prefix
+        const usersSnap = await getDocs(collection(db, 'users'));
+        usersSnap.forEach((docSnapshot) => {
+          if (docSnapshot.id.toUpperCase().startsWith(trimmedUid.toUpperCase())) {
+            foundData = docSnapshot.data();
+            foundId = docSnapshot.id;
+          }
+        });
+      } else {
+        // Fetch data directly using the full UID
+        const docRef = doc(db, 'users', trimmedUid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          foundData = docSnap.data();
+          foundId = docSnap.id;
+        }
+      }
+
+      if (foundData) {
+        setData({ id: foundId, ...foundData });
         setSuccessMsg('Profile successfully fetched from SIH-CODEHAWKS API');
       } else {
         throw new Error('No student found with that ID.');
