@@ -1,56 +1,107 @@
+import React, { useState, useEffect } from 'react';
+import banner1 from '../assets/banners/hero_banner_schemes.jpg';
+import banner2 from '../assets/banners/hero_banner_languages.jpg';
+import banner3 from '../assets/banners/hero_banner_ai_assistant.jpg';
+
 export default function Home() {
+  const banners = [banner1, banner2, banner3];
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % banners.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <section className="page active">
-      {/* Hero Section */}
-      <div
-        className="hero-section"
-        style={{
-          background: 'linear-gradient(135deg, #0b5b9c 0%, #2563eb 100%)',
-          color: 'white',
-          padding: '4rem 2rem',
-          textAlign: 'center',
-          marginBottom: '0',
-        }}
-      >
-        <h1 style={{ fontSize: '2.5rem', fontWeight: '700', marginBottom: '1rem' }}>
-          One App for all Government Services
-        </h1>
-        <p style={{ fontSize: '1.2rem', marginBottom: '2rem', opacity: '0.9' }}>
-          Access Central and State Government services easily and securely.
-        </p>
-        <div
-          className="hero-search"
-          style={{
-            maxWidth: '600px',
-            margin: '0 auto',
-            display: 'flex',
-            background: 'white',
-            borderRadius: '30px',
-            padding: '0.5rem 1rem',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+      {/* Hero Carousel */}
+      <div className="hero-carousel-wrapper" style={{ position: 'relative', overflow: 'hidden' }}>
+        <div 
+          className="hero-carousel-inner" 
+          style={{ 
+            display: 'flex', 
+            transition: 'transform 0.5s ease-in-out',
+            transform: `translateX(-${currentSlide * 100}%)`
           }}
         >
-          <i
-            className="fa-solid fa-magnifying-glass"
-            style={{ color: '#64748b', margin: 'auto 0' }}
-          ></i>
-          <input
-            type="text"
-            placeholder="Search for schemes, services..."
-            style={{
-              flex: 1,
-              border: 'none',
-              outline: 'none',
-              padding: '0.5rem 1rem',
-              fontSize: '1rem',
-            }}
-          />
-          <button
-            className="btn-primary"
-            style={{ borderRadius: '20px', padding: '0.5rem 1.5rem' }}
-          >
-            Search
-          </button>
+          {banners.map((banner, index) => (
+            <img 
+              key={index} 
+              src={banner} 
+              alt={`Hero Banner ${index + 1}`} 
+              style={{ width: '100%', flexShrink: 0, objectFit: 'cover' }} 
+            />
+          ))}
+        </div>
+        
+        {/* Navigation Arrows */}
+        <button
+          onClick={() => setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length)}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '20px',
+            transform: 'translateY(-50%)',
+            background: 'rgba(0,0,0,0.3)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '1.2rem',
+            zIndex: 10
+          }}
+        >
+          <i className="fa-solid fa-chevron-left"></i>
+        </button>
+        <button
+          onClick={() => setCurrentSlide((prev) => (prev + 1) % banners.length)}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            right: '20px',
+            transform: 'translateY(-50%)',
+            background: 'rgba(0,0,0,0.3)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '1.2rem',
+            zIndex: 10
+          }}
+        >
+          <i className="fa-solid fa-chevron-right"></i>
+        </button>
+
+        {/* Carousel Indicators */}
+        <div style={{ position: 'absolute', bottom: '15px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '8px', zIndex: 10 }}>
+          {banners.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                background: currentSlide === index ? 'white' : 'rgba(255,255,255,0.5)',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0
+              }}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
         </div>
       </div>
 

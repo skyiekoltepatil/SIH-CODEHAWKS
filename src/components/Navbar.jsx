@@ -147,10 +147,10 @@ export default function Navbar() {
                     top: '50px',
                     right: '50px',
                     width: '320px',
-                    background: 'white',
+                    background: 'var(--card-bg)',
                     borderRadius: '8px',
                     boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                    border: '1px solid #e2e8f0',
+                    border: '1px solid var(--border-color)',
                     zIndex: 100,
                     overflow: 'hidden',
                     textAlign: 'left',
@@ -159,13 +159,13 @@ export default function Navbar() {
                   <div
                     style={{
                       padding: '15px',
-                      borderBottom: '1px solid #e2e8f0',
+                      borderBottom: '1px solid var(--border-color)',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
                     }}
                   >
-                    <h4 style={{ margin: 0, fontSize: '1rem', color: '#1e293b' }}>Notifications</h4>
+                    <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-main)' }}>Notifications</h4>
                     <span
                       onClick={handleMarkAllRead}
                       style={{ fontSize: '0.75rem', color: '#3b82f6', cursor: 'pointer' }}
@@ -191,8 +191,8 @@ export default function Navbar() {
                           key={notif.id}
                           style={{
                             padding: '15px',
-                            borderBottom: '1px solid #f1f5f9',
-                            background: notif.read ? 'white' : '#f0f9ff',
+                            borderBottom: '1px solid var(--border-color)',
+                            background: notif.read ? 'transparent' : 'var(--icon-bg)',
                             cursor: 'pointer',
                             transition: 'background 0.2s',
                           }}
@@ -221,13 +221,13 @@ export default function Navbar() {
                                 style={{
                                   margin: '0 0 5px 0',
                                   fontSize: '0.85rem',
-                                  color: '#334155',
+                                  color: 'var(--text-main)',
                                   fontWeight: notif.read ? '400' : '600',
                                 }}
                               >
                                 {notif.message}
                               </p>
-                              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                                 {notif.timestamp
                                   ? new Date(notif.timestamp.seconds * 1000).toLocaleString()
                                   : 'Just now'}

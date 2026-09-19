@@ -54,12 +54,12 @@ export function PieCenter({
       }}
     >
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#1e293b', lineHeight: '1' }}>
+        <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--text-main)', lineHeight: '1' }}>
           {prefix}
           {value}
           {suffix}
         </div>
-        <div style={{ fontSize: '1rem', color: '#94a3b8', marginTop: '4px' }}>{label}</div>
+        <div style={{ fontSize: '1rem', color: 'var(--text-muted)', marginTop: '4px' }}>{label}</div>
       </div>
     </div>
   );

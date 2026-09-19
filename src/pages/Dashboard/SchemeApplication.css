@@ -20,7 +20,7 @@
   top: 20px;
   background: transparent;
   border: none;
-  color: #475569;
+  color: var(--text-muted);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -31,17 +31,17 @@
 }
 
 .application-header .back-btn:hover {
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .application-header h2 {
-  color: #0f172a;
+  color: var(--text-main);
   font-size: 2rem;
   margin-bottom: 10px;
 }
 
 .application-header p {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 1.05rem;
 }
 
@@ -68,7 +68,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: white;
+  background: var(--card-bg);
   border: 2px solid #cbd5e1;
   display: flex;
   align-items: center;
@@ -81,7 +81,7 @@
 .step span {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-muted);
   transition: all 0.3s;
 }
 
@@ -93,7 +93,7 @@
 }
 
 .step.active span {
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .step-line {
@@ -192,10 +192,10 @@
 /* Application Card */
 .application-card {
   flex: 1;
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   padding: 40px;
   overflow: hidden;
   position: relative;
@@ -218,12 +218,12 @@
 
 .step-content h3 {
   font-size: 1.5rem;
-  color: #1e293b;
+  color: var(--text-main);
   margin-bottom: 8px;
 }
 
 .step-desc {
-  color: #64748b;
+  color: var(--text-muted);
   margin-bottom: 30px;
   font-size: 0.95rem;
 }
@@ -246,7 +246,7 @@
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   font-size: 1rem;
-  color: #1e293b;
+  color: var(--text-main);
   background: transparent;
   outline: none;
   transition: all 0.2s;
@@ -262,9 +262,9 @@
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  background: white;
+  background: var(--card-bg);
   padding: 0 4px;
-  color: #64748b;
+  color: var(--text-muted);
   transition: all 0.2s ease-out;
   pointer-events: none;
   font-size: 1rem;
@@ -279,7 +279,7 @@
 }
 
 .app-floating-input input:not(:placeholder-shown):not(:focus) ~ label {
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 /* Upload Zone */
@@ -305,13 +305,13 @@
 }
 
 .upload-zone .btn-outline {
-  background-color: #ffffff;
+  background-color: var(--card-bg);
   border: 1px solid #2563eb;
   color: #2563eb;
 }
 
 .upload-zone .btn-outline:hover {
-  background-color: #f8fafc;
+  background-color: var(--bg-color);
 }
 
 .upload-zone .btn-primary {
@@ -325,13 +325,13 @@
 }
 
 .upload-zone h4 {
-  color: #1e293b;
+  color: var(--text-main);
   font-size: 1.1rem;
   margin-bottom: 8px;
 }
 
 .upload-zone p {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.9rem;
   margin-bottom: 20px;
 }
@@ -348,8 +348,8 @@
 
 /* Review Box */
 .review-section-box {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
@@ -358,7 +358,7 @@
 .review-section-box h4 {
   margin-top: 0;
   margin-bottom: 16px;
-  color: #1e293b;
+  color: var(--text-main);
   font-size: 1.15rem;
   border-bottom: 2px solid #e2e8f0;
   padding-bottom: 12px;
@@ -376,7 +376,7 @@
   display: flex;
   justify-content: space-between;
   padding: 12px 0;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .review-item:last-child {
@@ -384,11 +384,11 @@
 }
 
 .review-label {
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .review-item strong {
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .declaration-box {
@@ -415,7 +415,7 @@
   justify-content: space-between;
   margin-top: 40px;
   padding-top: 20px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-color);
 }
 
 .step-footer button {
@@ -430,10 +430,10 @@
 .application-success {
   text-align: center;
   padding: 60px 20px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   max-width: 600px;
   margin: 80px auto;
 }
@@ -452,13 +452,13 @@
 }
 
 .application-success h2 {
-  color: #0f172a;
+  color: var(--text-main);
   font-size: 2rem;
   margin-bottom: 16px;
 }
 
 .application-success p {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 1.1rem;
   margin-bottom: 32px;
 }

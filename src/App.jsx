@@ -22,7 +22,25 @@ import { AuthProvider } from './context/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './index.css';
 
+import { useEffect } from 'react';
+
 function App() {
+  useEffect(() => {
+    try {
+      const a11y = localStorage.getItem('a11ySettings');
+      if (a11y) {
+        const activeSettings = JSON.parse(a11y);
+        for (const setting in activeSettings) {
+          if (activeSettings[setting]) {
+            document.body.classList.add(`a11y-${setting}`);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load a11y settings', e);
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <ErrorBoundary>

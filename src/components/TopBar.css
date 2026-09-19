@@ -1,0 +1,132 @@
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #0c5999;
+  color: white;
+  padding: 4px 3rem;
+  font-family: Arial, sans-serif;
+  font-size: 0.85rem;
+  position: static; /* Static positioning means it scrolls out of view */
+  z-index: 60;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.topbar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emblem-logo {
+  height: 28px;
+  filter: brightness(0) invert(1);
+}
+
+.gov-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.digital-india-logo {
+  height: 24px;
+  background: var(--card-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-icon-btn {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.topbar-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.isl-chatbot-btn {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  overflow: hidden;
+  transition: opacity 0.2s;
+}
+
+.isl-chatbot-btn:hover {
+  opacity: 0.9;
+}
+
+.isl-chatbot-btn span.isl-text {
+  padding: 0 10px;
+}
+
+.isl-chatbot-btn span.isl-icon {
+  background: var(--card-bg);
+  color: #ff4d4f;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 1.1rem;
+}
+
+.language-selector {
+  margin-left: 4px;
+}
+
+.language-selector select {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+  font-weight: 600;
+}
+
+.language-selector select option {
+  color: var(--text-main);
+}
+
+/* Make it responsive */
+@media (max-width: 768px) {
+  .topbar {
+    padding: 8px 1rem;
+    flex-direction: column;
+    gap: 12px;
+  }
+}

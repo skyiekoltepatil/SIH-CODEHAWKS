@@ -888,9 +888,9 @@ export default function Profile() {
                   maxWidth: '500px',
                   width: '100%',
                   padding: '40px',
-                  background: '#f8fafc',
+                  background: 'var(--card-bg)',
                   borderRadius: '12px',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-color)',
                 }}
               >
                 <fieldset
@@ -900,7 +900,7 @@ export default function Profile() {
                   <h3
                     style={{
                       marginBottom: '30px',
-                      color: '#1e293b',
+                      color: 'var(--text-main)',
                       fontSize: '1.5rem',
                       textAlign: 'center',
                     }}
@@ -1033,13 +1033,13 @@ export default function Profile() {
                       rel="noopener noreferrer"
                       style={{
                         padding: '8px 12px',
-                        background: '#f1f5f9',
-                        color: '#475569',
+                        background: 'var(--icon-bg)',
+                        color: 'var(--text-main)',
                         borderRadius: '6px',
                         textDecoration: 'none',
                         fontSize: '0.85rem',
                         fontWeight: '600',
-                        border: '1px solid #cbd5e1',
+                        border: '1px solid var(--border-color)',
                       }}
                     >
                       <i className="fa-solid fa-arrow-up-right-from-square"></i> Open Site B
@@ -1050,13 +1050,13 @@ export default function Profile() {
                       rel="noopener noreferrer"
                       style={{
                         padding: '8px 12px',
-                        background: '#f1f5f9',
-                        color: '#475569',
+                        background: 'var(--icon-bg)',
+                        color: 'var(--text-main)',
                         borderRadius: '6px',
                         textDecoration: 'none',
                         fontSize: '0.85rem',
                         fontWeight: '600',
-                        border: '1px solid #cbd5e1',
+                        border: '1px solid var(--border-color)',
                       }}
                     >
                       <i className="fa-solid fa-arrow-up-right-from-square"></i> Open Site C
@@ -1067,13 +1067,13 @@ export default function Profile() {
                       rel="noopener noreferrer"
                       style={{
                         padding: '8px 12px',
-                        background: '#f1f5f9',
-                        color: '#475569',
+                        background: 'var(--icon-bg)',
+                        color: 'var(--text-main)',
                         borderRadius: '6px',
                         textDecoration: 'none',
                         fontSize: '0.85rem',
                         fontWeight: '600',
-                        border: '1px solid #cbd5e1',
+                        border: '1px solid var(--border-color)',
                       }}
                     >
                       <i className="fa-solid fa-arrow-up-right-from-square"></i> Open Site D
@@ -1638,6 +1638,7 @@ export default function Profile() {
                             width: '100%',
                             resize: 'vertical',
                             background: 'transparent',
+                            color: 'var(--text-main)',
                           }}
                           placeholder="Enter your full address"
                           value={contactData.address}
@@ -2012,13 +2013,13 @@ export default function Profile() {
               className="profile-form-wrapper"
               style={{
                 minHeight: '500px',
-                background: 'white',
+                background: 'var(--bg-color)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <p style={{ color: '#94a3b8', fontSize: '1.2rem' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>
                 Blank Page for {activeTab.replace(/_/g, ' ')}
               </p>
             </div>
@@ -2145,7 +2146,9 @@ export default function Profile() {
                   width: '100%',
                   padding: '10px',
                   borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-color)',
+                  color: 'var(--text-main)',
                   resize: 'vertical',
                 }}
               ></textarea>
