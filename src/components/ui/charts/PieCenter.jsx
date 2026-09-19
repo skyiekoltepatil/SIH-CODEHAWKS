@@ -32,7 +32,7 @@ export function PieCenter({
           pointerEvents: 'none',
         }}
       >
-        {children({ label, value })}
+        {children({ label, value, activeItem })}
       </div>
     );
   }
