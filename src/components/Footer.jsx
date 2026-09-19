@@ -22,6 +22,14 @@ export default function Footer() {
           </ul>
         </div>
         <div className="footer-section">
+          <h3>Get to Know</h3>
+          <ul>
+            <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+            <li><Link to="/help/faqs">FAQ</Link></li>
+            <li><Link to="/terms-of-service">Terms of Service</Link></li>
+          </ul>
+        </div>
+        <div className="footer-section">
           <h3>Contact Us</h3>
           <p><i className="fa-solid fa-envelope"></i> support@sihcodehawks.gov.in</p>
           <p><i className="fa-solid fa-phone"></i> +91 11-24301719</p>

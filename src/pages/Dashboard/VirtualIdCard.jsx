@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { db, auth } from '../../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { AuthContext } from '../../context/AuthContext';
 import './VirtualIdCard.css';
 
@@ -10,28 +10,35 @@ export default function VirtualIdCard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (auth.currentUser) {
-        try {
-          const docRef = doc(db, 'users', auth.currentUser.uid);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            setUserData({ uid: auth.currentUser.uid, ...docSnap.data() });
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
+    let unsubscribeSnapshot = null;
+
+    const setupListener = (uid) => {
+      const docRef = doc(db, 'users', uid);
+      unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          setUserData({ uid, ...docSnap.data() });
         }
-      }
-      setLoading(false);
+        setLoading(false);
+      }, (error) => {
+        console.error('Error fetching real-time user data:', error);
+        setLoading(false);
+      });
     };
 
-    // Listen for auth state changes in case it hasn't initialized yet
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) fetchUserData();
-      else setLoading(false);
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setupListener(user.uid);
+      } else {
+        setUserData(null);
+        setLoading(false);
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+    };
   }, []);
   const handleDownload = () => {
     alert('Downloading ID Card...');
@@ -45,17 +52,14 @@ export default function VirtualIdCard() {
           {/* Header */}
           <div className="id-card-header">
             <div className="id-card-logo">
-              <i
-                className="fa-solid fa-building-columns"
-                style={{ color: '#6d28d9', fontSize: '24px' }}
-              ></i>
+              <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" alt="Emblem" style={{ height: '32px' }} className="emblem-logo-card" />
               <div className="logo-text">
-                <span className="logo-title">ALARD</span>
-                <span className="logo-subtitle">UNIVERSITY</span>
+                <span className="logo-title">SIH</span>
+                <span className="logo-subtitle">CODEHAWKS</span>
               </div>
             </div>
             <div className="id-card-address">
-              <strong>AUP</strong>
+              <strong>Government of India</strong>
               <br />
               Survey No. 47 and 50, Near Rajiv Gandhi
               <br />

@@ -5,6 +5,7 @@ import { AnimatedThemeToggler } from './AnimatedThemeToggler';
 export default function TopBar() {
   const [lang, setLang] = useState(() => localStorage.getItem('site_language') || 'en');
   const [isA11yOpen, setIsA11yOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     // Check if script is already added to prevent duplicates during HMR
@@ -41,6 +42,14 @@ export default function TopBar() {
         }, 500);
       };
     }
+
+    // Listen for custom event to open chatbot
+    const handleOpenChatbot = () => setIsChatOpen(true);
+    window.addEventListener('openChatbot', handleOpenChatbot);
+
+    return () => {
+      window.removeEventListener('openChatbot', handleOpenChatbot);
+    };
   }, []);
 
   const handleLanguageChange = (e) => {
@@ -83,10 +92,10 @@ export default function TopBar() {
         <AnimatedThemeToggler className="topbar-icon-btn" title="Dark Mode" variant="circle">
           {(isDark) => <i className={isDark ? "fa-solid fa-sun" : "fa-solid fa-moon"}></i>}
         </AnimatedThemeToggler>
-        <button className="isl-chatbot-btn">
-          <span className="isl-text">ISL Chatbot</span>
+        <button className="isl-chatbot-btn" onClick={() => setIsChatOpen(!isChatOpen)}>
+          <span className="isl-text">Chatbot</span>
           <span className="isl-icon">
-            <i className="fa-solid fa-hands-asl-interpreting"></i>
+            <i className="fa-solid fa-robot"></i>
           </span>
         </button>
         <div className="language-selector notranslate">
@@ -115,7 +124,28 @@ export default function TopBar() {
         .goog-text-highlight { background: none !important; box-shadow: none !important; }
       `}</style>
       
-      <AccessibilityMenu isOpen={isA11yOpen} onClose={() => setIsA11yOpen(false)} />
+      {isA11yOpen && <AccessibilityMenu isOpen={isA11yOpen} onClose={() => setIsA11yOpen(false)} />}
+      
+      {isChatOpen && (
+        <div className="floating-chat-widget">
+          <div className="chat-header">
+            <h4>AI Assistant</h4>
+            <button onClick={() => setIsChatOpen(false)}><i className="fa-solid fa-xmark"></i></button>
+          </div>
+          <div className="chat-body">
+            <div className="chat-message ai" style={{ marginBottom: '10px' }}>
+              Hello! I am your AI Assistant. How can I help you today?
+            </div>
+            <div className="chat-message ai">
+              <em>Note: The chatbot is currently learning. This is just the UI for now!</em>
+            </div>
+          </div>
+          <div className="chat-input">
+            <input type="text" placeholder="Type a message..." />
+            <button><i className="fa-solid fa-paper-plane"></i></button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

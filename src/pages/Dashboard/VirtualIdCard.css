@@ -56,8 +56,12 @@
 .logo-title {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #4c1d95; /* Deep purple */
+  color: var(--text-main);
   letter-spacing: 1px;
+}
+
+html.dark .emblem-logo-card {
+  filter: brightness(0) invert(1);
 }
 
 .logo-subtitle {

@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainLayout from './components/MainLayout';
 import Home from './pages/Home';
 import About from './pages/About';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import Schemes from './pages/Schemes';
 import SchemeDetails from './pages/SchemeDetails';
 import Services from './pages/Services';
@@ -12,6 +14,7 @@ import AIAssistant from './pages/Dashboard/AIAssistant';
 import VirtualIdCard from './pages/Dashboard/VirtualIdCard';
 import DashboardOverview from './pages/Dashboard/DashboardOverview';
 import SchemeApplication from './pages/Dashboard/SchemeApplication';
+import Faq from './pages/Dashboard/Faq';
 
 import Login from './pages/Login';
 import MockSite from './pages/Demo/MockSite';
@@ -69,6 +72,10 @@ function App() {
                 <Route path="id-card" element={<VirtualIdCard />} />
                 <Route path="apply/:schemeId" element={<SchemeApplication />} />
               </Route>
+
+              <Route path="help/faqs" element={<Faq />} />
+              <Route path="privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="terms-of-service" element={<TermsOfService />} />
 
               {/* Mock Sites Demo Routes */}
               <Route

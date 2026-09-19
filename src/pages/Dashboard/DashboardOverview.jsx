@@ -644,11 +644,19 @@ export default function DashboardOverview() {
           <div className="sidebar-card">
             <h3>Help and Support</h3>
             <div className="help-grid">
-              <div className="help-item">
+              <div 
+                className="help-item" 
+                onClick={() => navigate('/help/faqs')}
+                style={{ cursor: 'pointer' }}
+              >
                 <i className="fa-regular fa-circle-question"></i>
                 <span>FAQs</span>
               </div>
-              <div className="help-item">
+              <div 
+                className="help-item" 
+                onClick={() => window.dispatchEvent(new Event('openChatbot'))}
+                style={{ cursor: 'pointer' }}
+              >
                 <i className="fa-regular fa-comments"></i>
                 <span>Contact Support Chat</span>
               </div>
