@@ -152,6 +152,14 @@
   overflow: hidden;
 }
 
+.floating-chat-widget .chat-container {
+  flex: 1;
+  height: auto;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+}
+
 .chat-header {
   background: #2563eb;
   color: white;

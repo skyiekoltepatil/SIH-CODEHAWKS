@@ -1,13 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { db } from '../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 import './TopBar.css';
 import AccessibilityMenu from './AccessibilityMenu';
 import { AnimatedThemeToggler } from './AnimatedThemeToggler';
+import ChatBot from './ChatBot';
 export default function TopBar() {
   const [lang, setLang] = useState(() => localStorage.getItem('site_language') || 'en');
   const [isA11yOpen, setIsA11yOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const { user } = useContext(AuthContext);
+  const [userApplications, setUserApplications] = useState([]);
+  const [chatLoading, setChatLoading] = useState(true);
 
   useEffect(() => {
+    const fetchUserApps = async () => {
+      if (!user?.uid) {
+        setChatLoading(false);
+        return;
+      }
+      try {
+        const appsRef = collection(db, 'users', user.uid, 'applications');
+        const snapshot = await getDocs(appsRef);
+        const apps = [];
+        snapshot.forEach((d) => apps.push({ id: d.id, ...d.data() }));
+        setUserApplications(apps);
+      } catch (err) {
+        console.error('Failed to load user applications for TopBar chatbot:', err);
+      } finally {
+        setChatLoading(false);
+      }
+    };
+    fetchUserApps();
+
     // Check if script is already added to prevent duplicates during HMR
     if (!document.getElementById('google-translate-script')) {
       const addScript = document.createElement('script');
@@ -130,20 +156,31 @@ export default function TopBar() {
         <div className="floating-chat-widget">
           <div className="chat-header">
             <h4>AI Assistant</h4>
-            <button onClick={() => setIsChatOpen(false)}><i className="fa-solid fa-xmark"></i></button>
+            <button onClick={() => setIsChatOpen(false)}>
+              <i className="fa-solid fa-xmark"></i>
+            </button>
           </div>
-          <div className="chat-body">
-            <div className="chat-message ai" style={{ marginBottom: '10px' }}>
-              Hello! I am your AI Assistant. How can I help you today?
+          {chatLoading ? (
+            <div className="chat-body">
+              <div
+                style={{
+                  padding: '20px',
+                  textAlign: 'center',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                <i
+                  className="fa-solid fa-spinner fa-spin fa-2x"
+                  style={{ marginBottom: '12px', display: 'block' }}
+                />
+                <span>Loading assistant...</span>
+              </div>
             </div>
-            <div className="chat-message ai">
-              <em>Note: The chatbot is currently learning. This is just the UI for now!</em>
-            </div>
-          </div>
-          <div className="chat-input">
-            <input type="text" placeholder="Type a message..." />
-            <button><i className="fa-solid fa-paper-plane"></i></button>
-          </div>
+          ) : (
+            <ChatBot
+              context={{ user, applications: userApplications }}
+            />
+          )}
         </div>
       )}
     </div>
