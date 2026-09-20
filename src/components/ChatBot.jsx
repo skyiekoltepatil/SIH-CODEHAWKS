@@ -1,18 +1,29 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { handleUserMessage, handleQuickCommand } from '../services/chatbot';
 
 // ---------------------------------------------------------------------------
 // Reusable chatbot UI — used by both the AIAssistant page and the floating widget
 // ---------------------------------------------------------------------------
 
-const WELCOME =
-  "Hello! I am your SIH CODEHAWKS AI Assistant. How can I help you check your application status or find new schemes?";
-
 export default function ChatBot({ context }) {
-  const [messages, setMessages] = useState([{ role: 'ai', text: WELCOME }]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+
+  const user = context?.user;
+  const languageFromContext = (user && user.language) || (typeof navigator !== 'undefined' ? navigator.language?.slice(0, 2) : 'en') || 'en';
+
+  const welcomeResponse = useMemo(() => {
+    return handleUserMessage('hello', { user, applications: context?.applications || [] });
+  }, [user, context]);
+
+  useEffect(() => {
+    // Prime the chat with the welcome message on first render
+    if (messages.length === 0) {
+      setMessages([{ role: 'ai', text: welcomeResponse.text, lang: welcomeResponse.lang }]);
+    }
+  }, [messages.length, welcomeResponse]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -22,8 +33,8 @@ export default function ChatBot({ context }) {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  const addMessage = useCallback((role, text) => {
-    setMessages((prev) => [...prev, { role, text }]);
+  const addMessage = useCallback((msgBlock) => {
+    setMessages((prev) => [...prev, msgBlock]);
   }, []);
 
   const handleSend = useCallback(() => {
@@ -31,25 +42,27 @@ export default function ChatBot({ context }) {
     if (!text) return;
 
     setInput('');
-    addMessage('user', text);
+    addMessage({ role: 'user', text });
     setLoading(true);
 
     // Give the UI a breath before the reply
     setTimeout(() => {
       try {
-        const reply = handleQuickCommand(text);
-        const response =
-          reply || handleUserMessage(text, context || { user: null, applications: [] });
+        const reply =
+          handleQuickCommand(text, context) ||
+          handleUserMessage(text, context || { user: null, applications: [] });
 
-        addMessage(
-          'ai',
-          response.text || "I'm not sure how to help with that. Try asking something else."
-        );
+        addMessage({
+          role: 'ai',
+          text: reply.text || "I'm not sure how to help with that. Try asking something else.",
+          lang: reply.lang,
+          suggestions: (reply.suggestions && reply.suggestions.length > 0) ? reply.suggestions : undefined,
+        });
       } catch (err) {
-        addMessage(
-          'ai',
-          "Sorry, something went wrong on my end. Please try again."
-        );
+        addMessage({
+          role: 'ai',
+          text: "Sorry, something went wrong on my end. Please try again.",
+        });
         console.error('Chatbot error:', err);
       } finally {
         setLoading(false);
@@ -68,12 +81,13 @@ export default function ChatBot({ context }) {
   );
 
   const renderMessage = useCallback(
-    ({ role, text }) => {
+    (text) => {
+      if (!text) return null;
       // Split out markdown-style bold markers for a cleaner look
       const parts = text.split(/(\*\*[^*]+\*\*)/g);
       return (
         <div
-          className={`message ${role === 'ai' ? 'ai-message' : 'user-message'}`}
+          className="message-content"
           style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
         >
           {parts.map((part, i) =>
@@ -89,11 +103,40 @@ export default function ChatBot({ context }) {
     []
   );
 
+  const renderSuggestionChips = useCallback((chips) => {
+    if (!chips || chips.length === 0) return null;
+    return (
+      <div className="suggestion-chips">
+        {chips.map((chip, idx) => (
+          <button
+            key={idx}
+            className="suggestion-chip"
+            onClick={() => {
+              setInput(chip.label);
+              // Auto-send a small delay after setting input
+              setTimeout(() => handleSend(), 80);
+            }}
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+    );
+  }, [handleSend]);
+
   return (
     <div className="chat-container">
+      {/* Suggestion chips after AI messages? We'll render them inline below AI messages */}
       <div className="chat-messages" id="chat-messages">
         {messages.map((msg, idx) => (
-          <div key={idx}>{renderMessage(msg)}</div>
+          <div key={idx} className={`message ${msg.role === 'ai' ? 'ai-message' : 'user-message'}`}>
+            {renderMessage(msg.text)}
+            {msg.role === 'ai' && msg.suggestions && (
+              <div className="suggestion-chips-inline">
+                {renderSuggestionChips(msg.suggestions)}
+              </div>
+            )}
+          </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
