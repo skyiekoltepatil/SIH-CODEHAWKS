@@ -14,28 +14,68 @@ export default function AccessibilityMenu({ isOpen, onClose }) {
       return;
     }
 
-    const handleTTSClick = (e) => {
-      // Ignore clicks within the accessibility menu itself
+    let ttsTimeout;
+    let lastHoveredElement = null;
+
+    const handleTTSHover = (e) => {
+      // Ignore hovers within the accessibility menu itself
       if (e.target.closest('.a11y-menu') || e.target.closest('.a11y-overlay') || e.target.closest('.a11y-btn')) {
         return;
       }
 
-      const text = e.target.innerText || e.target.textContent;
-      if (text && text.trim()) {
-        window.speechSynthesis?.cancel();
-        const utterance = new SpeechSynthesisUtterance(text.trim());
-        window.speechSynthesis?.speak(utterance);
-      }
+      if (e.target === lastHoveredElement) return;
+      lastHoveredElement = e.target;
+
+      clearTimeout(ttsTimeout);
+      ttsTimeout = setTimeout(() => {
+        const text = e.target.innerText || e.target.textContent;
+        // Don't read if it's a huge structural container or empty
+        if (text && text.trim() && !['BODY', 'HTML', 'MAIN', 'NAV'].includes(e.target.tagName)) {
+          window.speechSynthesis?.cancel();
+          
+          const utterance = new SpeechSynthesisUtterance(text.trim());
+          
+          // Some browsers fail silently if no voice is explicitly set
+          const voices = window.speechSynthesis?.getVoices();
+          if (voices && voices.length > 0) {
+            // Try to find a default English voice, or just use the first one
+            utterance.voice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+          }
+
+          // Fix for Chrome/Safari bug: utterance gets garbage collected before speaking
+          window.ttsUtterance = utterance;
+          
+          utterance.onerror = (err) => console.error("TTS Error:", err);
+          
+          window.speechSynthesis?.speak(utterance);
+        }
+      }, 500); // 500ms delay
     };
 
     // Use capture phase to ensure it triggers early
-    document.addEventListener('click', handleTTSClick, true);
+    document.addEventListener('mouseover', handleTTSHover, true);
 
     return () => {
-      document.removeEventListener('click', handleTTSClick, true);
+      document.removeEventListener('mouseover', handleTTSHover, true);
+      clearTimeout(ttsTimeout);
       window.speechSynthesis?.cancel();
     };
   }, [activeSettings.tts]);
+
+  // ADHD Mode cursor tracker
+  useEffect(() => {
+    if (!activeSettings.adhd) return;
+
+    const handleMouseMove = (e) => {
+      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.documentElement.style.removeProperty('--mouse-y');
+    };
+  }, [activeSettings.adhd]);
 
   const toggleSetting = (setting) => {
     setActiveSettings((prev) => {
@@ -44,8 +84,22 @@ export default function AccessibilityMenu({ isOpen, onClose }) {
       // Handle global CSS classes for demo purposes
       if (isActive) {
         document.body.classList.add(`a11y-${setting}`);
+        document.documentElement.classList.add(`a11y-${setting}`);
+        
+        // Fix for strict browsers (Safari/Chrome): Unlock speech engine during a direct user click
+        if (setting === 'tts' && window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+          const unlockUtterance = new SpeechSynthesisUtterance(" ");
+          unlockUtterance.volume = 0; // Silent unlock
+          window.speechSynthesis.speak(unlockUtterance);
+        }
       } else {
         document.body.classList.remove(`a11y-${setting}`);
+        document.documentElement.classList.remove(`a11y-${setting}`);
+        
+        if (setting === 'tts' && window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
       }
       
       const newSettings = {
@@ -60,8 +114,9 @@ export default function AccessibilityMenu({ isOpen, onClose }) {
   const resetSettings = () => {
     setActiveSettings({});
     localStorage.removeItem('a11ySettings');
-    // Remove all a11y classes from body
+    // Remove all a11y classes from body and html
     document.body.className = document.body.className.replace(/\ba11y-\S+/g, '').trim();
+    document.documentElement.className = document.documentElement.className.replace(/\ba11y-\S+/g, '').trim();
   };
 
   if (!isOpen) return null;
