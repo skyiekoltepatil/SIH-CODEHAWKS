@@ -25,7 +25,7 @@ export default function Footer() {
           <h3>Get to Know</h3>
           <ul>
             <li><Link to="/privacy-policy">Privacy Policy</Link></li>
-            <li><Link to="/help/faqs">FAQ</Link></li>
+            <li><Link to="/faqs">FAQ</Link></li>
             <li><Link to="/terms-of-service">Terms of Service</Link></li>
           </ul>
         </div>

@@ -19,7 +19,7 @@ export function PieCenter({
   if (children) {
     return (
       <div
-        className={`absolute inset-0 flex items-center justify-center ${className}`}
+        className={`absolute inset-0 flex items-center justify-center pointer-events-none ${className}`}
         style={{
           position: 'absolute',
           top: 0,
@@ -32,16 +32,14 @@ export function PieCenter({
           pointerEvents: 'none',
         }}
       >
-        <div style={{ pointerEvents: 'auto' }} aria-label={`${value} ${label}`}>
-          {children({ label, value, activeItem })}
-        </div>
+        {children({ label, value, activeItem })}
       </div>
     );
   }
 
   return (
     <div
-      className={`absolute inset-0 flex flex-col items-center justify-center ${className}`}
+      className={`absolute inset-0 flex flex-col items-center justify-center pointer-events-none ${className}`}
       style={{
         position: 'absolute',
         top: 0,
@@ -55,7 +53,7 @@ export function PieCenter({
         pointerEvents: 'none',
       }}
     >
-      <div style={{ textAlign: 'center', pointerEvents: 'auto' }} aria-label={`${prefix}${value}${suffix} ${label}`}>
+      <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--text-main)', lineHeight: '1' }}>
           {prefix}
           {value}

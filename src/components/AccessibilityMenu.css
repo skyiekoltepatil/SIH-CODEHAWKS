@@ -165,11 +165,11 @@
 }
 
 /* Base Accessibility Classes */
-body.a11y-bigger-text #root {
-  zoom: 1.15;
+body.a11y-bigger-text {
+  font-size: 110% !important;
 }
-body.a11y-smaller-text #root {
-  zoom: 0.85;
+body.a11y-smaller-text {
+  font-size: 90% !important;
 }
 body.a11y-text-spacing {
   letter-spacing: 1px !important;
@@ -202,19 +202,4 @@ body.a11y-links button {
   color: #000 !important;
   text-decoration: underline !important;
   font-weight: bold !important;
-}
-
-/* Pause all animations */
-body.a11y-pause *,
-body.a11y-pause *::before,
-body.a11y-pause *::after {
-  animation-duration: 0s !important;
-  animation-delay: 0s !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0s !important;
-  transition-delay: 0s !important;
-  scroll-behavior: auto !important;
-}
-body.a11y-pause {
-  scroll-behavior: auto !important;
 }

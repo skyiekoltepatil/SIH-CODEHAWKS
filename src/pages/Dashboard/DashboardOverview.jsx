@@ -790,9 +790,9 @@ export default function DashboardOverview() {
           <div className="sidebar-card">
             <h3>Help and Support</h3>
             <div className="help-grid">
-              <div 
-                className="help-item" 
-                onClick={() => navigate('/help/faqs')}
+              <div
+                className="help-item"
+                onClick={() => navigate('/faqs')}
                 style={{ cursor: 'pointer' }}
               >
                 <i className="fa-regular fa-circle-question"></i>

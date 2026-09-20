@@ -73,7 +73,7 @@ function App() {
                 <Route path="apply/:schemeId" element={<SchemeApplication />} />
               </Route>
 
-              <Route path="help/faqs" element={<Faq />} />
+              <Route path="faqs" element={<Faq />} />
               <Route path="privacy-policy" element={<PrivacyPolicy />} />
               <Route path="terms-of-service" element={<TermsOfService />} />
 

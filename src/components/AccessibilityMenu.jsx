@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import './AccessibilityMenu.css';
 import { AnimatedThemeToggler } from './AnimatedThemeToggler';
@@ -8,110 +8,34 @@ export default function AccessibilityMenu({ isOpen, onClose }) {
     return saved ? JSON.parse(saved) : {};
   });
 
-  const ttsEnabledRef = useRef(activeSettings.tts || false);
-  const hoverTimeoutRef = useRef(null);
-
-  // Keep ref in sync with state
   useEffect(() => {
-    ttsEnabledRef.current = !!activeSettings.tts;
     if (!activeSettings.tts) {
       window.speechSynthesis?.cancel();
-      clearTimeout(hoverTimeoutRef.current);
+      return;
     }
-  }, [activeSettings.tts]);
 
-  // Attach hover listeners once, check ref inside handler
-  useEffect(() => {
-    const handleMouseOver = (e) => {
-      if (!ttsEnabledRef.current) return;
-
-      // Only skip the overlay backdrop click-catcher
-      if (e.target.closest('.a11y-overlay')) {
+    const handleTTSClick = (e) => {
+      // Ignore clicks within the accessibility menu itself
+      if (e.target.closest('.a11y-menu') || e.target.closest('.a11y-overlay') || e.target.closest('.a11y-btn')) {
         return;
       }
 
-      const el = e.target;
-      let text = '';
-
-      // For accessibility menu buttons, read the label text
-      const a11yBtn = el.closest('.a11y-btn');
-      if (a11yBtn) {
-        const spanEl = a11yBtn.querySelector('span');
-        text = spanEl ? spanEl.textContent : a11yBtn.textContent;
+      const text = e.target.innerText || e.target.textContent;
+      if (text && text.trim()) {
+        window.speechSynthesis?.cancel();
+        const utterance = new SpeechSynthesisUtterance(text.trim());
+        window.speechSynthesis?.speak(utterance);
       }
-      // Handle SVG elements (graph numbers, labels)
-      else if (el instanceof SVGElement) {
-        // For SVG text/tspan elements, read textContent directly
-        if (el.tagName === 'text' || el.tagName === 'tspan') {
-          text = el.textContent || '';
-        }
-        // For other SVG elements (paths, groups), check aria-label or find parent with text
-        else {
-          text = el.getAttribute('aria-label') || '';
-          if (!text) {
-            // Look for foreignObject content inside SVG (like PieCenter)
-            const foreignObj = el.closest('foreignObject') || el.querySelector('foreignObject');
-            if (foreignObj) {
-              text = foreignObj.innerText || foreignObj.textContent || '';
-            }
-          }
-          if (!text) {
-            // Check parent group for aria-label
-            const parentG = el.closest('g[aria-label]');
-            if (parentG) text = parentG.getAttribute('aria-label');
-          }
-        }
-      }
-      // Regular HTML elements
-      else {
-        text = el.getAttribute('aria-label') || el.title || '';
-
-        if (!text) {
-          // Prefer the direct text content of the hovered element
-          const directText = Array.from(el.childNodes)
-            .filter((node) => node.nodeType === Node.TEXT_NODE)
-            .map((node) => node.textContent)
-            .join(' ')
-            .trim();
-
-          text = directText || el.innerText || el.textContent || '';
-        }
-      }
-
-      text = (text || '').trim();
-      if (!text || text.length > 300) return;
-
-      clearTimeout(hoverTimeoutRef.current);
-
-      hoverTimeoutRef.current = setTimeout(() => {
-        if (!ttsEnabledRef.current) return;
-        try {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = 'en-US';
-          utterance.rate = 1;
-          utterance.volume = 1;
-          window.speechSynthesis.speak(utterance);
-        } catch (err) {
-          console.warn('TTS error:', err);
-        }
-      }, 300);
     };
 
-    const handleMouseOut = () => {
-      clearTimeout(hoverTimeoutRef.current);
-    };
-
-    document.addEventListener('mouseover', handleMouseOver, true);
-    document.addEventListener('mouseout', handleMouseOut, true);
+    // Use capture phase to ensure it triggers early
+    document.addEventListener('click', handleTTSClick, true);
 
     return () => {
-      document.removeEventListener('mouseover', handleMouseOver, true);
-      document.removeEventListener('mouseout', handleMouseOut, true);
-      clearTimeout(hoverTimeoutRef.current);
+      document.removeEventListener('click', handleTTSClick, true);
       window.speechSynthesis?.cancel();
     };
-  }, []); // Mount once, never re-attach
+  }, [activeSettings.tts]);
 
   const toggleSetting = (setting) => {
     setActiveSettings((prev) => {
@@ -120,20 +44,8 @@ export default function AccessibilityMenu({ isOpen, onClose }) {
       // Handle global CSS classes for demo purposes
       if (isActive) {
         document.body.classList.add(`a11y-${setting}`);
-        if (setting === 'tts' && window.speechSynthesis) {
-          // Unlock speech synthesis with a real user gesture + audible confirmation
-          window.speechSynthesis.cancel();
-          const unlock = new SpeechSynthesisUtterance('Text to speech enabled. Hover over any text to hear it.');
-          unlock.lang = 'en-US';
-          unlock.rate = 1;
-          unlock.volume = 1;
-          window.speechSynthesis.speak(unlock);
-        }
       } else {
         document.body.classList.remove(`a11y-${setting}`);
-        if (setting === 'tts' && window.speechSynthesis) {
-          window.speechSynthesis.cancel();
-        }
       }
       
       const newSettings = {

@@ -124,7 +124,7 @@ export default function TopBar() {
         .goog-text-highlight { background: none !important; box-shadow: none !important; }
       `}</style>
       
-      <AccessibilityMenu isOpen={isA11yOpen} onClose={() => setIsA11yOpen(false)} />
+      {isA11yOpen && <AccessibilityMenu isOpen={isA11yOpen} onClose={() => setIsA11yOpen(false)} />}
       
       {isChatOpen && (
         <div className="floating-chat-widget">
