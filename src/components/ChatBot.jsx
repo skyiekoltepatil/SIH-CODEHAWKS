@@ -21,7 +21,12 @@ export default function ChatBot({ context }) {
   useEffect(() => {
     // Prime the chat with the welcome message on first render
     if (messages.length === 0) {
-      setMessages([{ role: 'ai', text: welcomeResponse.text, lang: welcomeResponse.lang }]);
+      setMessages([{ 
+        role: 'ai', 
+        text: welcomeResponse.text, 
+        lang: welcomeResponse.lang, 
+        suggestions: welcomeResponse.suggestions 
+      }]);
     }
   }, [messages.length, welcomeResponse]);
 

@@ -967,6 +967,8 @@ html.dark .btn-outline:hover {
 /* AI Assistant */
 .chat-container {
   background-color: var(--card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   display: flex;
