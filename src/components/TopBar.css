@@ -143,6 +143,7 @@
   max-width: 600px;
   max-height: 800px;
   background: var(--card-bg, #ffffff);
+  color: var(--text-main);
   border-radius: 12px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   display: flex;

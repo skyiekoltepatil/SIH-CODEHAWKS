@@ -1010,6 +1010,7 @@ html.dark .btn-outline:hover {
 
 .ai-message {
   background-color: var(--message-bg-ai);
+  color: var(--text-main);
   align-self: flex-start;
   border-bottom-left-radius: 0;
 }
