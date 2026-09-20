@@ -28,6 +28,13 @@ html.dark {
   --border-color: rgba(63, 63, 70, 0.8);
   --icon-bg: #27272a;
   --message-bg-ai: #18181b;
+  color-scheme: dark;
+}
+
+html.dark input, 
+html.dark textarea, 
+html.dark select {
+  color-scheme: dark;
 }
 
 * {
