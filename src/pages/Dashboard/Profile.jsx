@@ -888,9 +888,9 @@ export default function Profile() {
                   maxWidth: '500px',
                   width: '100%',
                   padding: '40px',
-                  background: '#f8fafc',
+                  background: 'var(--card-bg)',
                   borderRadius: '12px',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-color)',
                 }}
               >
                 <fieldset
@@ -900,7 +900,7 @@ export default function Profile() {
                   <h3
                     style={{
                       marginBottom: '30px',
-                      color: '#1e293b',
+                      color: 'var(--text-main)',
                       fontSize: '1.5rem',
                       textAlign: 'center',
                     }}
@@ -1033,13 +1033,13 @@ export default function Profile() {
                       rel="noopener noreferrer"
                       style={{
                         padding: '8px 12px',
-                        background: '#f1f5f9',
-                        color: '#475569',
+                        background: 'var(--icon-bg)',
+                        color: 'var(--text-main)',
                         borderRadius: '6px',
                         textDecoration: 'none',
                         fontSize: '0.85rem',
                         fontWeight: '600',
-                        border: '1px solid #cbd5e1',
+                        border: '1px solid var(--border-color)',
                       }}
                     >
                       <i className="fa-solid fa-arrow-up-right-from-square"></i> Open Site B
@@ -1050,13 +1050,13 @@ export default function Profile() {
                       rel="noopener noreferrer"
                       style={{
                         padding: '8px 12px',
-                        background: '#f1f5f9',
-                        color: '#475569',
+                        background: 'var(--icon-bg)',
+                        color: 'var(--text-main)',
                         borderRadius: '6px',
                         textDecoration: 'none',
                         fontSize: '0.85rem',
                         fontWeight: '600',
-                        border: '1px solid #cbd5e1',
+                        border: '1px solid var(--border-color)',
                       }}
                     >
                       <i className="fa-solid fa-arrow-up-right-from-square"></i> Open Site C
@@ -1067,13 +1067,13 @@ export default function Profile() {
                       rel="noopener noreferrer"
                       style={{
                         padding: '8px 12px',
-                        background: '#f1f5f9',
-                        color: '#475569',
+                        background: 'var(--icon-bg)',
+                        color: 'var(--text-main)',
                         borderRadius: '6px',
                         textDecoration: 'none',
                         fontSize: '0.85rem',
                         fontWeight: '600',
-                        border: '1px solid #cbd5e1',
+                        border: '1px solid var(--border-color)',
                       }}
                     >
                       <i className="fa-solid fa-arrow-up-right-from-square"></i> Open Site D
@@ -1573,7 +1573,7 @@ export default function Profile() {
                           background: '#f8fafc',
                           padding: '20px',
                           borderRadius: '8px',
-                          border: '1px solid #cbd5e1',
+                          border: '1px solid var(--border-color)',
                           marginTop: '20px',
                         }}
                       >
@@ -1638,6 +1638,7 @@ export default function Profile() {
                             width: '100%',
                             resize: 'vertical',
                             background: 'transparent',
+                            color: 'var(--text-main)',
                           }}
                           placeholder="Enter your full address"
                           value={contactData.address}
@@ -1756,7 +1757,7 @@ export default function Profile() {
                           background: '#f8fafc',
                           padding: '20px',
                           borderRadius: '8px',
-                          border: '1px solid #cbd5e1',
+                          border: '1px solid var(--border-color)',
                           marginTop: '-10px',
                           marginBottom: '20px',
                         }}
@@ -1871,7 +1872,7 @@ export default function Profile() {
                           background: '#f8fafc',
                           padding: '20px',
                           borderRadius: '8px',
-                          border: '1px solid #cbd5e1',
+                          border: '1px solid var(--border-color)',
                           marginTop: '-10px',
                         }}
                       >
@@ -1922,12 +1923,12 @@ export default function Profile() {
           ) : activeSidebar === 'UPLOAD_DOCUMENTS' ? (
             <div
               className="profile-form-wrapper"
-              style={{ minHeight: '500px', background: 'white' }}
+              style={{ minHeight: '500px' }}
             >
-              <h3 style={{ marginBottom: '30px', color: '#1e293b', fontSize: '1.4rem' }}>
+              <h3 style={{ marginBottom: '30px', color: 'var(--text-main)', fontSize: '1.4rem' }}>
                 Upload Required Documents
               </h3>
-              <p style={{ color: '#64748b', marginBottom: '30px', fontSize: '0.9rem' }}>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '30px', fontSize: '0.9rem' }}>
                 Please upload clear, legible copies of the original documents. Max file size: 5MB
                 per document.
               </p>
@@ -2012,13 +2013,13 @@ export default function Profile() {
               className="profile-form-wrapper"
               style={{
                 minHeight: '500px',
-                background: 'white',
+                background: 'var(--bg-color)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <p style={{ color: '#94a3b8', fontSize: '1.2rem' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>
                 Blank Page for {activeTab.replace(/_/g, ' ')}
               </p>
             </div>
@@ -2043,15 +2044,16 @@ export default function Profile() {
             style={{
               maxWidth: '500px',
               width: '100%',
-              background: 'white',
+              background: 'var(--card-bg)',
               padding: '24px',
               borderRadius: '12px',
+              border: '1px solid var(--border-color)',
             }}
           >
-            <h3 style={{ marginBottom: '20px', color: '#1e293b' }}>Upload Document</h3>
+            <h3 style={{ marginBottom: '20px', color: 'var(--text-main)' }}>Upload Document</h3>
 
             <div className="ui-input-group" style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-main)' }}>
                 File <span className="req">*</span>
               </label>
               <div
@@ -2067,9 +2069,9 @@ export default function Profile() {
               >
                 <i
                   className="fa-solid fa-cloud-arrow-up upload-icon"
-                  style={{ fontSize: '2rem', color: '#94a3b8', marginBottom: '10px' }}
+                  style={{ fontSize: '2rem', color: 'var(--text-muted)', marginBottom: '10px' }}
                 ></i>
-                <div className="upload-text" style={{ fontSize: '0.9rem', color: '#475569' }}>
+                <div className="upload-text" style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                   {docFormData.file ? (
                     <span
                       style={{
@@ -2115,7 +2117,7 @@ export default function Profile() {
             </div>
 
             <div className="ui-input-group" style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-main)' }}>
                 Document Name
               </label>
               <input
@@ -2127,13 +2129,15 @@ export default function Profile() {
                   width: '100%',
                   padding: '10px',
                   borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-color)',
+                  color: 'var(--text-main)',
                 }}
               />
             </div>
 
             <div className="ui-input-group" style={{ marginBottom: '25px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-main)' }}>
                 Subject Text
               </label>
               <textarea
@@ -2145,7 +2149,9 @@ export default function Profile() {
                   width: '100%',
                   padding: '10px',
                   borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-color)',
+                  color: 'var(--text-main)',
                   resize: 'vertical',
                 }}
               ></textarea>
@@ -2161,8 +2167,9 @@ export default function Profile() {
                 style={{
                   padding: '10px 20px',
                   borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  background: '#f1f5f9',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-color)',
+                  color: 'var(--text-main)',
                   cursor: 'pointer',
                 }}
               >
@@ -2426,7 +2433,7 @@ export default function Profile() {
                   style={{
                     padding: '10px 22px',
                     borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--border-color)',
                     background: '#f1f5f9',
                     color: '#475569',
                     fontWeight: '600',
@@ -2501,7 +2508,7 @@ export default function Profile() {
               Are you sure you want to lock your profile? You will <strong style={{ color: '#1e293b' }}>not be able to edit any details</strong> after locking.
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button type="button" onClick={() => setShowLockConfirmModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f1f5f9', color: '#475569', fontWeight: '600', cursor: 'pointer' }}>
+              <button type="button" onClick={() => setShowLockConfirmModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#f1f5f9', color: '#475569', fontWeight: '600', cursor: 'pointer' }}>
                 Cancel
               </button>
               <button type="button" onClick={handleLockProfile} disabled={isLockingProfile} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#d97706', color: 'white', fontWeight: '600', cursor: isLockingProfile ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -2531,7 +2538,7 @@ export default function Profile() {
               Are you sure you want to unlock your profile? You will be able to edit your details again.
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button type="button" onClick={() => setShowUnlockConfirmModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f1f5f9', color: '#475569', fontWeight: '600', cursor: 'pointer' }}>
+              <button type="button" onClick={() => setShowUnlockConfirmModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#f1f5f9', color: '#475569', fontWeight: '600', cursor: 'pointer' }}>
                 Cancel
               </button>
               <button type="button" onClick={handleUnlockProfile} disabled={isLockingProfile} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#059669', color: 'white', fontWeight: '600', cursor: isLockingProfile ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>

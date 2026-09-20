@@ -1,5 +1,5 @@
 .scheme-details-page {
-  background-color: #f1f5f9;
+  background-color: var(--bg-color);
   min-height: calc(100vh - 70px);
   display: flex;
   flex-direction: column;
@@ -35,7 +35,7 @@
 
 .sd-title {
   font-size: 2rem;
-  color: #1e293b;
+  color: var(--text-main);
   margin: 0 0 25px 0;
   font-weight: 700;
 }
@@ -52,7 +52,7 @@
   border: none;
   padding: 10px 0;
   font-size: 1.05rem;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   font-weight: 500;
   position: relative;
@@ -64,7 +64,7 @@
 }
 
 .sd-tab.active {
-  color: #1e293b;
+  color: var(--text-main);
   font-weight: 600;
 }
 
@@ -92,7 +92,7 @@
 
 .overview-left-card,
 .overview-right-card {
-  background: #ffffff;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 30px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -131,11 +131,11 @@
 .category-header h3 {
   margin: 0;
   font-size: 1.25rem;
-  color: #1e293b;
+  color: var(--text-main);
 }
 
 .description-text {
-  color: #475569;
+  color: var(--text-muted);
   line-height: 1.6;
   margin-bottom: 25px;
   font-size: 0.95rem;
@@ -143,14 +143,14 @@
 
 .overview-left-card h4 {
   margin: 0 0 15px 0;
-  color: #1e293b;
+  color: var(--text-main);
   font-size: 1.1rem;
 }
 
 .overview-left-card ul {
   margin: 0;
   padding-left: 20px;
-  color: #475569;
+  color: var(--text-muted);
 }
 
 .overview-left-card li {
@@ -167,27 +167,27 @@
 
 .emblem-icon {
   font-size: 2.5rem;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .emblem-text {
   display: flex;
   flex-direction: column;
   font-size: 0.8rem;
-  color: #475569;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
 .stats-section h5,
 .progress-section h5 {
   margin: 0 0 10px 0;
-  color: #1e293b;
+  color: var(--text-main);
   font-size: 0.95rem;
 }
 
 .stat-value {
   margin: 0 0 8px 0;
-  color: #475569;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -209,7 +209,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 /* Documentation Content */
@@ -219,7 +219,7 @@
 }
 
 .doc-col {
-  background: #ffffff;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 25px;
   flex: 1;
@@ -228,12 +228,12 @@
 
 .doc-col h4 {
   margin: 0 0 15px 0;
-  color: #1e293b;
+  color: var(--text-main);
   font-size: 1.1rem;
 }
 
 .doc-col p {
-  color: #475569;
+  color: var(--text-muted);
   font-size: 0.9rem;
   line-height: 1.5;
   margin-bottom: 20px;
@@ -241,14 +241,14 @@
 
 .doc-col h5 {
   margin: 0 0 10px 0;
-  color: #1e293b;
+  color: var(--text-main);
   font-size: 0.95rem;
 }
 
 .doc-col ul {
   margin: 0;
   padding-left: 20px;
-  color: #475569;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -270,14 +270,14 @@
   padding: 15px;
   border: 1px dashed #cbd5e1;
   border-radius: 8px;
-  background: #f8fafc;
+  background: var(--bg-color);
 }
 
 .doc-upload-item span {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #1e293b;
+  color: var(--text-main);
   font-weight: 500;
   font-size: 0.95rem;
 }
@@ -302,11 +302,11 @@
 }
 
 .empty-content {
-  background: #ffffff;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 40px;
   text-align: center;
-  color: #64748b;
+  color: var(--text-muted);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
@@ -316,7 +316,7 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  background: #ffffff;
+  background: var(--card-bg);
   padding: 15px 0;
   box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
   display: flex;
@@ -425,8 +425,8 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #fff;
-  color: #000;
+  background: var(--card-bg);
+  color: var(--text-main);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -1,0 +1,251 @@
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #0c5999;
+  color: white;
+  padding: 4px 3rem;
+  font-family: Arial, sans-serif;
+  font-size: 0.85rem;
+  position: static; /* Static positioning means it scrolls out of view */
+  z-index: 60;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.topbar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emblem-logo {
+  height: 28px;
+  filter: brightness(0) invert(1);
+}
+
+.gov-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.digital-india-logo {
+  height: 24px;
+  background: var(--card-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-icon-btn {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.topbar-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.isl-chatbot-btn {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  overflow: hidden;
+  transition: opacity 0.2s;
+}
+
+.isl-chatbot-btn:hover {
+  opacity: 0.9;
+}
+
+.isl-chatbot-btn span.isl-text {
+  padding: 0 10px;
+}
+
+.isl-chatbot-btn span.isl-icon {
+  background: var(--card-bg);
+  color: #ff4d4f;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 1.1rem;
+}
+
+.language-selector {
+  margin-left: 4px;
+}
+
+.language-selector select {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+  font-weight: 600;
+}
+
+.language-selector select option {
+  color: var(--text-main);
+}
+
+/* Make it responsive */
+@media (max-width: 768px) {
+  .topbar {
+    padding: 8px 1rem;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+/* Floating Chatbot Widget */
+.floating-chat-widget {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 40vw;
+  height: 72vh;
+  min-width: 320px;
+  min-height: 400px;
+  max-width: 600px;
+  max-height: 800px;
+  background: var(--card-bg, #ffffff);
+  color: var(--text-main);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  border: 1px solid var(--border-color, #e2e8f0);
+  overflow: hidden;
+}
+
+.floating-chat-widget .chat-container {
+  flex: 1;
+  height: auto;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+}
+
+.chat-header {
+  background: #2563eb;
+  color: white;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.chat-header button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.chat-header button:hover {
+  opacity: 1;
+}
+
+.chat-body {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background: var(--bg-color, #f8fafc);
+}
+
+.chat-message.ai {
+  background: var(--card-bg, #ffffff);
+  color: var(--text-main, #1e293b);
+  padding: 12px;
+  border-radius: 8px;
+  border-bottom-left-radius: 0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  border: 1px solid var(--border-color, #e2e8f0);
+}
+
+.chat-input {
+  display: flex;
+  padding: 12px;
+  background: var(--card-bg, #ffffff);
+  border-top: 1px solid var(--border-color, #e2e8f0);
+  gap: 8px;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 20px;
+  outline: none;
+  font-size: 0.9rem;
+  background: var(--bg-color, #ffffff);
+  color: var(--text-main, #1e293b);
+}
+
+.chat-input input:focus {
+  border-color: #2563eb;
+}
+
+.chat-input button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.chat-input button:hover {
+  background: #1d4ed8;
+}

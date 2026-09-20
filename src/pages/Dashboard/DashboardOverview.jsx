@@ -10,7 +10,9 @@ import './DashboardOverview.css';
 export default function DashboardOverview() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const selectedFilter = 'All';
+  const [selectedFilter, setSelectedFilter] = useState('All');
+  const [hoveredFilter, setHoveredFilter] = useState(null);
+  const [drilledStatus, setDrilledStatus] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAlert, setShowAlert] = useState(true);
   const [profileCompletion, setProfileCompletion] = useState(0); // Default base percentage
@@ -148,10 +150,11 @@ export default function DashboardOverview() {
   const pendingCount = applications.filter((a) => a.status === 'Pending').length;
   const rejectedCount = applications.filter((a) => a.status === 'Rejected').length;
 
+  const effectiveFilter = hoveredFilter || selectedFilter;
   const filteredApps =
-    selectedFilter === 'All'
+    effectiveFilter === 'All'
       ? applications
-      : applications.filter((app) => app.status === selectedFilter);
+      : applications.filter((app) => app.status === effectiveFilter);
 
   const itemsPerPage = 5;
   const totalPages = Math.ceil(filteredApps.length / itemsPerPage);
@@ -445,34 +448,57 @@ export default function DashboardOverview() {
                   </pattern>
                 </defs>
               </svg>
+              {drilledStatus && (
+                <button
+                  onClick={() => {
+                    setDrilledStatus(null);
+                    setSelectedFilter('All');
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '0',
+                    left: '10px',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    padding: '4px 8px',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-main)',
+                    cursor: 'pointer',
+                    zIndex: 10,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <i className="fa-solid fa-arrow-left"></i> Back
+                </button>
+              )}
               <PieChart
-                data={[
-                  {
-                    label: 'Approved',
-                    value: approvedCount,
-                    color: '#10b981',
-                    fill: 'url(#horizontal-lines)',
-                  },
-                  {
-                    label: 'Pending',
-                    value: pendingCount,
-                    color: '#f59e0b',
-                    fill: 'url(#vertical-lines)',
-                  },
-                  {
-                    label: 'Rejected',
-                    value: rejectedCount,
-                    color: '#ef4444',
-                    fill: 'url(#lines)',
-                  },
-                ].filter((d) => d.value > 0)}
-                size={220}
-                innerRadius={70}
-                padAngle={0.03}
-                cornerRadius={4}
-              >
-                {totalCount > 0 ? (
-                  [
+                data={(() => {
+                  if (drilledStatus) {
+                    return applications
+                      .filter((app) => app.status === drilledStatus)
+                      .map((app) => ({
+                        id: app.id,
+                        label: app.schemeName || app.name || 'Application',
+                        value: 1,
+                        status: app.status,
+                        color:
+                          app.status === 'Approved'
+                            ? '#10b981'
+                            : app.status === 'Rejected'
+                              ? '#ef4444'
+                              : '#f59e0b',
+                        fill:
+                          app.status === 'Approved'
+                            ? 'url(#horizontal-lines)'
+                            : app.status === 'Rejected'
+                              ? 'url(#lines)'
+                              : 'url(#vertical-lines)',
+                      }));
+                  }
+                  return [
                     {
                       label: 'Approved',
                       value: approvedCount,
@@ -491,25 +517,145 @@ export default function DashboardOverview() {
                       color: '#ef4444',
                       fill: 'url(#lines)',
                     },
-                  ]
-                    .filter((d) => d.value > 0)
-                    .map((_, index) => <PieSlice key={index} index={index} />)
-                ) : (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      width: '140px',
-                      height: '140px',
-                      borderRadius: '50%',
-                      border: '40px solid #e2e8f0',
-                      boxSizing: 'border-box',
-                    }}
-                  ></div>
-                )}
-                <PieCenter defaultLabel="Total" />
+                  ].filter((d) => d.value > 0);
+                })()}
+                size={220}
+                innerRadius={70}
+                padAngle={0.03}
+                cornerRadius={4}
+              >
+                {(() => {
+                  const currentData = drilledStatus 
+                    ? applications.filter(app => app.status === drilledStatus) 
+                    : [
+                        { label: 'Approved', value: approvedCount },
+                        { label: 'Pending', value: pendingCount },
+                        { label: 'Rejected', value: rejectedCount }
+                      ].filter(d => d.value > 0);
+                      
+                  if (currentData.length > 0) {
+                    return currentData.map((item, index) => (
+                      <PieSlice
+                        key={drilledStatus ? item.id : item.label}
+                        index={index}
+                        hoverEffect="none"
+                        onMouseEnter={() => {
+                          if (!drilledStatus) setHoveredFilter(item.label);
+                        }}
+                        onMouseLeave={() => {
+                          if (!drilledStatus) setHoveredFilter(null);
+                        }}
+                        onClick={() => {
+                          if (!drilledStatus) {
+                            setDrilledStatus(item.label);
+                            setSelectedFilter(item.label);
+                          } else {
+                            navigate('/dashboard/applications', { state: { expandAppId: item.id } });
+                          }
+                        }}
+                      />
+                    ));
+                  }
+                  return (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: '140px',
+                        height: '140px',
+                        borderRadius: '50%',
+                        border: '40px solid var(--border-color)',
+                        boxSizing: 'border-box',
+                      }}
+                    ></div>
+                  );
+                })()}
+                <PieCenter>
+                  {({ activeItem }) => {
+                    if (activeItem) {
+                      if (!drilledStatus) {
+                        return (
+                          <div style={{ textAlign: 'center' }}>
+                            <div
+                              style={{
+                                fontSize: '2.5rem',
+                                fontWeight: 'bold',
+                                color: 'var(--text-main)',
+                                lineHeight: '1',
+                              }}
+                            >
+                              {activeItem.value}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: '1rem',
+                                color: activeItem.color,
+                                marginTop: '4px',
+                              }}
+                            >
+                              {activeItem.label}
+                            </div>
+                          </div>
+                        );
+                      }
+                      
+                      return (
+                        <div style={{ textAlign: 'center', padding: '0 10px' }}>
+                          <div
+                            style={{
+                              fontSize: '0.95rem',
+                              fontWeight: 'bold',
+                              color: 'var(--text-main)',
+                              lineHeight: '1.2',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            {activeItem.label}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '0.85rem',
+                              color: activeItem.color,
+                              marginTop: '4px',
+                            }}
+                          >
+                            {activeItem.status}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div style={{ textAlign: 'center' }}>
+                        <div
+                          style={{
+                            fontSize: '2.5rem',
+                            fontWeight: 'bold',
+                            color: 'var(--text-main)',
+                            lineHeight: '1',
+                          }}
+                        >
+                          {drilledStatus
+                            ? applications.filter((app) => app.status === drilledStatus).length
+                            : totalCount}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '1rem',
+                            color: 'var(--text-muted)',
+                            marginTop: '4px',
+                          }}
+                        >
+                          {drilledStatus ? drilledStatus : 'Total'}
+                        </div>
+                      </div>
+                    );
+                  }}
+                </PieCenter>
               </PieChart>
             </div>
 
@@ -524,7 +670,7 @@ export default function DashboardOverview() {
               </button>
             </div>
             <div className="filtered-schemes-list">
-              <h4>{selectedFilter === 'All' ? 'All' : selectedFilter} Applications</h4>
+              <h4>{effectiveFilter === 'All' ? 'All' : effectiveFilter} Applications</h4>
 
               {paginatedApps.map((app) => (
                 <div key={app.id} className="mini-scheme-item" style={{ marginBottom: '8px' }}>
@@ -644,11 +790,19 @@ export default function DashboardOverview() {
           <div className="sidebar-card">
             <h3>Help and Support</h3>
             <div className="help-grid">
-              <div className="help-item">
+              <div
+                className="help-item"
+                onClick={() => navigate('/faqs')}
+                style={{ cursor: 'pointer' }}
+              >
                 <i className="fa-regular fa-circle-question"></i>
                 <span>FAQs</span>
               </div>
-              <div className="help-item">
+              <div 
+                className="help-item" 
+                onClick={() => window.dispatchEvent(new Event('openChatbot'))}
+                style={{ cursor: 'pointer' }}
+              >
                 <i className="fa-regular fa-comments"></i>
                 <span>Contact Support Chat</span>
               </div>

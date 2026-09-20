@@ -11,6 +11,9 @@ export function PieSlice({
   hoverOffset = 10,
   arcs,
   path,
+  onClick,
+  onMouseEnter,
+  onMouseLeave,
 }) {
   const { data, hoveredIndex, setHoveredIndex } = usePieChart();
   const arc = arcs[index];
@@ -40,8 +43,15 @@ export function PieSlice({
 
   return (
     <g
-      onMouseEnter={() => setHoveredIndex(index)}
-      onMouseLeave={() => setHoveredIndex(null)}
+      onMouseEnter={(e) => {
+        setHoveredIndex(index);
+        if (onMouseEnter) onMouseEnter(e, item);
+      }}
+      onMouseLeave={(e) => {
+        setHoveredIndex(null);
+        if (onMouseLeave) onMouseLeave(e, item);
+      }}
+      onClick={(e) => onClick && onClick(item, e)}
       style={{
         cursor: 'pointer',
         opacity: isOtherHovered ? 0.3 : 1,
