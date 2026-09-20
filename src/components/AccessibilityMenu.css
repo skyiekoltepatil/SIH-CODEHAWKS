@@ -165,15 +165,36 @@
 }
 
 /* Base Accessibility Classes */
-body.a11y-bigger-text {
-  font-size: 110% !important;
+html.a11y-bigger-text {
+  font-size: 115% !important;
 }
-body.a11y-smaller-text {
-  font-size: 90% !important;
+html.a11y-smaller-text {
+  font-size: 85% !important;
 }
 body.a11y-text-spacing {
   letter-spacing: 1px !important;
   word-spacing: 2px !important;
+}
+body.a11y-tts *:hover {
+  outline: 2px solid #7b40f2 !important;
+  outline-offset: 2px;
+  cursor: crosshair !important;
+}
+
+/* ADHD Mode Reading Mask */
+body.a11y-adhd::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  background: 
+    linear-gradient(rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.5) calc(var(--mouse-y, 50vh) - 50px),
+    transparent calc(var(--mouse-y, 50vh) - 50px), transparent calc(var(--mouse-y, 50vh) + 50px),
+    rgba(0,0,0,0.5) calc(var(--mouse-y, 50vh) + 50px), rgba(0,0,0,0.5) 100%);
 }
 body.a11y-line-height {
   line-height: 1.8 !important;
