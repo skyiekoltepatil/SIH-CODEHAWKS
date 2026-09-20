@@ -197,6 +197,15 @@ body {
   background-color: #eff6ff;
 }
 
+html.dark .btn-outline {
+  border-color: #3b82f6;
+  color: #60a5fa;
+}
+
+html.dark .btn-outline:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
 .full-width {
   width: 100%;
   padding: 0.75rem;

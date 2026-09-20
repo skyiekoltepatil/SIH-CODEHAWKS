@@ -566,13 +566,13 @@ export default function SchemeApplication() {
             </p>
 
             <div style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
+              background: 'var(--icon-bg)',
+              border: '1px solid var(--border-color)',
               borderRadius: '8px',
               padding: '16px',
               marginBottom: '24px'
             }}>
-              <h4 style={{ margin: '0 0 12px 0', color: '#1e293b', fontSize: '1rem' }}>Documents Needed:</h4>
+              <h4 style={{ margin: '0 0 12px 0', color: 'var(--text-main)', fontSize: '1rem' }}>Documents Needed:</h4>
               <ul style={{ margin: 0, paddingLeft: '0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {[
                   'Aadhaar Card',
@@ -593,7 +593,7 @@ export default function SchemeApplication() {
                   });
                   return (
                     <li key={docName} style={{ 
-                      color: isUploaded ? '#16a34a' : '#64748b', 
+                      color: isUploaded ? '#16a34a' : 'var(--text-muted)', 
                       display: 'flex', 
                       alignItems: 'center', 
                       gap: '10px',
@@ -661,9 +661,9 @@ export default function SchemeApplication() {
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         padding: '10px 15px',
-                        background: '#f8fafc',
+                        background: 'var(--icon-bg)',
                         borderRadius: '8px',
-                        border: '1px solid #e2e8f0',
+                        border: '1px solid var(--border-color)',
                       }}
                     >
                       <div
@@ -974,7 +974,7 @@ export default function SchemeApplication() {
           <div
             className="modal-content"
             style={{
-              background: '#fff',
+              background: 'var(--card-bg)',
               padding: '24px',
               borderRadius: '12px',
               width: '90%',
@@ -998,6 +998,7 @@ export default function SchemeApplication() {
                   border: 'none',
                   fontSize: '1.2rem',
                   cursor: 'pointer',
+                  color: 'var(--text-main)',
                 }}
               >
                 <i className="fa-solid fa-xmark"></i>
@@ -1005,7 +1006,7 @@ export default function SchemeApplication() {
             </div>
 
             {!profileDocuments || Object.keys(profileDocuments).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '20px 0', color: '#64748b' }}>
+              <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)' }}>
                 <p>No documents found in your profile.</p>
                 <button
                   type="button"
@@ -1045,7 +1046,7 @@ export default function SchemeApplication() {
                         alignItems: 'center',
                         gap: '12px',
                         padding: '12px',
-                        border: '1px solid #e2e8f0',
+                        border: '1px solid var(--border-color)',
                         borderRadius: '8px',
                         cursor: 'pointer',
                       }}
@@ -1064,7 +1065,7 @@ export default function SchemeApplication() {
                       <span
                         style={{
                           fontSize: '1rem',
-                          color: '#1e293b',
+                          color: 'var(--text-main)',
                           fontWeight: '500',
                           textTransform: 'capitalize',
                         }}
@@ -1074,7 +1075,7 @@ export default function SchemeApplication() {
                       <span
                         style={{
                           fontSize: '0.8rem',
-                          color: '#64748b',
+                          color: 'var(--text-muted)',
                           marginLeft: 'auto',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
