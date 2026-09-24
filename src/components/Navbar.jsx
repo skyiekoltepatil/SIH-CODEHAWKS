@@ -324,6 +324,15 @@ export default function Navbar() {
                       </Link>
                     </li>
                     <li>
+                      <Link
+                        to="/dashboard/audit-log"
+                        onClick={() => setIsAuthModalOpen(false)}
+                      >
+                        <i className="fa-solid fa-clock-rotate-left" style={{ color: '#10b981' }}></i>{' '}
+                        Data Access History
+                      </Link>
+                    </li>
+                    <li>
                       <button
                         onClick={() => {
                           logout();

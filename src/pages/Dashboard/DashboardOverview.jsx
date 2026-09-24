@@ -80,6 +80,16 @@ export default function DashboardOverview() {
               });
             });
 
+            // Citizen Master Profile wizard contributes to completion
+            const cp = userData?.citizenProfile;
+            if (cp?.submitted) {
+              completedFields += 15;
+              totalFields += 15;
+            } else if (cp?.basic?.fullName) {
+              completedFields += 5;
+              totalFields += 15;
+            }
+
             const calculatedPercentage =
               totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
             setProfileCompletion(calculatedPercentage);
@@ -300,7 +310,7 @@ export default function DashboardOverview() {
                 >
                   <button
                     className="btn-primary"
-                    onClick={() => navigate('/dashboard/profile')}
+                    onClick={() => navigate('/dashboard/citizen-profile')}
                     style={{ padding: '12px 24px', fontSize: '1rem', letterSpacing: '0.5px' }}
                   >
                     Complete Profile
