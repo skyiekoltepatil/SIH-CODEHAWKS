@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { schemesData } from '../../data';
 
@@ -18,6 +18,7 @@ export default function SchemeApplication() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isDeclared, setIsDeclared] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
+  const [isUpdateProfileModalOpen, setIsUpdateProfileModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     // Personal Details (Step 3)
@@ -84,6 +85,127 @@ export default function SchemeApplication() {
     };
     fetchProfileData();
   }, [user]);
+
+  const handleFetchEntireForm = async () => {
+    if (!user?.uid) return;
+    try {
+      const docRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        let updatedData = { ...formData };
+        updatedData.firstName = data.personalDetails?.firstName || updatedData.firstName;
+        updatedData.lastName = data.personalDetails?.lastName || updatedData.lastName;
+        updatedData.email = data.personalDetails?.officialEmail || user.email || updatedData.email;
+        updatedData.phone = data.contactDetails?.phoneNumber || updatedData.phone;
+        updatedData.aadhaar = data.identityDetails?.aadhaarNumber || updatedData.aadhaar;
+        updatedData.address = data.contactDetails?.address || updatedData.address;
+        
+        updatedData.collegeName = data.educationDetails?.collegeName || updatedData.collegeName;
+        updatedData.courseName = data.educationDetails?.courseName || updatedData.courseName;
+        updatedData.currentYear = data.educationDetails?.currentYear || updatedData.currentYear;
+        updatedData.enrollmentNumber = data.educationDetails?.enrollmentNumber || updatedData.enrollmentNumber;
+        updatedData.previousMarks = data.educationDetails?.previousMarks || updatedData.previousMarks;
+        
+        updatedData.familyIncome = data.familyDetails?.familyIncome || updatedData.familyIncome;
+        updatedData.fatherOccupation = data.familyDetails?.fatherOccupation || updatedData.fatherOccupation;
+        updatedData.motherOccupation = data.familyDetails?.motherOccupation || updatedData.motherOccupation;
+        
+        updatedData.accountHolderName = data.bankDetails?.accountHolderName || updatedData.accountHolderName;
+        updatedData.accountNumber = data.bankDetails?.accountNumber || updatedData.accountNumber;
+        updatedData.ifscCode = data.bankDetails?.ifscCode || updatedData.ifscCode;
+        updatedData.bankName = data.bankDetails?.bankName || updatedData.bankName;
+
+        if (data.documents) {
+          const newDocs = [];
+          Object.entries(data.documents).forEach(([key, docObj]) => {
+            if (docObj?.url && !updatedData.documents.some(d => d.url === docObj.url)) {
+              newDocs.push({
+                name: docObj.docName || key,
+                originalFilename: docObj.name || key,
+                url: docObj.url,
+                isFromProfile: true,
+              });
+            }
+          });
+          updatedData.documents = [...updatedData.documents, ...newDocs];
+        }
+
+        setFormData(updatedData);
+
+        // Validation for incomplete steps
+        if (!updatedData.firstName || !updatedData.lastName || !updatedData.email || !updatedData.phone || !updatedData.aadhaar || !updatedData.dob || !updatedData.address) {
+          setCurrentStep(1);
+          setFormError('Please fill missing Personal Details.');
+        } else if (!updatedData.collegeName || !updatedData.courseName || !updatedData.currentYear || !updatedData.enrollmentNumber || !updatedData.previousMarks) {
+          setCurrentStep(2);
+          setFormError('Please fill missing Academic Details.');
+        } else if (!updatedData.familyIncome || !updatedData.fatherOccupation || !updatedData.motherOccupation) {
+          setCurrentStep(3);
+          setFormError('Please fill missing Family & Income Details.');
+        } else if (updatedData.documents.length === 0) {
+          setCurrentStep(4);
+          setFormError('Please upload mandatory documents.');
+        } else if (!updatedData.accountHolderName || !updatedData.bankName || !updatedData.accountNumber || !updatedData.ifscCode) {
+          setCurrentStep(5);
+          setFormError('Please fill missing Bank Details.');
+        } else {
+          setCurrentStep(6);
+          setFormError('');
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching entire form:', err);
+    }
+  };
+
+  const handleFetchSpecificForm = async (step) => {
+    if (!user?.uid) return;
+    try {
+      const docRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (step === 1) {
+          setFormData((prev) => ({
+            ...prev,
+            firstName: data.personalDetails?.firstName || prev.firstName,
+            lastName: data.personalDetails?.lastName || prev.lastName,
+            email: data.personalDetails?.officialEmail || user.email || prev.email,
+            phone: data.contactDetails?.phoneNumber || prev.phone,
+            aadhaar: data.identityDetails?.aadhaarNumber || prev.aadhaar,
+            address: data.contactDetails?.address || prev.address,
+          }));
+        } else if (step === 2) {
+          setFormData((prev) => ({
+            ...prev,
+            collegeName: data.educationDetails?.collegeName || prev.collegeName,
+            courseName: data.educationDetails?.courseName || prev.courseName,
+            currentYear: data.educationDetails?.currentYear || prev.currentYear,
+            enrollmentNumber: data.educationDetails?.enrollmentNumber || prev.enrollmentNumber,
+            previousMarks: data.educationDetails?.previousMarks || prev.previousMarks,
+          }));
+        } else if (step === 3) {
+          setFormData((prev) => ({
+            ...prev,
+            familyIncome: data.familyDetails?.familyIncome || prev.familyIncome,
+            fatherOccupation: data.familyDetails?.fatherOccupation || prev.fatherOccupation,
+            motherOccupation: data.familyDetails?.motherOccupation || prev.motherOccupation,
+          }));
+        } else if (step === 5) {
+          setFormData((prev) => ({
+            ...prev,
+            accountHolderName: data.bankDetails?.accountHolderName || prev.accountHolderName,
+            accountNumber: data.bankDetails?.accountNumber || prev.accountNumber,
+            ifscCode: data.bankDetails?.ifscCode || prev.ifscCode,
+            bankName: data.bankDetails?.bankName || prev.bankName,
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching specific form:', err);
+    }
+  };
 
   const handleNext = () => {
     setFormError('');
@@ -199,30 +321,66 @@ export default function SchemeApplication() {
     setIsFetchModalOpen(false);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
     setFormError('');
     if (!user?.uid) {
       setFormError('Please log in to submit an application.');
       return;
     }
-
     if (formData.documents.length === 0) {
       setFormError('It is mandatory to upload at least 1 document.');
       setCurrentStep(4);
       return;
     }
-
     if (!isDeclared) {
       setFormError('Please declare that the information is correct by checking the box.');
       return;
     }
+    setIsUpdateProfileModalOpen(true);
+  };
 
+  const executeSubmit = async (shouldUpdateProfile) => {
+    setIsUpdateProfileModalOpen(false);
     setIsSubmitting(true);
     setUploadProgress('Uploading documents...');
 
     try {
+      if (shouldUpdateProfile && user?.uid) {
+        const docRef = doc(db, 'users', user.uid);
+        await setDoc(docRef, {
+          personalDetails: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+          },
+          contactDetails: {
+            phoneNumber: formData.phone,
+            address: formData.address,
+          },
+          identityDetails: {
+            aadhaarNumber: formData.aadhaar,
+          },
+          educationDetails: {
+            collegeName: formData.collegeName,
+            courseName: formData.courseName,
+            currentYear: formData.currentYear,
+            enrollmentNumber: formData.enrollmentNumber,
+            previousMarks: formData.previousMarks,
+          },
+          familyDetails: {
+            familyIncome: formData.familyIncome,
+            fatherOccupation: formData.fatherOccupation,
+            motherOccupation: formData.motherOccupation,
+          },
+          bankDetails: {
+            accountHolderName: formData.accountHolderName,
+            accountNumber: formData.accountNumber,
+            ifscCode: formData.ifscCode,
+            bankName: formData.bankName,
+          }
+        }, { merge: true });
+      }
+
       // Upload documents with multi-tier storage (Cloudinary + Firestore Cloud fallback)
       const uploadedDocumentUrls = [];
 
@@ -344,6 +502,16 @@ export default function SchemeApplication() {
         </button>
         <h2>Apply for Scheme</h2>
         <p>Complete the steps below to submit your application.</p>
+        
+        <div style={{ marginTop: '20px', padding: '16px', background: 'var(--icon-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+          <div>
+            <h4 style={{ margin: 0, color: 'var(--text-main)' }}>Want to save time?</h4>
+            <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Autofill this form using your saved profile data.</p>
+          </div>
+          <button type="button" className="btn-primary" onClick={handleFetchEntireForm}>
+            <i className="fa-solid fa-bolt" style={{ marginRight: '8px' }}></i> Fetch Entire Data & Review
+          </button>
+        </div>
       </div>
 
       <div className="application-main-content">
@@ -382,8 +550,15 @@ export default function SchemeApplication() {
       <div className="application-card">
         {currentStep === 1 && (
           <div className="step-content form-slide-in">
-            <h3>Personal Information</h3>
-            <p className="step-desc">Verify your pre-filled details from your profile.</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h3>Personal Information</h3>
+                <p className="step-desc">Verify your pre-filled details from your profile.</p>
+              </div>
+              <button type="button" className="btn-outline" onClick={() => handleFetchSpecificForm(1)} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+                <i className="fa-solid fa-download"></i> Fetch Data
+              </button>
+            </div>
             <div className="app-form-grid">
               <div className="app-floating-input">
                 <input
@@ -461,8 +636,15 @@ export default function SchemeApplication() {
 
         {currentStep === 2 && (
           <div className="step-content form-slide-in">
-            <h3>Academic Details</h3>
-            <p className="step-desc">Provide your current and previous academic records.</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h3>Academic Details</h3>
+                <p className="step-desc">Provide your current and previous academic records.</p>
+              </div>
+              <button type="button" className="btn-outline" onClick={() => handleFetchSpecificForm(2)} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+                <i className="fa-solid fa-download"></i> Fetch Data
+              </button>
+            </div>
             <div className="app-form-grid">
               <div className="app-floating-input" style={{ gridColumn: '1 / -1' }}>
                 <input
@@ -520,8 +702,15 @@ export default function SchemeApplication() {
 
         {currentStep === 3 && (
           <div className="step-content form-slide-in">
-            <h3>Family & Income Details</h3>
-            <p className="step-desc">Provide details regarding your family income.</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h3>Family & Income Details</h3>
+                <p className="step-desc">Provide details regarding your family income.</p>
+              </div>
+              <button type="button" className="btn-outline" onClick={() => handleFetchSpecificForm(3)} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+                <i className="fa-solid fa-download"></i> Fetch Data
+              </button>
+            </div>
             <div className="app-form-grid">
               <div className="app-floating-input">
                 <input
@@ -764,8 +953,15 @@ export default function SchemeApplication() {
 
         {currentStep === 5 && (
           <div className="step-content form-slide-in">
-            <h3>Bank Details</h3>
-            <p className="step-desc">Enter bank details for Direct Benefit Transfer (DBT).</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h3>Bank Details</h3>
+                <p className="step-desc">Enter bank details for Direct Benefit Transfer (DBT).</p>
+              </div>
+              <button type="button" className="btn-outline" onClick={() => handleFetchSpecificForm(5)} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+                <i className="fa-solid fa-download"></i> Fetch Data
+              </button>
+            </div>
             <div className="app-form-grid">
               <div className="app-floating-input">
                 <input
@@ -1112,6 +1308,62 @@ export default function SchemeApplication() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {isUpdateProfileModalOpen && (
+        <div
+          className="modal-overlay active"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.6)',
+            zIndex: 1000,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <div
+            className="modal-content"
+            style={{
+              background: 'var(--card-bg)',
+              padding: '24px',
+              borderRadius: '12px',
+              width: '90%',
+              maxWidth: '500px',
+            }}
+          >
+            <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-main)' }}>Update Profile?</h3>
+            <p style={{ margin: '0 0 24px 0', color: 'var(--text-muted)' }}>
+              Would you like to save this new information to your main profile for faster applications in the future?
+            </p>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '10px',
+              }}
+            >
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={() => executeSubmit(false)}
+              >
+                No, Just Submit
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => executeSubmit(true)}
+              >
+                Yes, Update Profile
+              </button>
+            </div>
           </div>
         </div>
       )}
