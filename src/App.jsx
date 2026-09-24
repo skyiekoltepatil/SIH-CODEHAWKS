@@ -14,6 +14,8 @@ import AIAssistant from './pages/Dashboard/AIAssistant';
 import VirtualIdCard from './pages/Dashboard/VirtualIdCard';
 import DashboardOverview from './pages/Dashboard/DashboardOverview';
 import SchemeApplication from './pages/Dashboard/SchemeApplication';
+import CitizenProfile from './pages/Dashboard/CitizenProfile';
+import AuditLog from './pages/Dashboard/AuditLog';
 import Faq from './pages/Dashboard/Faq';
 
 import Login from './pages/Login';
@@ -23,7 +25,8 @@ import MockSiteLookup from './pages/Demo/MockSiteLookup';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import './index.css';
+import AuditToast from './components/AuditToast';
+import './components/AuditToast.css';
 
 import { useEffect } from 'react';
 
@@ -48,6 +51,7 @@ function App() {
     <AuthProvider>
       <ErrorBoundary>
         <Router>
+          <AuditToast />
           <Routes>
             <Route path="/" element={<MainLayout />}>
               <Route index element={<Home />} />
@@ -68,6 +72,8 @@ function App() {
                 <Route index element={<DashboardOverview />} />
                 <Route path="applications" element={<Applications />} />
                 <Route path="profile" element={<Profile />} />
+                <Route path="citizen-profile" element={<CitizenProfile />} />
+                <Route path="audit-log" element={<AuditLog />} />
                 <Route path="ai-assistant" element={<AIAssistant />} />
                 <Route path="id-card" element={<VirtualIdCard />} />
                 <Route path="apply/:schemeId" element={<SchemeApplication />} />
