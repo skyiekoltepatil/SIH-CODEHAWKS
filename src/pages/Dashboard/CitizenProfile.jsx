@@ -13,6 +13,11 @@ import {
 import { uploadDocument } from '../../utils/fileUpload';
 import emailjs from '@emailjs/browser';
 import AuditLogModal from '../../components/AuditLogModal';
+import {
+  encryptProfile,
+  decryptProfile,
+  profileHasEncryptedData,
+} from '../../utils/secureVault';
 import './CitizenProfile.css';
 
 /* ============================================================
@@ -385,6 +390,7 @@ export default function CitizenProfile() {
   const [docModal, setDocModal] = useState(null);
   const [docForm, setDocForm] = useState({ file: null, name: '', number: '', expiry: '' });
   const [auditOpen, setAuditOpen] = useState(false);
+  const [encryptionStatus, setEncryptionStatus] = useState('checking'); // checking | encrypted | plain
 
   /* ---------- deep get/set ---------- */
 
@@ -412,7 +418,10 @@ export default function CitizenProfile() {
         if (snap.exists()) {
           const d = snap.data();
           if (d.citizenProfile) {
-            setData((prev) => ({ ...prev, ...d.citizenProfile }));
+            // Sensitive fields are stored encrypted at rest — decrypt for the session
+            setEncryptionStatus(profileHasEncryptedData(d.citizenProfile) ? 'encrypted' : 'plain');
+            const decrypted = await decryptProfile(d.citizenProfile, user.uid);
+            setData((prev) => ({ ...prev, ...decrypted }));
           }
         }
       } catch (err) {
@@ -425,11 +434,14 @@ export default function CitizenProfile() {
   const persist = async (overrides = {}, stepForSave = step) => {
     if (!user?.uid) return;
     try {
+      // Sensitive fields are encrypted client-side (AES-GCM) before they touch the DB
+      const encrypted = await encryptProfile({ ...data, ...overrides }, user.uid);
       await setDoc(
         doc(db, 'users', user.uid),
-        { citizenProfile: { ...data, ...overrides, lastStep: stepForSave } },
+        { citizenProfile: { ...encrypted, lastStep: stepForSave } },
         { merge: true }
       );
+      setEncryptionStatus('encrypted');
     } catch (err) {
       console.error('Failed to save draft:', err);
     }
@@ -880,7 +892,7 @@ export default function CitizenProfile() {
       const completedAt = new Date().toISOString();
       await setDoc(
         doc(db, 'users', user.uid),
-        { citizenProfile: { ...data, submitted: true, completedAt, lastStep: 10 } },
+        { citizenProfile: { ...(await encryptProfile(data, user.uid)), submitted: true, completedAt, lastStep: 10 } },
         { merge: true }
       );
       await addDoc(collection(db, 'users', user.uid, 'dataAccessHistory'), {
@@ -907,6 +919,11 @@ export default function CitizenProfile() {
   const emailVerified = get('basic.emailVerified') || false;
   const identityVerified = get('identity.verified') || false;
   const bankVerified = get('bank.verified') || false;
+
+  /* ---------- consent stats (live) ---------- */
+  const consentEntries = Object.values(data.consents || {});
+  const activeConsents = consentEntries.filter((c) => c?.status === 'Authorized').length;
+  const revokedConsents = consentEntries.filter((c) => c?.status === 'Revoked').length;
 
   const reviewSections = [
     {
@@ -1062,8 +1079,20 @@ export default function CitizenProfile() {
           </p>
         </div>
         <div className="cp-header-badges">
-          <span className="cp-badge cp-badge-green">
-            <i className="fa-solid fa-lock"></i> Encrypted
+          <span
+            className={`cp-badge ${encryptionStatus === 'encrypted' ? 'cp-badge-green' : encryptionStatus === 'plain' ? 'cp-badge-amber' : 'cp-badge-gray'}`}
+            title={
+              encryptionStatus === 'encrypted'
+                ? 'Aadhaar, bank, mobile and email fields are encrypted with AES-256-GCM before storage'
+                : 'Sensitive fields will be encrypted the next time you save'
+            }
+          >
+            <i className={`fa-solid ${encryptionStatus === 'encrypted' ? 'fa-lock' : 'fa-lock-open'}`}></i>{' '}
+            {encryptionStatus === 'encrypted'
+              ? 'Encrypted (AES-256)'
+              : encryptionStatus === 'plain'
+                ? 'Encrypted on next save'
+                : 'Checking encryption…'}
           </span>
           <button
             type="button"
@@ -1073,9 +1102,14 @@ export default function CitizenProfile() {
           >
             <i className="fa-solid fa-clock-rotate-left"></i> Audit-logged
           </button>
-          <span className="cp-badge cp-badge-amber">
+          <button
+            type="button"
+            className="cp-badge cp-badge-amber cp-badge-clickable"
+            onClick={() => goTo(10)}
+            title="Manage which departments can access your data"
+          >
             <i className="fa-solid fa-user-shield"></i> Consent-based
-          </span>
+          </button>
         </div>
       </div>
 
@@ -1136,8 +1170,20 @@ export default function CitizenProfile() {
                 onChange={(v) => set('basic.preferredLanguage', v)}
                 error={errors['basic.preferredLanguage']}
               />
-              <Field label="Mobile Number" required maxLength={10} placeholder="10-digit mobile" value={get('basic.mobile')} onChange={(v) => set('basic.mobile', v)} error={errors['basic.mobile']} />
-              <Field label="Email Address" type="email" required value={get('basic.email')} onChange={(v) => set('basic.email', v)} error={errors['basic.email']} />
+              <Field label="Mobile Number" required maxLength={10} placeholder="10-digit mobile" value={get('basic.mobile')} onChange={(v) => {
+                set('basic.mobile', v);
+                if (get('basic.mobileVerified')) {
+                  set('basic.mobileVerified', false);
+                  setMobileOtp((p) => ({ ...p, sent: false, value: '', expected: '' }));
+                }
+              }} error={errors['basic.mobile']} />
+              <Field label="Email Address" type="email" required value={get('basic.email')} onChange={(v) => {
+                set('basic.email', v);
+                if (get('basic.emailVerified')) {
+                  set('basic.emailVerified', false);
+                  setEmailOtp((p) => ({ ...p, sent: false, value: '', expected: '' }));
+                }
+              }} error={errors['basic.email']} />
               <div className="cp-field">
                 <label>Photograph</label>
                 <button type="button" className="cp-btn cp-btn-outline" onClick={() => photoInputRef.current?.click()}>
@@ -1220,7 +1266,13 @@ export default function CitizenProfile() {
                 maxLength={12}
                 placeholder={get('identity.docType') === 'Aadhaar' ? '12-digit Aadhaar number' : 'Number as printed'}
                 value={get('identity.docNumber')}
-                onChange={(v) => set('identity.docNumber', v)}
+                onChange={(v) => {
+                  set('identity.docNumber', v);
+                  if (get('identity.verified')) {
+                    set('identity.verified', false);
+                    setIdOtp((p) => ({ ...p, sent: false, value: '', expected: '' }));
+                  }
+                }}
                 error={errors['identity.docNumber']}
                 hint={get('identity.docNumber') ? `Shown as: ${maskIdNumber(get('identity.docNumber'))}` : undefined}
               />
@@ -1502,9 +1554,21 @@ export default function CitizenProfile() {
               <Field label="Bank Name" required value={get('bank.bankName')} onChange={(v) => set('bank.bankName', v)} error={errors['bank.bankName']} />
               <Field label="Branch" required value={get('bank.branch')} onChange={(v) => set('bank.branch', v)} error={errors['bank.branch']} />
               <Field label="Account Type" required options={['Savings', 'Current', 'Other']} value={get('bank.accountType')} onChange={(v) => set('bank.accountType', v)} error={errors['bank.accountType']} />
-              <Field label="Account Number" required value={get('bank.accountNumber')} onChange={(v) => set('bank.accountNumber', v)} error={errors['bank.accountNumber']} />
+              <Field label="Account Number" required value={get('bank.accountNumber')} onChange={(v) => {
+                set('bank.accountNumber', v);
+                if (get('bank.verified')) {
+                  set('bank.verified', false);
+                  setBankOtp((p) => ({ ...p, sent: false, value: '', expected: '' }));
+                }
+              }} error={errors['bank.accountNumber']} />
               <Field label="Confirm Account Number" required value={get('bank.confirmAccountNumber')} onChange={(v) => set('bank.confirmAccountNumber', v)} error={errors['bank.confirmAccountNumber']} />
-              <Field label="IFSC Code" required maxLength={11} placeholder="SBIN0001234" hint="Format: 4 letters + 0 + 6 characters" value={get('bank.ifsc')} onChange={(v) => set('bank.ifsc', v.toUpperCase())} error={errors['bank.ifsc']} />
+              <Field label="IFSC Code" required maxLength={11} placeholder="SBIN0001234" hint="Format: 4 letters + 0 + 6 characters" value={get('bank.ifsc')} onChange={(v) => {
+                set('bank.ifsc', v.toUpperCase());
+                if (get('bank.verified')) {
+                  set('bank.verified', false);
+                  setBankOtp((p) => ({ ...p, sent: false, value: '', expected: '' }));
+                }
+              }} error={errors['bank.ifsc']} />
               <div className="cp-field">
                 <label>Bank Verification Status</label>
                 <div>
@@ -1642,10 +1706,10 @@ export default function CitizenProfile() {
               </div>
             ))}
 
-            {/* Consent UI */}
+            {/* Consent Center */}
             <div className="cp-consent-panel">
               <h3>
-                <i className="fa-solid fa-user-shield"></i> Data Sharing Consent
+                <i className="fa-solid fa-user-shield"></i> Consent Center
               </h3>
               <p className="cp-section-desc">
                 Control which departments can request your information. Each grant records{' '}
@@ -1653,13 +1717,41 @@ export default function CitizenProfile() {
                 <strong>why</strong> it is needed and <strong>how long</strong> access lasts. All
                 consents appear in your Data Access History and can be revoked anytime.
               </p>
-              <button
-                type="button"
-                className="cp-btn cp-btn-outline"
-                onClick={() => navigate('/dashboard/audit-log')}
-              >
-                <i className="fa-solid fa-clock-rotate-left"></i> View Data Access History
-              </button>
+
+              <div className="cp-consent-stats">
+                <div className="cp-consent-stat">
+                  <span className="cp-consent-stat-value">{activeConsents}</span>
+                  <span className="cp-consent-stat-label">Active consents</span>
+                </div>
+                <div className="cp-consent-stat">
+                  <span className="cp-consent-stat-value">{revokedConsents}</span>
+                  <span className="cp-consent-stat-label">Revoked</span>
+                </div>
+                <div className="cp-consent-stat">
+                  <span className="cp-consent-stat-value">
+                    {DEPARTMENTS.length - Object.keys(data.consents || {}).length}
+                  </span>
+                  <span className="cp-consent-stat-label">Never granted</span>
+                </div>
+                <button
+                  type="button"
+                  className="cp-btn cp-btn-outline"
+                  onClick={() => navigate('/dashboard/audit-log')}
+                >
+                  <i className="fa-solid fa-clock-rotate-left"></i> View Data Access History
+                </button>
+              </div>
+
+              {Object.keys(data.consents || {}).length > 0 && (
+                <div className="cp-notice cp-notice-info">
+                  <i className="fa-solid fa-shield-halved"></i>
+                  <span>
+                    Departments can only read the fields you granted — and those fields are{' '}
+                    <strong>decrypted for them only while consent is active</strong>. Revoking a
+                    consent cuts access immediately.
+                  </span>
+                </div>
+              )}
               {DEPARTMENTS.map((dept) => {
                 const consent = get(`consents.${dept.id}`);
                 return (

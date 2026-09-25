@@ -215,6 +215,40 @@ export default function Applications() {
                                   <div className="acs2-subtitle">
                                     Verification Dependencies found (Post-Audit Review)
                                   </div>
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      gap: '8px',
+                                      marginTop: '6px',
+                                      flexWrap: 'wrap',
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        fontSize: '0.72rem',
+                                        fontWeight: 600,
+                                        color: '#059669',
+                                        background: '#d1fae5',
+                                        padding: '2px 8px',
+                                        borderRadius: '10px',
+                                      }}
+                                    >
+                                      <i className="fa-solid fa-lock"></i> Encrypted (AES-256)
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontSize: '0.72rem',
+                                        fontWeight: 600,
+                                        color: '#d97706',
+                                        background: '#fef3c7',
+                                        padding: '2px 8px',
+                                        borderRadius: '10px',
+                                      }}
+                                    >
+                                      <i className="fa-solid fa-user-shield"></i> Consent-based
+                                      sharing
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
 

@@ -215,18 +215,149 @@
 .scheme-status-card {
   background: var(--card-bg);
   border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  padding: 24px 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 14px rgba(0, 0, 0, 0.03);
   border: 1px solid var(--border-color);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.scheme-status-card:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 8px 22px rgba(0, 0, 0, 0.06);
 }
 
 .scheme-status-card h3 {
-  margin: 0 0 16px 0;
+  margin: 0 0 14px 0;
   font-size: 1.25rem;
+  font-weight: 700;
   color: var(--text-main);
+  letter-spacing: -0.01em;
 }
 
-/* Horizontal Progress */
+/* Status inline pill (colored text on soft colored bg) */
+.scheme-status-text .status-approved,
+.scheme-status-text .status-pending,
+.scheme-status-text .status-rejected {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.scheme-status-text .status-approved {
+  color: #059669;
+  background: #d1fae5;
+}
+
+.scheme-status-text .status-pending {
+  color: #d97706;
+  background: #fef3c7;
+}
+
+.scheme-status-text .status-rejected {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+.scheme-status-text {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+
+/* Progress row: label + full-width track */
+.scheme-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scheme-progress-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.scheme-progress-track {
+  flex: 1;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.scheme-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.scheme-progress-fill.status-approved {
+  background: #10b981;
+}
+
+.scheme-progress-fill.status-pending {
+  background: #3b82f6;
+}
+
+.scheme-progress-fill.status-rejected {
+  background: #ef4444;
+}
+
+/* Pagination under the cards list */
+.applications-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 8px;
+}
+
+.scheme-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.scheme-flex > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-track {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 9px 22px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.btn-track:hover {
+  background-color: #2563eb;
+}
+
+.btn-reapply {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.btn-reapply:hover {
+  background-color: #dc2626;
+}
 .stepper-container {
   display: flex;
   justify-content: space-between;
@@ -309,18 +440,7 @@
   margin-top: 4px;
 }
 
-/* Standard Scheme Card layout */
-.scheme-flex {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.scheme-status-text {
-  font-size: 1rem;
-  color: var(--text-muted);
-  margin-bottom: 16px;
-}
+/* Standard Scheme Card layout (layout + buttons defined above, near card styles) */
 
 .status-approved {
   color: #10b981;
@@ -330,26 +450,6 @@
 .status-rejected {
   color: #ef4444;
   font-weight: 600;
-}
-
-.btn-track {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.btn-reapply {
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
 }
 
 .btn-outline {

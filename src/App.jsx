@@ -28,9 +28,24 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import AuditToast from './components/AuditToast';
 import './components/AuditToast.css';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 function App() {
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   useEffect(() => {
     try {
       const a11y = localStorage.getItem('a11ySettings');
@@ -51,6 +66,11 @@ function App() {
     <AuthProvider>
       <ErrorBoundary>
         <Router>
+          {isOffline && (
+            <div style={{ backgroundColor: '#ffcc00', padding: '10px', textAlign: 'center', color: '#000', fontWeight: 'bold', zIndex: 9999, position: 'relative' }}>
+              You are currently offline. Changes will be saved locally and synced when you reconnect.
+            </div>
+          )}
           <AuditToast />
           <Routes>
             <Route path="/" element={<MainLayout />}>

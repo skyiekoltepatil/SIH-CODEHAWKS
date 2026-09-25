@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 
@@ -23,7 +23,10 @@ const isLocalHost =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 const auth = getAuth(app);
-const db = getFirestore(app);
+// Initialize Firestore with offline persistence enabled
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache()
+});
 const storage = getStorage(app);
 const functions = getFunctions(app);
 
