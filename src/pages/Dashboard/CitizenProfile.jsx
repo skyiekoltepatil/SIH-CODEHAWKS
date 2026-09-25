@@ -1170,8 +1170,20 @@ export default function CitizenProfile() {
                 onChange={(v) => set('basic.preferredLanguage', v)}
                 error={errors['basic.preferredLanguage']}
               />
-              <Field label="Mobile Number" required maxLength={10} placeholder="10-digit mobile" value={get('basic.mobile')} onChange={(v) => set('basic.mobile', v)} error={errors['basic.mobile']} />
-              <Field label="Email Address" type="email" required value={get('basic.email')} onChange={(v) => set('basic.email', v)} error={errors['basic.email']} />
+              <Field label="Mobile Number" required maxLength={10} placeholder="10-digit mobile" value={get('basic.mobile')} onChange={(v) => {
+                set('basic.mobile', v);
+                if (get('basic.mobileVerified')) {
+                  set('basic.mobileVerified', false);
+                  setMobileOtp((p) => ({ ...p, sent: false, value: '', expected: '' }));
+                }
+              }} error={errors['basic.mobile']} />
+              <Field label="Email Address" type="email" required value={get('basic.email')} onChange={(v) => {
+                set('basic.email', v);
+                if (get('basic.emailVerified')) {
+                  set('basic.emailVerified', false);
+                  setEmailOtp((p) => ({ ...p, sent: false, value: '', expected: '' }));
+                }
+              }} error={errors['basic.email']} />
               <div className="cp-field">
                 <label>Photograph</label>
                 <button type="button" className="cp-btn cp-btn-outline" onClick={() => photoInputRef.current?.click()}>
@@ -1254,7 +1266,13 @@ export default function CitizenProfile() {
                 maxLength={12}
                 placeholder={get('identity.docType') === 'Aadhaar' ? '12-digit Aadhaar number' : 'Number as printed'}
                 value={get('identity.docNumber')}
-                onChange={(v) => set('identity.docNumber', v)}
+                onChange={(v) => {
+                  set('identity.docNumber', v);
+                  if (get('identity.verified')) {
+                    set('identity.verified', false);
+                    setIdOtp((p) => ({ ...p, sent: false, value: '', expected: '' }));
+                  }
+                }}
                 error={errors['identity.docNumber']}
                 hint={get('identity.docNumber') ? `Shown as: ${maskIdNumber(get('identity.docNumber'))}` : undefined}
               />
@@ -1536,9 +1554,21 @@ export default function CitizenProfile() {
               <Field label="Bank Name" required value={get('bank.bankName')} onChange={(v) => set('bank.bankName', v)} error={errors['bank.bankName']} />
               <Field label="Branch" required value={get('bank.branch')} onChange={(v) => set('bank.branch', v)} error={errors['bank.branch']} />
               <Field label="Account Type" required options={['Savings', 'Current', 'Other']} value={get('bank.accountType')} onChange={(v) => set('bank.accountType', v)} error={errors['bank.accountType']} />
-              <Field label="Account Number" required value={get('bank.accountNumber')} onChange={(v) => set('bank.accountNumber', v)} error={errors['bank.accountNumber']} />
+              <Field label="Account Number" required value={get('bank.accountNumber')} onChange={(v) => {
+                set('bank.accountNumber', v);
+                if (get('bank.verified')) {
+                  set('bank.verified', false);
+                  setBankOtp((p) => ({ ...p, sent: false, value: '', expected: '' }));
+                }
+              }} error={errors['bank.accountNumber']} />
               <Field label="Confirm Account Number" required value={get('bank.confirmAccountNumber')} onChange={(v) => set('bank.confirmAccountNumber', v)} error={errors['bank.confirmAccountNumber']} />
-              <Field label="IFSC Code" required maxLength={11} placeholder="SBIN0001234" hint="Format: 4 letters + 0 + 6 characters" value={get('bank.ifsc')} onChange={(v) => set('bank.ifsc', v.toUpperCase())} error={errors['bank.ifsc']} />
+              <Field label="IFSC Code" required maxLength={11} placeholder="SBIN0001234" hint="Format: 4 letters + 0 + 6 characters" value={get('bank.ifsc')} onChange={(v) => {
+                set('bank.ifsc', v.toUpperCase());
+                if (get('bank.verified')) {
+                  set('bank.verified', false);
+                  setBankOtp((p) => ({ ...p, sent: false, value: '', expected: '' }));
+                }
+              }} error={errors['bank.ifsc']} />
               <div className="cp-field">
                 <label>Bank Verification Status</label>
                 <div>

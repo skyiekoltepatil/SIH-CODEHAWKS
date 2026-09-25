@@ -6,7 +6,7 @@ import { db } from '../../firebase';
 import { schemesData } from '../../data';
 
 import { uploadDocument } from '../../utils/fileUpload';
-import { encryptApplication } from '../../utils/secureVault';
+import { encryptApplication, decryptProfile } from '../../utils/secureVault';
 import './SchemeApplication.css';
 
 export default function SchemeApplication() {
@@ -59,6 +59,58 @@ export default function SchemeApplication() {
   const [formError, setFormError] = useState('');
   const fileInputRef = useRef(null);
 
+  const getMergedProfileData = async (uid, data) => {
+    let pData = { firstName: data.personalDetails?.firstName, lastName: data.personalDetails?.lastName, email: data.personalDetails?.officialEmail, dob: '' };
+    let cData = { phone: data.contactDetails?.phoneNumber, address: data.contactDetails?.address };
+    let iData = { aadhaar: data.identityDetails?.aadhaarNumber };
+    let eData = { collegeName: data.educationDetails?.collegeName, courseName: data.educationDetails?.courseName, currentYear: data.educationDetails?.currentYear, enrollmentNumber: data.educationDetails?.enrollmentNumber, previousMarks: data.educationDetails?.previousMarks };
+    let fData = { familyIncome: data.familyDetails?.familyIncome, fatherOccupation: data.familyDetails?.fatherOccupation, motherOccupation: data.familyDetails?.motherOccupation };
+    let bData = { accountHolderName: data.bankDetails?.accountHolderName, accountNumber: data.bankDetails?.accountNumber, ifscCode: data.bankDetails?.ifscCode, bankName: data.bankDetails?.bankName };
+    let docsData = data.documents || {};
+
+    if (data.citizenProfile) {
+      try {
+        const dec = await decryptProfile(data.citizenProfile, uid);
+        const names = dec.basic?.fullName?.trim().split(' ') || [];
+        const fName = names[0] || '';
+        const lName = names.slice(1).join(' ') || '';
+        
+        pData.firstName = fName || pData.firstName;
+        pData.lastName = lName || pData.lastName;
+        pData.email = dec.basic?.email || pData.email;
+        pData.dob = dec.basic?.dob || pData.dob;
+        cData.phone = dec.basic?.mobile || cData.phone;
+        
+        const addrSource = dec.address?.sameAsCurrent ? dec.address?.current : (dec.address?.permanent || dec.address?.current);
+        const currentAddrParts = [addrSource?.line1, addrSource?.line2, addrSource?.village, addrSource?.district, addrSource?.state, addrSource?.pincode].filter(Boolean);
+        const currentAddr = currentAddrParts.join(', ');
+        cData.address = currentAddr || cData.address;
+        
+        iData.aadhaar = dec.identity?.docNumber || iData.aadhaar;
+        
+        eData.collegeName = dec.education?.institution || eData.collegeName;
+        eData.courseName = dec.education?.currentLevel || eData.courseName;
+        eData.currentYear = dec.education?.year || eData.currentYear;
+        eData.enrollmentNumber = dec.education?.enrollmentNumber || eData.enrollmentNumber;
+        eData.previousMarks = dec.education?.prevMarks || eData.previousMarks;
+        
+        fData.familyIncome = dec.family?.annualIncome || fData.familyIncome;
+        fData.fatherOccupation = dec.family?.fatherName ? `Father: ${dec.family.fatherName}` : fData.fatherOccupation;
+        fData.motherOccupation = dec.family?.motherName ? `Mother: ${dec.family.motherName}` : fData.motherOccupation;
+        
+        bData.accountHolderName = dec.basic?.fullName || bData.accountHolderName;
+        bData.accountNumber = dec.bank?.accountNumber || bData.accountNumber;
+        bData.ifscCode = dec.bank?.ifsc || bData.ifscCode;
+        bData.bankName = dec.bank?.bankName || bData.bankName;
+        
+        docsData = dec.documents || docsData;
+      } catch (err) {
+        console.error('Decryption error', err);
+      }
+    }
+    return { pData, cData, iData, eData, fData, bData, docsData };
+  };
+
   useEffect(() => {
     const fetchProfileData = async () => {
       if (user?.uid) {
@@ -67,16 +119,21 @@ export default function SchemeApplication() {
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             const data = docSnap.data();
+            const { pData, cData, iData, docsData } = await getMergedProfileData(user.uid, data);
+            
             setFormData((prev) => ({
               ...prev,
-              firstName: data.personalDetails?.firstName || '',
-              lastName: data.personalDetails?.lastName || '',
-              email: data.personalDetails?.officialEmail || user.email || '',
-              phone: data.contactDetails?.phoneNumber || '',
-              aadhaar: data.identityDetails?.aadhaarNumber || '',
+              firstName: pData.firstName || '',
+              lastName: pData.lastName || '',
+              email: pData.email || user.email || '',
+              dob: pData.dob || '',
+              phone: cData.phone || '',
+              aadhaar: iData.aadhaar || '',
+              address: cData.address || '',
             }));
-            if (data.documents) {
-              setProfileDocuments(data.documents);
+            
+            if (docsData && Object.keys(docsData).length > 0) {
+              setProfileDocuments(docsData);
             }
           }
         } catch (err) {
@@ -94,32 +151,35 @@ export default function SchemeApplication() {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
+        const { pData, cData, iData, eData, fData, bData, docsData } = await getMergedProfileData(user.uid, data);
+        
         let updatedData = { ...formData };
-        updatedData.firstName = data.personalDetails?.firstName || updatedData.firstName;
-        updatedData.lastName = data.personalDetails?.lastName || updatedData.lastName;
-        updatedData.email = data.personalDetails?.officialEmail || user.email || updatedData.email;
-        updatedData.phone = data.contactDetails?.phoneNumber || updatedData.phone;
-        updatedData.aadhaar = data.identityDetails?.aadhaarNumber || updatedData.aadhaar;
-        updatedData.address = data.contactDetails?.address || updatedData.address;
+        updatedData.firstName = pData.firstName || updatedData.firstName;
+        updatedData.lastName = pData.lastName || updatedData.lastName;
+        updatedData.email = pData.email || user.email || updatedData.email;
+        updatedData.dob = pData.dob || updatedData.dob;
+        updatedData.phone = cData.phone || updatedData.phone;
+        updatedData.aadhaar = iData.aadhaar || updatedData.aadhaar;
+        updatedData.address = cData.address || updatedData.address;
         
-        updatedData.collegeName = data.educationDetails?.collegeName || updatedData.collegeName;
-        updatedData.courseName = data.educationDetails?.courseName || updatedData.courseName;
-        updatedData.currentYear = data.educationDetails?.currentYear || updatedData.currentYear;
-        updatedData.enrollmentNumber = data.educationDetails?.enrollmentNumber || updatedData.enrollmentNumber;
-        updatedData.previousMarks = data.educationDetails?.previousMarks || updatedData.previousMarks;
+        updatedData.collegeName = eData.collegeName || updatedData.collegeName;
+        updatedData.courseName = eData.courseName || updatedData.courseName;
+        updatedData.currentYear = eData.currentYear || updatedData.currentYear;
+        updatedData.enrollmentNumber = eData.enrollmentNumber || updatedData.enrollmentNumber;
+        updatedData.previousMarks = eData.previousMarks || updatedData.previousMarks;
         
-        updatedData.familyIncome = data.familyDetails?.familyIncome || updatedData.familyIncome;
-        updatedData.fatherOccupation = data.familyDetails?.fatherOccupation || updatedData.fatherOccupation;
-        updatedData.motherOccupation = data.familyDetails?.motherOccupation || updatedData.motherOccupation;
+        updatedData.familyIncome = fData.familyIncome || updatedData.familyIncome;
+        updatedData.fatherOccupation = fData.fatherOccupation || updatedData.fatherOccupation;
+        updatedData.motherOccupation = fData.motherOccupation || updatedData.motherOccupation;
         
-        updatedData.accountHolderName = data.bankDetails?.accountHolderName || updatedData.accountHolderName;
-        updatedData.accountNumber = data.bankDetails?.accountNumber || updatedData.accountNumber;
-        updatedData.ifscCode = data.bankDetails?.ifscCode || updatedData.ifscCode;
-        updatedData.bankName = data.bankDetails?.bankName || updatedData.bankName;
+        updatedData.accountHolderName = bData.accountHolderName || updatedData.accountHolderName;
+        updatedData.accountNumber = bData.accountNumber || updatedData.accountNumber;
+        updatedData.ifscCode = bData.ifscCode || updatedData.ifscCode;
+        updatedData.bankName = bData.bankName || updatedData.bankName;
 
-        if (data.documents) {
+        if (docsData) {
           const newDocs = [];
-          Object.entries(data.documents).forEach(([key, docObj]) => {
+          Object.entries(docsData).forEach(([key, docObj]) => {
             if (docObj?.url && !updatedData.documents.some(d => d.url === docObj.url)) {
               newDocs.push({
                 name: docObj.docName || key,
@@ -167,39 +227,42 @@ export default function SchemeApplication() {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
+        const { pData, cData, iData, eData, fData, bData } = await getMergedProfileData(user.uid, data);
+        
         if (step === 1) {
           setFormData((prev) => ({
             ...prev,
-            firstName: data.personalDetails?.firstName || prev.firstName,
-            lastName: data.personalDetails?.lastName || prev.lastName,
-            email: data.personalDetails?.officialEmail || user.email || prev.email,
-            phone: data.contactDetails?.phoneNumber || prev.phone,
-            aadhaar: data.identityDetails?.aadhaarNumber || prev.aadhaar,
-            address: data.contactDetails?.address || prev.address,
+            firstName: pData.firstName || prev.firstName,
+            lastName: pData.lastName || prev.lastName,
+            email: pData.email || user.email || prev.email,
+            dob: pData.dob || prev.dob,
+            phone: cData.phone || prev.phone,
+            aadhaar: iData.aadhaar || prev.aadhaar,
+            address: cData.address || prev.address,
           }));
         } else if (step === 2) {
           setFormData((prev) => ({
             ...prev,
-            collegeName: data.educationDetails?.collegeName || prev.collegeName,
-            courseName: data.educationDetails?.courseName || prev.courseName,
-            currentYear: data.educationDetails?.currentYear || prev.currentYear,
-            enrollmentNumber: data.educationDetails?.enrollmentNumber || prev.enrollmentNumber,
-            previousMarks: data.educationDetails?.previousMarks || prev.previousMarks,
+            collegeName: eData.collegeName || prev.collegeName,
+            courseName: eData.courseName || prev.courseName,
+            currentYear: eData.currentYear || prev.currentYear,
+            enrollmentNumber: eData.enrollmentNumber || prev.enrollmentNumber,
+            previousMarks: eData.previousMarks || prev.previousMarks,
           }));
         } else if (step === 3) {
           setFormData((prev) => ({
             ...prev,
-            familyIncome: data.familyDetails?.familyIncome || prev.familyIncome,
-            fatherOccupation: data.familyDetails?.fatherOccupation || prev.fatherOccupation,
-            motherOccupation: data.familyDetails?.motherOccupation || prev.motherOccupation,
+            familyIncome: fData.familyIncome || prev.familyIncome,
+            fatherOccupation: fData.fatherOccupation || prev.fatherOccupation,
+            motherOccupation: fData.motherOccupation || prev.motherOccupation,
           }));
         } else if (step === 5) {
           setFormData((prev) => ({
             ...prev,
-            accountHolderName: data.bankDetails?.accountHolderName || prev.accountHolderName,
-            accountNumber: data.bankDetails?.accountNumber || prev.accountNumber,
-            ifscCode: data.bankDetails?.ifscCode || prev.ifscCode,
-            bankName: data.bankDetails?.bankName || prev.bankName,
+            accountHolderName: bData.accountHolderName || prev.accountHolderName,
+            accountNumber: bData.accountNumber || prev.accountNumber,
+            ifscCode: bData.ifscCode || prev.ifscCode,
+            bankName: bData.bankName || prev.bankName,
           }));
         }
       }
