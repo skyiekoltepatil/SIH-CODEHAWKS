@@ -564,6 +564,41 @@ button.cp-badge {
   word-break: break-word;
 }
 
+/* ---------- Consent Center stats ---------- */
+.cp-consent-stats {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+  background: var(--bg-color, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+
+.cp-consent-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cp-consent-stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-main, #1e293b);
+  line-height: 1.1;
+}
+
+.cp-consent-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted, #64748b);
+}
+
+.cp-consent-stats .cp-btn {
+  margin-left: auto;
+}
+
 /* ---------- Consent ---------- */
 .cp-consent-panel {
   margin-top: 28px;

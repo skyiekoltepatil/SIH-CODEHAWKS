@@ -6,6 +6,7 @@ import { db } from '../../firebase';
 import { schemesData } from '../../data';
 
 import { uploadDocument } from '../../utils/fileUpload';
+import { encryptApplication } from '../../utils/secureVault';
 import './SchemeApplication.css';
 
 export default function SchemeApplication() {
@@ -421,6 +422,7 @@ export default function SchemeApplication() {
         desc: 'Application submitted and under review',
         currentStep: 1,
         totalSteps: 6,
+        dataProtection: { encrypted: true, consentBased: true },
         applicantName:
           `${formData.firstName} ${formData.lastName}`.trim() || user.displayName || 'Applicant',
         applicantEmail: formData.email || user.email || '',
@@ -453,7 +455,20 @@ export default function SchemeApplication() {
         documents: uploadedDocumentUrls,
       };
 
-      await addDoc(collection(db, 'users', user.uid, 'applications'), applicationData);
+      // Sensitive fields (Aadhaar, phone, bank account) are encrypted client-side before storage
+      const savedApplication = await encryptApplication(applicationData, user.uid);
+      await addDoc(collection(db, 'users', user.uid, 'applications'), savedApplication);
+
+      // Consent + encryption are recorded in the user's Data Access History
+      await addDoc(collection(db, 'users', user.uid, 'dataAccessHistory'), {
+        department: scheme.name,
+        departmentId: schemeId,
+        requested: 'Application data (Aadhaar & bank fields encrypted, AES-256-GCM)',
+        purpose: 'Scheme application processing',
+        status: 'Authorized',
+        type: 'consent-granted',
+        createdAt: serverTimestamp(),
+      });
 
       // Create a notification for the submission
       await addDoc(collection(db, 'users', user.uid, 'notifications'), {

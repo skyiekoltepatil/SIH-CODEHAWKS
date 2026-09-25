@@ -13,8 +13,7 @@ export default function DashboardOverview() {
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [hoveredFilter, setHoveredFilter] = useState(null);
   const [drilledStatus, setDrilledStatus] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showAlert, setShowAlert] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);  const [showAlert, setShowAlert] = useState(true);
   const [profileCompletion, setProfileCompletion] = useState(0); // Default base percentage
   const [verificationStatus, setVerificationStatus] = useState({
     contact: false,
@@ -161,6 +160,7 @@ export default function DashboardOverview() {
   const rejectedCount = applications.filter((a) => a.status === 'Rejected').length;
 
   const effectiveFilter = hoveredFilter || selectedFilter;
+
   const filteredApps =
     effectiveFilter === 'All'
       ? applications
@@ -343,7 +343,7 @@ export default function DashboardOverview() {
               </button>
             </div>
           ) : (
-            applications.map((app) => {
+            paginatedApps.map((app) => {
               let progressPercent = 25;
               if (app.status === 'Approved') {
                 progressPercent = 100;
@@ -371,39 +371,16 @@ export default function DashboardOverview() {
                         Status: <span className={statusClass}>{app.status}</span> (
                         {app.desc || 'Application submitted'})
                       </div>
-                      <div
-                        style={{
-                          marginTop: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                        }}
-                      >
-                        <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#64748b' }}>
+                      <div className="scheme-progress-row">
+                        <span className="scheme-progress-label">
                           {app.status === 'Rejected'
                             ? `Progress: Stopped at ${progressPercent}%`
                             : `Progress: ${progressPercent}%`}
                         </span>
-                        <div
-                          style={{
-                            flex: 1,
-                            height: '6px',
-                            background: '#e2e8f0',
-                            borderRadius: '4px',
-                            overflow: 'hidden',
-                          }}
-                        >
+                        <div className="scheme-progress-track">
                           <div
-                            style={{
-                              width: `${progressPercent}%`,
-                              height: '100%',
-                              background:
-                                app.status === 'Approved'
-                                  ? '#10b981'
-                                  : app.status === 'Rejected'
-                                    ? '#ef4444'
-                                    : '#3b82f6',
-                            }}
+                            className={`scheme-progress-fill ${statusClass}`}
+                            style={{ width: `${progressPercent}%` }}
                           ></div>
                         </div>
                       </div>
@@ -420,6 +397,30 @@ export default function DashboardOverview() {
                 </div>
               );
             })
+          )}
+
+          {applications.length > itemsPerPage && (
+            <div className="applications-pagination">
+              <span className="pagination-text">
+                Page {currentPage} of {totalPages}
+              </span>
+              <div className="pagination-buttons">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="pagination-btn"
+                >
+                  <i className="fa-solid fa-chevron-left"></i>
+                </button>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="pagination-btn"
+                >
+                  <i className="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
@@ -463,6 +464,7 @@ export default function DashboardOverview() {
                   onClick={() => {
                     setDrilledStatus(null);
                     setSelectedFilter('All');
+                    setCurrentPage(1);
                   }}
                   style={{
                     position: 'absolute',
@@ -559,6 +561,7 @@ export default function DashboardOverview() {
                           if (!drilledStatus) {
                             setDrilledStatus(item.label);
                             setSelectedFilter(item.label);
+                            setCurrentPage(1);
                           } else {
                             navigate('/dashboard/applications', { state: { expandAppId: item.id } });
                           }
