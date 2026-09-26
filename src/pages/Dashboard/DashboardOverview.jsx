@@ -2,7 +2,15 @@ import { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { db } from '../../firebase';
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  getDocs,
+  onSnapshot,
+} from 'firebase/firestore';
+import { formatTs } from '../../utils/auditMeta';
 import { PieChart, PieSlice, PieCenter } from '../../components/ui/charts';
 import { uploadDocument } from '../../utils/fileUpload';
 import './DashboardOverview.css';
@@ -22,6 +30,8 @@ export default function DashboardOverview() {
   });
 
   const [applications, setApplications] = useState([]);
+  const [auditEvents, setAuditEvents] = useState([]);
+  const [activityFilter, setActivityFilter] = useState('All');
 
   // Avatar State
   const [avatarUrl, setAvatarUrl] = useState(user?.photoURL || null);
@@ -150,11 +160,98 @@ export default function DashboardOverview() {
       }
     };
 
+    // Real-time listener for account audit events (consents, uploads, etc.)
+    let unsubAudit;
+    if (user?.uid) {
+      unsubAudit = onSnapshot(
+        collection(db, 'users', user.uid, 'dataAccessHistory'),
+        (snap) => {
+          const data = [];
+          snap.forEach((docSnap) => data.push({ id: docSnap.id, ...docSnap.data() }));
+          setAuditEvents(data);
+        },
+        (err) => console.error('Error loading audit events:', err)
+      );
+    }
+
     fetchProfileData();
     fetchApplications();
+    return () => unsubAudit && unsubAudit();
   }, [user]);
 
   const totalCount = applications.length;
+
+  // ---------- Recent Activities (schemes + account events) ----------
+  const APPLICATION_ACTIVITY_META = {
+    Approved: { label: 'Scheme Approved', badge: 'ra-badge-green', icon: 'fa-circle-check' },
+    Pending: { label: 'Scheme Pending', badge: 'ra-badge-amber', icon: 'fa-hourglass-half' },
+    Rejected: { label: 'Scheme Rejected', badge: 'ra-badge-red', icon: 'fa-circle-xmark' },
+    Applied: { label: 'Scheme Applied', badge: 'ra-badge-blue', icon: 'fa-file-signature' },
+  };
+
+  const schemeActivities = applications.map((app) => ({
+    id: `app-${app.id}`,
+    kind: 'scheme',
+    type: app.status === 'Approved' ? 'Approved' : app.status === 'Rejected' ? 'Rejected' : 'Applied',
+    schemeName: app.schemeName || app.name || 'Unknown Scheme',
+    status: app.status,
+    desc: app.desc || 'Application submitted',
+    progress: app.totalSteps && app.currentStep !== undefined
+      ? Math.round((app.currentStep / app.totalSteps) * 100)
+      : app.status === 'Approved'
+        ? 100
+        : 50,
+    appId: app.id,
+    ts: app.timestamp || app.updatedAt || null,
+  }));
+
+  const accountActivities = auditEvents.map((e) => ({
+    id: `evt-${e.id}`,
+    kind: 'account',
+    type: e.type,
+    meta: e,
+    ts: e.createdAt || null,
+  }));
+
+  const activityCounts = [...schemeActivities, ...accountActivities].reduce((acc, a) => {
+    const k = a.kind === 'scheme' ? `scheme-${a.status}` : a.type;
+    acc[k] = (acc[k] || 0) + 1;
+    return acc;
+  }, {});
+
+  const ACTIVITY_FILTERS = [
+    { key: 'All', label: 'All', icon: 'fa-list-ul' },
+    { key: 'scheme-Applied', label: 'Applied', icon: 'fa-file-signature' },
+    { key: 'scheme-Approved', label: 'Approved', icon: 'fa-circle-check' },
+    { key: 'scheme-Pending', label: 'Pending', icon: 'fa-hourglass-half' },
+    { key: 'scheme-Rejected', label: 'Rejected', icon: 'fa-circle-xmark' },
+    { key: 'account', label: 'Account', icon: 'fa-user-shield' },
+  ];
+
+  const recentActivities = [...schemeActivities, ...accountActivities]
+    .filter((a) => {
+      if (activityFilter === 'All') return true;
+      if (activityFilter === 'account') return a.kind === 'account';
+      return a.kind === 'scheme' && `scheme-${a.status}` === activityFilter;
+    })
+    .sort((a, b) => {
+      const ta = a.ts?.toMillis?.() || 0;
+      const tb = b.ts?.toMillis?.() || 0;
+      return tb - ta;
+    })
+    .slice(0, 8);
+
+  const accountMetaFor = (type) => {
+    const map = {
+      'consent-granted': { label: 'Consent Granted', badge: 'ra-badge-green', icon: 'fa-user-shield' },
+      'consent-revoked': { label: 'Consent Revoked', badge: 'ra-badge-red', icon: 'fa-user-slash' },
+      'profile-submitted': { label: 'Profile Submitted', badge: 'ra-badge-blue', icon: 'fa-id-card' },
+      'otp-verified': { label: 'OTP Verified', badge: 'ra-badge-teal', icon: 'fa-shield-halved' },
+      'document-uploaded': { label: 'Document Uploaded', badge: 'ra-badge-violet', icon: 'fa-file-arrow-up' },
+      'draft-saved': { label: 'Draft Saved', badge: 'ra-badge-amber', icon: 'fa-floppy-disk' },
+    };
+    return map[type] || { label: 'Activity', badge: 'ra-badge-gray', icon: 'fa-clock-rotate-left' };
+  };
   const approvedCount = applications.filter((a) => a.status === 'Approved').length;
   const pendingCount = applications.filter((a) => a.status === 'Pending').length;
   const rejectedCount = applications.filter((a) => a.status === 'Rejected').length;
@@ -320,108 +417,167 @@ export default function DashboardOverview() {
             </div>
           </div>
 
-          {applications.length === 0 ? (
-            <div
-              className="scheme-status-card"
-              style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}
-            >
-              <i
-                className="fa-solid fa-folder-open"
-                style={{ fontSize: '3rem', marginBottom: '16px', color: '#cbd5e1' }}
-              ></i>
-              <h3>No Applications Yet</h3>
-              <p>
-                You haven't applied for any schemes. Check out the Recommendations or Schemes page
-                to get started!
-              </p>
-              <button
-                className="btn-primary"
-                style={{ marginTop: '16px' }}
-                onClick={() => navigate('/schemes')}
-              >
-                Browse Schemes
-              </button>
-            </div>
-          ) : (
-            paginatedApps.map((app) => {
-              let progressPercent = 25;
-              if (app.status === 'Approved') {
-                progressPercent = 100;
-              } else if (app.status === 'Rejected') {
-                progressPercent = 75;
-              } else if (app.totalSteps && app.currentStep !== undefined) {
-                progressPercent = Math.round((app.currentStep / app.totalSteps) * 100);
-              } else {
-                progressPercent = 50;
-              }
-
-              const statusClass =
-                app.status === 'Approved'
-                  ? 'status-approved'
-                  : app.status === 'Rejected'
-                    ? 'status-rejected'
-                    : 'status-pending';
-
-              return (
-                <div className="scheme-status-card" key={app.id}>
-                  <div className="scheme-flex">
-                    <div style={{ width: '100%' }}>
-                      <h3>{app.schemeName || 'Unknown Scheme'}</h3>
-                      <div className="scheme-status-text">
-                        Status: <span className={statusClass}>{app.status}</span> (
-                        {app.desc || 'Application submitted'})
-                      </div>
-                      <div className="scheme-progress-row">
-                        <span className="scheme-progress-label">
-                          {app.status === 'Rejected'
-                            ? `Progress: Stopped at ${progressPercent}%`
-                            : `Progress: ${progressPercent}%`}
-                        </span>
-                        <div className="scheme-progress-track">
-                          <div
-                            className={`scheme-progress-fill ${statusClass}`}
-                            style={{ width: `${progressPercent}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      className={app.status === 'Rejected' ? 'btn-reapply' : 'btn-track'}
-                      onClick={() =>
-                        navigate('/dashboard/applications', { state: { expandAppId: app.id } })
-                      }
-                    >
-                      {app.status === 'Rejected' ? 'Re-apply' : 'Track'}
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          )}
-
-          {applications.length > itemsPerPage && (
-            <div className="applications-pagination">
-              <span className="pagination-text">
-                Page {currentPage} of {totalPages}
+          {/* Recent Activities timeline (scheme applications + account events) */}
+          <div className="scheme-status-card recent-activities-card">
+            <div className="ra-head">
+              <div>
+                <h3>Recent Activities</h3>
+                <p className="ra-sub">Scheme applications & account events, newest first.</p>
+              </div>
+              <span className="ra-live-badge" title="Updates in real time">
+                <span className="ra-live-dot"></span> Live
               </span>
-              <div className="pagination-buttons">
+            </div>
+
+            <div className="ra-filters" role="group" aria-label="Filter activities">
+              {ACTIVITY_FILTERS.map((f) => (
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="pagination-btn"
+                  key={f.key}
+                  type="button"
+                  className={`ra-chip ${activityFilter === f.key ? 'active' : ''}`}
+                  onClick={() => setActivityFilter(f.key)}
                 >
-                  <i className="fa-solid fa-chevron-left"></i>
+                  <i className={`fa-solid ${f.icon}`}></i> {f.label}
+                  <span className="ra-chip-count">
+                    {f.key === 'All'
+                      ? schemeActivities.length + accountActivities.length
+                      : f.key === 'account'
+                        ? accountActivities.length
+                        : activityCounts[f.key] || 0}
+                  </span>
                 </button>
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="pagination-btn"
-                >
-                  <i className="fa-solid fa-chevron-right"></i>
+              ))}
+            </div>
+
+            {recentActivities.length === 0 ? (
+              <div className="ra-empty">
+                <i className="fa-solid fa-folder-open"></i>
+                <h4>No activities yet</h4>
+                <p>Apply for a scheme or update your profile and it will show up here instantly.</p>
+                <button className="btn-primary" onClick={() => navigate('/schemes')}>
+                  Browse Schemes
                 </button>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="ra-timeline">
+                {recentActivities.map((a) => {
+                  const meta =
+                    a.kind === 'scheme'
+                      ? APPLICATION_ACTIVITY_META[a.type] || {
+                          label: 'Scheme Activity',
+                          badge: 'ra-badge-gray',
+                          icon: 'fa-clock-rotate-left',
+                        }
+                      : accountMetaFor(a.type);
+
+                  return (
+                    <div className="ra-entry" key={a.id}>
+                      <div className="ra-rail">
+                        <span className={`ra-dot ${meta.badge}`}>
+                          <i className={`fa-solid ${meta.icon}`}></i>
+                        </span>
+                      </div>
+                      <div className="ra-card">
+                        <div className="ra-card-head">
+                          <div className="ra-card-title">
+                            <span className={`ra-badge ${meta.badge}`}>{meta.label}</span>
+                            <strong>
+                              {a.kind === 'scheme'
+                                ? a.schemeName
+                                : a.meta?.department || 'System'}
+                            </strong>
+                          </div>
+                          <span className="ra-time">
+                            <i className="fa-regular fa-clock"></i> {formatTs(a.ts)}
+                          </span>
+                        </div>
+
+                        {a.kind === 'scheme' ? (
+                          <>
+                            <div className="ra-card-body">
+                              <div className="ra-field">
+                                <span className="ra-key">Status</span>
+                                <span className={`ra-badge ${meta.badge}`}>{a.status}</span>
+                              </div>
+                              <div className="ra-field">
+                                <span className="ra-key">Details</span>
+                                <span className="ra-val">{a.desc}</span>
+                              </div>
+                              {a.status !== 'Approved' && a.status !== 'Rejected' && (
+                                <div className="ra-progress-row">
+                                  <span className="ra-key">Progress</span>
+                                  <div className="ra-progress-track">
+                                    <div
+                                      className="ra-progress-fill"
+                                      style={{ width: `${a.progress}%` }}
+                                    ></div>
+                                  </div>
+                                  <span className="ra-progress-label">{a.progress}%</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="ra-actions">
+                              {a.status === 'Rejected' && (
+                                <button
+                                  className="btn-sm btn-primary-sm"
+                                  onClick={() =>
+                                    navigate('/dashboard/applications', {
+                                      state: { expandAppId: a.appId },
+                                    })
+                                  }
+                                >
+                                  Re-apply
+                                </button>
+                              )}
+                              <button
+                                className="btn-sm btn-outline"
+                                onClick={() =>
+                                  navigate('/dashboard/applications', {
+                                    state: { expandAppId: a.appId },
+                                  })
+                                }
+                              >
+                                Track
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="ra-card-body">
+                            {a.meta?.purpose && (
+                              <div className="ra-field">
+                                <span className="ra-key">Purpose</span>
+                                <span className="ra-val">{a.meta.purpose}</span>
+                              </div>
+                            )}
+                            {a.meta?.requested && (
+                              <div className="ra-field">
+                                <span className="ra-key">Data</span>
+                                <span className="ra-val">{a.meta.requested}</span>
+                              </div>
+                            )}
+                            {a.meta?.status && (
+                              <div className="ra-field">
+                                <span className="ra-key">Status</span>
+                                <span className={`ra-badge ${meta.badge}`}>{a.meta.status}</span>
+                              </div>
+                            )}
+                            <button
+                              className="ra-expand-btn"
+                              onClick={() => navigate('/dashboard/audit-log')}
+                            >
+                              View full log <i className="fa-solid fa-arrow-right"></i>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+
+          </div>
         </div>
 
         {/* Right Sidebar */}

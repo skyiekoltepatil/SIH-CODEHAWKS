@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect, useRef } from 'react';
+import { useState, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -57,6 +57,8 @@ export default function SchemeApplication() {
   const [isFetchModalOpen, setIsFetchModalOpen] = useState(false);
   const [selectedDocsForFetch, setSelectedDocsForFetch] = useState([]);
   const [formError, setFormError] = useState('');
+  const [isFetching, setIsFetching] = useState(false);
+  const [fetchNotice, setFetchNotice] = useState('');
   const fileInputRef = useRef(null);
 
   const getMergedProfileData = async (uid, data) => {
@@ -111,163 +113,185 @@ export default function SchemeApplication() {
     return { pData, cData, iData, eData, fData, bData, docsData };
   };
 
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      if (user?.uid) {
-        try {
-          const docRef = doc(db, 'users', user.uid);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            const { pData, cData, iData, docsData } = await getMergedProfileData(user.uid, data);
-            
-            setFormData((prev) => ({
-              ...prev,
-              firstName: pData.firstName || '',
-              lastName: pData.lastName || '',
-              email: pData.email || user.email || '',
-              dob: pData.dob || '',
-              phone: cData.phone || '',
-              aadhaar: iData.aadhaar || '',
-              address: cData.address || '',
-            }));
-            
-            if (docsData && Object.keys(docsData).length > 0) {
-              setProfileDocuments(docsData);
-            }
-          }
-        } catch (err) {
-          console.error('Error prefilling form:', err);
-        }
-      }
-    };
-    fetchProfileData();
-  }, [user]);
+  // Profile data is fetched ON DEMAND — only when the user clicks a "Fetch"
+  // button — and merged non-destructively into whatever they already filled.
+  // The raw user doc is cached for the session so repeat clicks don't re-fetch.
+  const profileCacheRef = useRef(null);
 
-  const handleFetchEntireForm = async () => {
-    if (!user?.uid) return;
-    try {
+  const loadMergedProfile = async () => {
+    if (!profileCacheRef.current) {
       const docRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const { pData, cData, iData, eData, fData, bData, docsData } = await getMergedProfileData(user.uid, data);
-        
-        let updatedData = { ...formData };
-        updatedData.firstName = pData.firstName || updatedData.firstName;
-        updatedData.lastName = pData.lastName || updatedData.lastName;
-        updatedData.email = pData.email || user.email || updatedData.email;
-        updatedData.dob = pData.dob || updatedData.dob;
-        updatedData.phone = cData.phone || updatedData.phone;
-        updatedData.aadhaar = iData.aadhaar || updatedData.aadhaar;
-        updatedData.address = cData.address || updatedData.address;
-        
-        updatedData.collegeName = eData.collegeName || updatedData.collegeName;
-        updatedData.courseName = eData.courseName || updatedData.courseName;
-        updatedData.currentYear = eData.currentYear || updatedData.currentYear;
-        updatedData.enrollmentNumber = eData.enrollmentNumber || updatedData.enrollmentNumber;
-        updatedData.previousMarks = eData.previousMarks || updatedData.previousMarks;
-        
-        updatedData.familyIncome = fData.familyIncome || updatedData.familyIncome;
-        updatedData.fatherOccupation = fData.fatherOccupation || updatedData.fatherOccupation;
-        updatedData.motherOccupation = fData.motherOccupation || updatedData.motherOccupation;
-        
-        updatedData.accountHolderName = bData.accountHolderName || updatedData.accountHolderName;
-        updatedData.accountNumber = bData.accountNumber || updatedData.accountNumber;
-        updatedData.ifscCode = bData.ifscCode || updatedData.ifscCode;
-        updatedData.bankName = bData.bankName || updatedData.bankName;
+      profileCacheRef.current = docSnap.exists() ? docSnap.data() : {};
+    }
+    const merged = await getMergedProfileData(user.uid, profileCacheRef.current);
+    if (merged.docsData && Object.keys(merged.docsData).length > 0) {
+      setProfileDocuments(merged.docsData);
+    }
+    return merged;
+  };
 
-        if (docsData) {
-          const newDocs = [];
-          Object.entries(docsData).forEach(([key, docObj]) => {
-            if (docObj?.url && !updatedData.documents.some(d => d.url === docObj.url)) {
-              newDocs.push({
-                name: docObj.docName || key,
-                originalFilename: docObj.name || key,
-                url: docObj.url,
-                isFromProfile: true,
-              });
-            }
-          });
-          updatedData.documents = [...updatedData.documents, ...newDocs];
-        }
+  const handleFetchEntireForm = async () => {
+    if (!user?.uid || isFetching) return;
+    setIsFetching(true);
+    setFormError('');
+    setFetchNotice('');
+    try {
+      const { pData, cData, iData, eData, fData, bData, docsData } = await loadMergedProfile();
 
-        setFormData(updatedData);
+      // Non-destructive merge: user-entered values always win over profile data.
+      const pick = (profileVal, currentVal) => currentVal || profileVal || '';
+      let updatedData = {
+        ...formData,
+        firstName: pick(pData.firstName, formData.firstName),
+        lastName: pick(pData.lastName, formData.lastName),
+        email: pick(pData.email || user.email, formData.email),
+        dob: pick(pData.dob, formData.dob),
+        phone: pick(cData.phone, formData.phone),
+        aadhaar: pick(iData.aadhaar, formData.aadhaar),
+        address: pick(cData.address, formData.address),
+        collegeName: pick(eData.collegeName, formData.collegeName),
+        courseName: pick(eData.courseName, formData.courseName),
+        currentYear: pick(eData.currentYear, formData.currentYear),
+        enrollmentNumber: pick(eData.enrollmentNumber, formData.enrollmentNumber),
+        previousMarks: pick(eData.previousMarks, formData.previousMarks),
+        familyIncome: pick(fData.familyIncome, formData.familyIncome),
+        fatherOccupation: pick(fData.fatherOccupation, formData.fatherOccupation),
+        motherOccupation: pick(fData.motherOccupation, formData.motherOccupation),
+        accountHolderName: pick(bData.accountHolderName, formData.accountHolderName),
+        accountNumber: pick(bData.accountNumber, formData.accountNumber),
+        ifscCode: pick(bData.ifscCode, formData.ifscCode),
+        bankName: pick(bData.bankName, formData.bankName),
+        documents: [...formData.documents],
+      };
 
-        // Validation for incomplete steps
-        if (!updatedData.firstName || !updatedData.lastName || !updatedData.email || !updatedData.phone || !updatedData.aadhaar || !updatedData.dob || !updatedData.address) {
-          setCurrentStep(1);
-          setFormError('Please fill missing Personal Details.');
-        } else if (!updatedData.collegeName || !updatedData.courseName || !updatedData.currentYear || !updatedData.enrollmentNumber || !updatedData.previousMarks) {
-          setCurrentStep(2);
-          setFormError('Please fill missing Academic Details.');
-        } else if (!updatedData.familyIncome || !updatedData.fatherOccupation || !updatedData.motherOccupation) {
-          setCurrentStep(3);
-          setFormError('Please fill missing Family & Income Details.');
-        } else if (updatedData.documents.length === 0) {
-          setCurrentStep(4);
-          setFormError('Please upload mandatory documents.');
-        } else if (!updatedData.accountHolderName || !updatedData.bankName || !updatedData.accountNumber || !updatedData.ifscCode) {
-          setCurrentStep(5);
-          setFormError('Please fill missing Bank Details.');
-        } else {
-          setCurrentStep(6);
-          setFormError('');
-        }
+      if (docsData) {
+        const newDocs = [];
+        Object.entries(docsData).forEach(([key, docObj]) => {
+          if (docObj?.url && !updatedData.documents.some((d) => d.url === docObj.url)) {
+            newDocs.push({
+              name: docObj.docName || key,
+              originalFilename: docObj.name || key,
+              url: docObj.url,
+              isFromProfile: true,
+            });
+          }
+        });
+        updatedData.documents = [...updatedData.documents, ...newDocs];
+      }
+
+      const newlyFetchedDocs = docsData
+        ? Object.entries(docsData).filter(
+            ([key, docObj]) =>
+              docObj?.url && !formData.documents.some((d) => d.url === docObj.url)
+          ).length
+        : 0;
+
+      const fetchedCount =
+        Object.keys(updatedData).filter(
+          (k) => k !== 'documents' && updatedData[k] && !formData[k]
+        ).length + newlyFetchedDocs;
+
+      setFormData(updatedData);
+      setFetchNotice(
+        fetchedCount > 0
+          ? `${fetchedCount} field${fetchedCount > 1 ? 's' : ''} filled from your profile — please review below.`
+          : 'Nothing new to fill — your entered data was kept.'
+      );
+
+      // Jump to the first step with missing data so the user can review it.
+      if (!updatedData.firstName || !updatedData.lastName || !updatedData.email || !updatedData.phone || !updatedData.aadhaar || !updatedData.dob || !updatedData.address) {
+        setCurrentStep(1);
+        setFormError('Some Personal Details are still missing — please complete them.');
+      } else if (!updatedData.collegeName || !updatedData.courseName || !updatedData.currentYear || !updatedData.enrollmentNumber || !updatedData.previousMarks) {
+        setCurrentStep(2);
+        setFormError('Some Academic Details are still missing — please complete them.');
+      } else if (!updatedData.familyIncome || !updatedData.fatherOccupation || !updatedData.motherOccupation) {
+        setCurrentStep(3);
+        setFormError('Some Family & Income Details are still missing — please complete them.');
+      } else if (updatedData.documents.length === 0) {
+        setCurrentStep(4);
+        setFormError('Please upload mandatory documents.');
+      } else if (!updatedData.accountHolderName || !updatedData.bankName || !updatedData.accountNumber || !updatedData.ifscCode) {
+        setCurrentStep(5);
+        setFormError('Some Bank Details are still missing — please complete them.');
+      } else {
+        setCurrentStep(6);
+        setFormError('');
       }
     } catch (err) {
       console.error('Error fetching entire form:', err);
+      setFormError('Could not fetch your profile data. Please try again.');
+    } finally {
+      setIsFetching(false);
     }
   };
 
   const handleFetchSpecificForm = async (step) => {
-    if (!user?.uid) return;
+    if (!user?.uid || isFetching) return;
+    setIsFetching(true);
+    setFormError('');
+    setFetchNotice('');
     try {
-      const docRef = doc(db, 'users', user.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const { pData, cData, iData, eData, fData, bData } = await getMergedProfileData(user.uid, data);
-        
-        if (step === 1) {
-          setFormData((prev) => ({
-            ...prev,
-            firstName: pData.firstName || prev.firstName,
-            lastName: pData.lastName || prev.lastName,
-            email: pData.email || user.email || prev.email,
-            dob: pData.dob || prev.dob,
-            phone: cData.phone || prev.phone,
-            aadhaar: iData.aadhaar || prev.aadhaar,
-            address: cData.address || prev.address,
-          }));
-        } else if (step === 2) {
-          setFormData((prev) => ({
-            ...prev,
-            collegeName: eData.collegeName || prev.collegeName,
-            courseName: eData.courseName || prev.courseName,
-            currentYear: eData.currentYear || prev.currentYear,
-            enrollmentNumber: eData.enrollmentNumber || prev.enrollmentNumber,
-            previousMarks: eData.previousMarks || prev.previousMarks,
-          }));
-        } else if (step === 3) {
-          setFormData((prev) => ({
-            ...prev,
-            familyIncome: fData.familyIncome || prev.familyIncome,
-            fatherOccupation: fData.fatherOccupation || prev.fatherOccupation,
-            motherOccupation: fData.motherOccupation || prev.motherOccupation,
-          }));
-        } else if (step === 5) {
-          setFormData((prev) => ({
-            ...prev,
-            accountHolderName: bData.accountHolderName || prev.accountHolderName,
-            accountNumber: bData.accountNumber || prev.accountNumber,
-            ifscCode: bData.ifscCode || prev.ifscCode,
-            bankName: bData.bankName || prev.bankName,
-          }));
-        }
+      const { pData, cData, iData, eData, fData, bData } = await loadMergedProfile();
+
+      // Non-destructive: only fills EMPTY fields, never overwrites user input.
+      const merge = (updates) =>
+        setFormData((prev) => {
+          const filled = {};
+          let count = 0;
+          Object.entries(updates).forEach(([field, profileVal]) => {
+            if (!prev[field] && profileVal) {
+              filled[field] = profileVal;
+              count++;
+            }
+          });
+          setFetchNotice(
+            count > 0
+              ? `${count} field${count > 1 ? 's' : ''} filled from your profile.`
+              : 'Nothing new to fill — your entered data was kept.'
+          );
+          return { ...prev, ...filled };
+        });
+
+      if (step === 1) {
+        merge({
+          firstName: pData.firstName,
+          lastName: pData.lastName,
+          email: pData.email || user.email,
+          dob: pData.dob,
+          phone: cData.phone,
+          aadhaar: iData.aadhaar,
+          address: cData.address,
+        });
+      } else if (step === 2) {
+        merge({
+          collegeName: eData.collegeName,
+          courseName: eData.courseName,
+          currentYear: eData.currentYear,
+          enrollmentNumber: eData.enrollmentNumber,
+          previousMarks: eData.previousMarks,
+        });
+      } else if (step === 3) {
+        merge({
+          familyIncome: fData.familyIncome,
+          fatherOccupation: fData.fatherOccupation,
+          motherOccupation: fData.motherOccupation,
+        });
+      } else if (step === 5) {
+        merge({
+          accountHolderName: bData.accountHolderName,
+          accountNumber: bData.accountNumber,
+          ifscCode: bData.ifscCode,
+          bankName: bData.bankName,
+        });
       }
     } catch (err) {
       console.error('Error fetching specific form:', err);
+      setFormError('Could not fetch your profile data. Please try again.');
+    } finally {
+      setIsFetching(false);
+      setTimeout(() => setFetchNotice(''), 5000);
     }
   };
 
@@ -584,10 +608,18 @@ export default function SchemeApplication() {
         <div style={{ marginTop: '20px', padding: '16px', background: 'var(--icon-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
           <div>
             <h4 style={{ margin: 0, color: 'var(--text-main)' }}>Want to save time?</h4>
-            <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Autofill this form using your saved profile data.</p>
+            <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Click below to autofill this form from your saved profile — only empty fields are filled.</p>
           </div>
-          <button type="button" className="btn-primary" onClick={handleFetchEntireForm}>
-            <i className="fa-solid fa-bolt" style={{ marginRight: '8px' }}></i> Fetch Entire Data & Review
+          <button type="button" className="btn-primary" onClick={handleFetchEntireForm} disabled={isFetching}>
+            {isFetching ? (
+              <>
+                <i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '8px' }}></i> Fetching…
+              </>
+            ) : (
+              <>
+                <i className="fa-solid fa-bolt" style={{ marginRight: '8px' }}></i> Fetch Entire Data & Review
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -633,8 +665,8 @@ export default function SchemeApplication() {
                 <h3>Personal Information</h3>
                 <p className="step-desc">Verify your pre-filled details from your profile.</p>
               </div>
-              <button type="button" className="btn-outline" onClick={() => handleFetchSpecificForm(1)} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
-                <i className="fa-solid fa-download"></i> Fetch Data
+              <button type="button" className="btn-outline" onClick={() => handleFetchSpecificForm(1)} disabled={isFetching} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+                <i className={`fa-solid ${isFetching ? 'fa-spinner fa-spin' : 'fa-download'}`}></i> {isFetching ? 'Fetching…' : 'Fetch Data'}
               </button>
             </div>
             <div className="app-form-grid">
@@ -719,8 +751,8 @@ export default function SchemeApplication() {
                 <h3>Academic Details</h3>
                 <p className="step-desc">Provide your current and previous academic records.</p>
               </div>
-              <button type="button" className="btn-outline" onClick={() => handleFetchSpecificForm(2)} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
-                <i className="fa-solid fa-download"></i> Fetch Data
+              <button type="button" className="btn-outline" onClick={() => handleFetchSpecificForm(2)} disabled={isFetching} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+                <i className={`fa-solid ${isFetching ? 'fa-spinner fa-spin' : 'fa-download'}`}></i> {isFetching ? 'Fetching…' : 'Fetch Data'}
               </button>
             </div>
             <div className="app-form-grid">
@@ -785,8 +817,8 @@ export default function SchemeApplication() {
                 <h3>Family & Income Details</h3>
                 <p className="step-desc">Provide details regarding your family income.</p>
               </div>
-              <button type="button" className="btn-outline" onClick={() => handleFetchSpecificForm(3)} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
-                <i className="fa-solid fa-download"></i> Fetch Data
+              <button type="button" className="btn-outline" onClick={() => handleFetchSpecificForm(3)} disabled={isFetching} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+                <i className={`fa-solid ${isFetching ? 'fa-spinner fa-spin' : 'fa-download'}`}></i> {isFetching ? 'Fetching…' : 'Fetch Data'}
               </button>
             </div>
             <div className="app-form-grid">
@@ -1036,8 +1068,8 @@ export default function SchemeApplication() {
                 <h3>Bank Details</h3>
                 <p className="step-desc">Enter bank details for Direct Benefit Transfer (DBT).</p>
               </div>
-              <button type="button" className="btn-outline" onClick={() => handleFetchSpecificForm(5)} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
-                <i className="fa-solid fa-download"></i> Fetch Data
+              <button type="button" className="btn-outline" onClick={() => handleFetchSpecificForm(5)} disabled={isFetching} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+                <i className={`fa-solid ${isFetching ? 'fa-spinner fa-spin' : 'fa-download'}`}></i> {isFetching ? 'Fetching…' : 'Fetch Data'}
               </button>
             </div>
             <div className="app-form-grid">
@@ -1197,6 +1229,23 @@ export default function SchemeApplication() {
                 I declare that all the information provided is correct to the best of my knowledge.
               </label>
             </div>
+          </div>
+        )}
+
+        {fetchNotice && (
+          <div style={{ color: '#047857', background: '#d1fae5', padding: '12px', borderRadius: '8px', marginTop: '20px', border: '1px solid #6ee7b7', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+            <span>
+              <i className="fa-solid fa-circle-check" style={{ marginRight: '8px' }}></i>
+              {fetchNotice}
+            </span>
+            <button
+              type="button"
+              onClick={() => setFetchNotice('')}
+              style={{ background: 'none', border: 'none', color: '#047857', cursor: 'pointer', fontSize: '1rem' }}
+              aria-label="Dismiss"
+            >
+              <i className="fa-solid fa-xmark"></i>
+            </button>
           </div>
         )}
 

@@ -809,6 +809,400 @@
   background: var(--bg-color);
 }
 
+/* ---------- Recent Activities timeline (AuditLog-style) ---------- */
+.recent-activities-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ra-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ra-head h3 {
+  margin: 0 0 4px 0;
+}
+
+.ra-sub {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.ra-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #059669;
+  background: #d1fae5;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ra-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: ra-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes ra-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+  }
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+  }
+}
+
+.ra-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ra-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ra-chip:hover {
+  border-color: #94a3b8;
+  color: var(--text-main);
+}
+
+.ra-chip.active {
+  background: #1e40af;
+  border-color: #1e40af;
+  color: #fff;
+}
+
+.ra-chip-count {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  padding: 1px 7px;
+  font-weight: 700;
+}
+
+.ra-chip.active .ra-chip-count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Empty state */
+.ra-empty {
+  text-align: center;
+  padding: 30px 16px;
+  color: var(--text-muted);
+}
+
+.ra-empty i {
+  font-size: 2.6rem;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.ra-empty h4 {
+  margin: 0 0 6px 0;
+  color: var(--text-main);
+}
+
+.ra-empty p {
+  margin: 0 0 14px 0;
+  font-size: 0.88rem;
+}
+
+/* Timeline */
+.ra-timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.ra-entry {
+  display: flex;
+  gap: 14px;
+}
+
+.ra-entry:not(:last-child) .ra-rail::after {
+  content: '';
+  position: absolute;
+  top: 34px;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  background: var(--border-color);
+}
+
+.ra-rail {
+  position: relative;
+  flex-shrink: 0;
+  width: 34px;
+  display: flex;
+  justify-content: center;
+}
+
+.ra-dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.ra-dot.ra-badge-green {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.ra-dot.ra-badge-amber {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.ra-dot.ra-badge-red {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.ra-dot.ra-badge-blue {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.ra-dot.ra-badge-teal {
+  background: #ccfbf1;
+  color: #0d9488;
+}
+
+.ra-dot.ra-badge-violet {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.ra-dot.ra-badge-gray {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.ra-card {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ra-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+}
+
+.ra-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ra-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.ra-card-title strong {
+  font-size: 0.92rem;
+  color: var(--text-main);
+}
+
+.ra-time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ra-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ra-badge.ra-badge-green {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.ra-badge.ra-badge-amber {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.ra-badge.ra-badge-red {
+  background: #fee2e2;
+  color: #dc2626;
+}
+  
+.ra-badge.ra-badge-blue {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.ra-badge.ra-badge-teal {
+  background: #ccfbf1;
+  color: #0d9488;
+}
+
+.ra-badge.ra-badge-violet {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.ra-badge.ra-badge-gray {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.ra-card-body {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ra-field {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 0.84rem;
+}
+
+.ra-key {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.ra-val {
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.ra-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ra-progress-track {
+  flex: 1;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ra-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: #3b82f6;
+  transition: width 0.4s ease;
+}
+
+.ra-progress-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 32px;
+  text-align: right;
+}
+
+.ra-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ra-expand-btn {
+  align-self: flex-start;
+  margin-top: 10px;
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+}
+
+.ra-expand-btn:hover {
+  text-decoration: underline;
+}
+
+.ra-footer {
+  margin-top: 4px;
+}
+
+/* Dark mode */
+html.dark .ra-card {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.dark .ra-live-badge {
+  background: rgba(16, 185, 129, 0.15);
+}
+
+html.dark .ra-chip.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
 /* Quick Actions Row */
 .quick-actions-row {
   display: grid;

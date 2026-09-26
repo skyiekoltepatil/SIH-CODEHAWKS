@@ -676,1878 +676,248 @@ export default function Profile() {
   };
 
   return (
-    <div id="profile">
-      <div className="profile-ui-container">
-        {/* Left Sidebar */}
-        <aside className="profile-sidebar">
-          <button
-            className={`profile-nav-btn ${activeSidebar === 'PERSONAL_DETAILS' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveSidebar('PERSONAL_DETAILS');
-              setActiveTab('PERSONAL_DETAILS');
-            }}
+    <div id="profile" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 80px)', padding: '20px' }}>
+      <div
+        className="password-change-container"
+        style={{
+          width: '100%',
+          maxWidth: '450px',
+          background: 'rgba(255, 255, 255, 0.85)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderRadius: '24px',
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          overflow: 'hidden',
+          position: 'relative'
+        }}
+      >
+
+        <form
+          id="ui-profile-form"
+          onSubmit={handleChangePassword}
+          style={{ padding: '40px 32px' }}
+        >
+          <fieldset
+            disabled={isProfileLocked}
+            style={{ border: 'none', padding: 0, margin: 0 }}
           >
-            <i className="fa-solid fa-user"></i> PERSONAL DETAILS
-          </button>
-          <button
-            className={`profile-nav-btn ${activeSidebar === 'CONTACT_DETAILS' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveSidebar('CONTACT_DETAILS');
-              setActiveTab('CONTACT_DETAILS');
-            }}
-          >
-            <i className="fa-solid fa-phone"></i> CONTACT DETAILS
-          </button>
-          <button
-            className={`profile-nav-btn ${activeSidebar === 'FAMILY_DETAILS' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveSidebar('FAMILY_DETAILS');
-              setActiveTab('FAMILY_DETAILS');
-            }}
-          >
-            <i className="fa-solid fa-users"></i> FAMILY DETAILS
-          </button>
-          <button
-            className={`profile-nav-btn ${activeSidebar === 'EDUCATION_DETAILS' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveSidebar('EDUCATION_DETAILS');
-              setActiveTab('EDUCATION_DETAILS');
-            }}
-          >
-            <i className="fa-solid fa-graduation-cap"></i> EDUCATION DETAILS
-          </button>
-          <button
-            className={`profile-nav-btn ${activeSidebar === 'BANK_DETAILS' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveSidebar('BANK_DETAILS');
-              setActiveTab('BANK_DETAILS');
-            }}
-          >
-            <i className="fa-solid fa-building-columns"></i> BANK DETAILS
-          </button>
-          <button
-            className={`profile-nav-btn ${activeSidebar === 'UPLOAD_DOCUMENTS' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveSidebar('UPLOAD_DOCUMENTS');
-              setActiveTab('UPLOAD_DOCUMENTS');
-            }}
-          >
-            <i className="fa-solid fa-upload"></i> UPLOAD DOCUMENTS
-          </button>
-          <button
-            className={`profile-nav-btn ${activeSidebar === 'CHANGE_PASSWORD' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveSidebar('CHANGE_PASSWORD');
-              setActiveTab('CHANGE_PASSWORD');
-            }}
-          >
-            <i className="fa-solid fa-lock"></i> CHANGE PASSWORD
-          </button>
-        </aside>
-
-        {/* Right Content Area */}
-        <main className="profile-content-area">
-          {/* Lock Profile Banner */}
-          <div
-            style={{
-              marginBottom: '20px',
-              padding: '15px',
-              background: isProfileLocked ? '#dcfce7' : '#fef3c7',
-              borderRadius: '8px',
-              border: `1px solid ${isProfileLocked ? '#86efac' : '#fde68a'}`,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <div>
-              <h3
-                style={{
-                  margin: 0,
-                  color: isProfileLocked ? '#166534' : '#92400e',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}
-              >
-                {isProfileLocked ? (
-                  <>
-                    <i className="fa-solid fa-lock"></i> Profile Locked & Finalized
-                  </>
-                ) : (
-                  <>
-                    <i className="fa-solid fa-lock-open"></i> Profile Unlocked
-                  </>
-                )}
-              </h3>
-              <p
-                style={{
-                  margin: '5px 0 0 0',
-                  color: isProfileLocked ? '#15803d' : '#b45309',
-                  fontSize: '0.9rem',
-                }}
-              >
-                {isProfileLocked
-                  ? 'Your profile is locked for verification and cannot be edited.'
-                  : 'Lock your profile when you have finished entering your details.'}
-              </p>
-            </div>
-            {isProfileLocked ? (
-              <button
-                onClick={() => setShowUnlockConfirmModal(true)}
-                disabled={isLockingProfile}
-                style={{
-                  padding: '10px 20px',
-                  background: 'transparent',
-                  color: '#15803d',
-                  border: '1px solid #15803d',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                {isLockingProfile ? 'UNLOCKING...' : 'UNLOCK PROFILE'}
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowLockConfirmModal(true)}
-                disabled={isLockingProfile}
-                style={{
-                  padding: '10px 20px',
-                  background: '#b45309',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                {isLockingProfile ? 'LOCKING...' : 'LOCK PROFILE'}
-              </button>
-            )}
-          </div>
-
-          {/* Horizontal Tabs */}
-          {activeSidebar === 'PERSONAL_DETAILS' && (
-            <div className="profile-top-tabs">
-              <button
-                className={`profile-top-tab-btn ${activeTab === 'PERSONAL_DETAILS' ? 'active' : ''}`}
-                onClick={() => setActiveTab('PERSONAL_DETAILS')}
-              >
-                PERSONAL DETAILS
-              </button>
-              <button
-                className={`profile-top-tab-btn ${activeTab === 'IDENTITY' ? 'active' : ''}`}
-                onClick={() => setActiveTab('IDENTITY')}
-              >
-                IDENTITY
-              </button>
-              <button
-                className={`profile-top-tab-btn ${activeTab === 'RELIGION' ? 'active' : ''}`}
-                onClick={() => setActiveTab('RELIGION')}
-              >
-                RELIGION
-              </button>
-              <button
-                className={`profile-top-tab-btn ${activeTab === 'PHYSICALLY_HANDICAPPED' ? 'active' : ''}`}
-                onClick={() => setActiveTab('PHYSICALLY_HANDICAPPED')}
-              >
-                PHYSICALLY HANDICAPPED
-              </button>
-              <button
-                className={`profile-top-tab-btn ${activeTab === 'MINORITY_DETAILS' ? 'active' : ''}`}
-                onClick={() => setActiveTab('MINORITY_DETAILS')}
-              >
-                MINORITY DETAILS
-              </button>
-              <button
-                className={`profile-top-tab-btn ${activeTab === 'PASSPORT_DETAILS' ? 'active' : ''}`}
-                onClick={() => setActiveTab('PASSPORT_DETAILS')}
-              >
-                PASSPORT DETAILS
-              </button>
-              <button
-                className={`profile-top-tab-btn ${activeTab === 'EXAMINATION_DETAILS' ? 'active' : ''}`}
-                onClick={() => setActiveTab('EXAMINATION_DETAILS')}
-              >
-                EXAMINATION DETAILS
-              </button>
-            </div>
-          )}
-
-          {/* Form Content */}
-          {activeSidebar === 'CHANGE_PASSWORD' ? (
-            <div
-              className="profile-form-wrapper"
-              style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-            >
-              <form
-                id="ui-profile-form"
-                onSubmit={handleChangePassword}
-                style={{
-                  maxWidth: '500px',
-                  width: '100%',
-                  padding: '40px',
-                  background: 'var(--card-bg)',
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                }}
-              >
-                <fieldset
-                  disabled={isProfileLocked}
-                  style={{ border: 'none', padding: 0, margin: 0 }}
-                >
-                  <h3
-                    style={{
-                      marginBottom: '30px',
-                      color: 'var(--text-main)',
-                      fontSize: '1.5rem',
-                      textAlign: 'center',
-                    }}
-                  >
-                    Change Password
-                  </h3>
-
-                  <div className="ui-form-grid" style={{ gridTemplateColumns: '1fr', gap: '24px' }}>
-                    <div className="ui-input-group">
-                      <label>Current Password</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-lock"></i>
-                        <input
-                          type={showCurrentPassword ? 'text' : 'password'}
-                          required
-                          value={passwordData.currentPassword}
-                          onChange={(e) =>
-                            setPasswordData({ ...passwordData, currentPassword: e.target.value })
-                          }
-                        />
-                        <i
-                          className={`fa-solid ${showCurrentPassword ? 'fa-eye-slash' : 'fa-eye'}`}
-                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                          style={{
-                            cursor: 'pointer',
-                            margin: 0,
-                            paddingLeft: '10px',
-                            color: '#94a3b8',
-                          }}
-                        ></i>
-                      </div>
-                      <div
-                        style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}
-                      >
-                        <span
-                          onClick={handleForgotPassword}
-                          style={{
-                            color: '#2563eb',
-                            fontSize: '0.82rem',
-                            cursor: 'pointer',
-                            fontWeight: '500',
-                          }}
-                          title="Send password reset link to your email"
-                        >
-                          Forgot Password?
-                        </span>
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>New Password</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-key"></i>
-                        <input
-                          type={showNewPassword ? 'text' : 'password'}
-                          required
-                          value={passwordData.newPassword}
-                          onChange={(e) =>
-                            setPasswordData({ ...passwordData, newPassword: e.target.value })
-                          }
-                        />
-                        <i
-                          className={`fa-solid ${showNewPassword ? 'fa-eye-slash' : 'fa-eye'}`}
-                          onClick={() => setShowNewPassword(!showNewPassword)}
-                          style={{
-                            cursor: 'pointer',
-                            margin: 0,
-                            paddingLeft: '10px',
-                            color: '#94a3b8',
-                          }}
-                        ></i>
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Confirm New Password</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-key"></i>
-                        <input
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          required
-                          value={passwordData.confirmNewPassword}
-                          onChange={(e) =>
-                            setPasswordData({ ...passwordData, confirmNewPassword: e.target.value })
-                          }
-                        />
-                        <i
-                          className={`fa-solid ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          style={{
-                            cursor: 'pointer',
-                            margin: 0,
-                            paddingLeft: '10px',
-                            color: '#94a3b8',
-                          }}
-                        ></i>
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    className="profile-form-footer"
-                    style={{ marginTop: '20px', paddingTop: '0' }}
-                  >
-                    <button
-                      type="submit"
-                      className="btn-primary"
-                      style={{ width: '100%' }}
-                      disabled={isUpdatingPassword}
-                    >
-                      {isUpdatingPassword ? 'UPDATING...' : 'UPDATE PASSWORD'}
-                    </button>
-                  </div>
-                </fieldset>
-              </form>
-            </div>
-          ) : activeTab === 'PERSONAL_DETAILS' && activeSidebar === 'PERSONAL_DETAILS' ? (
-            <div className="profile-form-wrapper">
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '20px',
-                }}
-              >
-                <h3 style={{ margin: 0, color: '#1e293b' }}>Personal Details</h3>
-                <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <a
-                      href="/mock-b"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        padding: '8px 12px',
-                        background: 'var(--icon-bg)',
-                        color: 'var(--text-main)',
-                        borderRadius: '6px',
-                        textDecoration: 'none',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        border: '1px solid var(--border-color)',
-                      }}
-                    >
-                      <i className="fa-solid fa-arrow-up-right-from-square"></i> Open Site B
-                    </a>
-                    <a
-                      href="/mock-c"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        padding: '8px 12px',
-                        background: 'var(--icon-bg)',
-                        color: 'var(--text-main)',
-                        borderRadius: '6px',
-                        textDecoration: 'none',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        border: '1px solid var(--border-color)',
-                      }}
-                    >
-                      <i className="fa-solid fa-arrow-up-right-from-square"></i> Open Site C
-                    </a>
-                    <a
-                      href="/mock-d"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        padding: '8px 12px',
-                        background: 'var(--icon-bg)',
-                        color: 'var(--text-main)',
-                        borderRadius: '6px',
-                        textDecoration: 'none',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        border: '1px solid var(--border-color)',
-                      }}
-                    >
-                      <i className="fa-solid fa-arrow-up-right-from-square"></i> Open Site D
-                    </a>
-                  </div>
-                  <div className="submit-dropdown-container">
-                    <button
-                      type="button"
-                      disabled={isPushing}
-                      style={{
-                        background: '#2563eb',
-                        color: 'white',
-                        padding: '10px 16px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        display: 'flex',
-                        gap: '8px',
-                        alignItems: 'center',
-                      }}
-                    >
-                      {isPushing ? (
-                        'SUBMITTING...'
-                      ) : (
-                        <>
-                          <i className="fa-solid fa-paper-plane"></i> PUSH DATA OPTIONS{' '}
-                          <i
-                            className="fa-solid fa-chevron-down"
-                            style={{ fontSize: '0.8em', marginLeft: '5px' }}
-                          ></i>
-                        </>
-                      )}
-                    </button>
-                    <div className="submit-dropdown-content">
-                      <button
-                        type="button"
-                        onClick={() => handleRequestPush('mock_site_b', 'Site B')}
-                      >
-                        <i className="fa-solid fa-globe"></i> Push to Site B
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <form id="ui-profile-form" onSubmit={handleSave}>
-                <fieldset
-                  disabled={isProfileLocked}
-                  style={{ border: 'none', padding: 0, margin: 0 }}
-                >
-                  <div className="ui-form-grid">
-                    <div className="ui-input-group">
-                      <label>
-                        First Name{' '}
-                        <span className="req" style={{ color: '#ef4444' }}>
-                          *
-                        </span>
-                      </label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-pen"></i>
-                        <input
-                          type="text"
-                          required
-                          value={formData.firstName}
-                          onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Middle Name</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-pen"></i>
-                        <input
-                          type="text"
-                          value={formData.middleName}
-                          onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>
-                        Last Name{' '}
-                        <span className="req" style={{ color: '#ef4444' }}>
-                          *
-                        </span>
-                      </label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-pen"></i>
-                        <input
-                          type="text"
-                          required
-                          value={formData.lastName}
-                          onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="ui-form-grid" style={{ marginTop: '24px' }}>
-                    <div className="ui-input-group">
-                      <label>
-                        Official Email{' '}
-                        <span className="req" style={{ color: '#ef4444' }}>
-                          *
-                        </span>
-                      </label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-envelope"></i>
-                        <input
-                          type="email"
-                          required
-                          value={formData.officialEmail}
-                          onChange={(e) =>
-                            setFormData({ ...formData, officialEmail: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Student Admission Main Category</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-list"></i>
-                        <input
-                          type="text"
-                          value={formData.admissionCategory}
-                          onChange={(e) =>
-                            setFormData({ ...formData, admissionCategory: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Caste</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-list"></i>
-                        <input
-                          type="text"
-                          value={formData.caste}
-                          onChange={(e) => setFormData({ ...formData, caste: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="ui-form-grid" style={{ marginTop: '24px' }}>
-                    <div className="ui-input-group">
-                      <label>Sub Cast</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-list"></i>
-                        <input
-                          type="text"
-                          value={formData.subCaste}
-                          onChange={(e) => setFormData({ ...formData, subCaste: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Nationality</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-flag"></i>
-                        <input
-                          type="text"
-                          value={formData.nationality}
-                          onChange={(e) =>
-                            setFormData({ ...formData, nationality: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Domicile</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-home"></i>
-                        <input
-                          type="text"
-                          value={formData.domicile}
-                          onChange={(e) => setFormData({ ...formData, domicile: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="ui-form-grid" style={{ marginTop: '24px' }}>
-                    <div className="ui-input-group">
-                      <label>Mobile Number</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-phone"></i>
-                        <input
-                          type="tel"
-                          pattern="\d{10}"
-                          title="10-digit mobile number"
-                          maxLength="10"
-                          value={formData.mobileNumber}
-                          onChange={(e) =>
-                            setFormData({ ...formData, mobileNumber: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Birth Place</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-map-marker-alt"></i>
-                        <input
-                          type="text"
-                          value={formData.birthPlace}
-                          onChange={(e) => setFormData({ ...formData, birthPlace: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Birth Country</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-globe"></i>
-                        <input
-                          type="text"
-                          value={formData.birthCountry}
-                          onChange={(e) =>
-                            setFormData({ ...formData, birthCountry: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="ui-form-grid" style={{ marginTop: '24px' }}>
-                    <div className="ui-input-group">
-                      <label>Birth State</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-map"></i>
-                        <input
-                          type="text"
-                          value={formData.birthState}
-                          onChange={(e) => setFormData({ ...formData, birthState: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Birth District</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-map-pin"></i>
-                        <input
-                          type="text"
-                          value={formData.birthDistrict}
-                          onChange={(e) =>
-                            setFormData({ ...formData, birthDistrict: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Native Place</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-home"></i>
-                        <input
-                          type="text"
-                          value={formData.nativePlace}
-                          onChange={(e) =>
-                            setFormData({ ...formData, nativePlace: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="ui-form-grid" style={{ marginTop: '24px' }}>
-                    <div className="ui-input-group">
-                      <label>Native Country</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-globe"></i>
-                        <input
-                          type="text"
-                          value={formData.nativeCountry}
-                          onChange={(e) =>
-                            setFormData({ ...formData, nativeCountry: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Native State</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-map"></i>
-                        <input
-                          type="text"
-                          value={formData.nativeState}
-                          onChange={(e) =>
-                            setFormData({ ...formData, nativeState: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Native District</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-map-pin"></i>
-                        <input
-                          type="text"
-                          value={formData.nativeDistrict}
-                          onChange={(e) =>
-                            setFormData({ ...formData, nativeDistrict: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="ui-form-grid" style={{ marginTop: '24px' }}>
-                    <div className="ui-input-group">
-                      <label>
-                        Primary_Email (Personal){' '}
-                        <span className="req" style={{ color: '#ef4444' }}>
-                          *
-                        </span>
-                      </label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-envelope"></i>
-                        <input
-                          type="email"
-                          required
-                          value={formData.primaryEmail}
-                          onChange={(e) =>
-                            setFormData({ ...formData, primaryEmail: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Alternate_Email</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-envelope"></i>
-                        <input
-                          type="email"
-                          value={formData.alternateEmail}
-                          onChange={(e) =>
-                            setFormData({ ...formData, alternateEmail: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Blood Group</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-tint"></i>
-                        <input
-                          type="text"
-                          value={formData.bloodGroup}
-                          onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="ui-form-grid" style={{ marginTop: '24px' }}>
-                    <div className="ui-input-group">
-                      <label>Earning Parent Name</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-user-tie"></i>
-                        <input
-                          type="text"
-                          value={formData.parentName}
-                          onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Earning Parent Relation</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-users"></i>
-                        <input
-                          type="text"
-                          value={formData.parentRelation}
-                          onChange={(e) =>
-                            setFormData({ ...formData, parentRelation: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="ui-input-group">
-                      <label>Career Choice</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-briefcase"></i>
-                        <input
-                          type="text"
-                          value={formData.careerChoice}
-                          onChange={(e) =>
-                            setFormData({ ...formData, careerChoice: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="ui-form-grid" style={{ marginTop: '24px' }}>
-                    <div className="ui-input-group">
-                      <label>Alumni Institute</label>
-                      <div className="input-wrapper">
-                        <i className="fa-solid fa-graduation-cap"></i>
-                        <input
-                          type="text"
-                          value={formData.alumniInstitute || ''}
-                          onChange={(e) =>
-                            setFormData({ ...formData, alumniInstitute: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="profile-form-footer">
-                    <button type="submit" className="btn-primary" disabled={isSaving}>
-                      {isSaving ? 'SAVING...' : 'SAVE & CONTINUE'}
-                    </button>
-                  </div>
-                </fieldset>
-              </form>
-            </div>
-          ) : activeTab === 'CONTACT_DETAILS' && activeSidebar === 'CONTACT_DETAILS' ? (
-            <div className="profile-form-wrapper">
-              <form id="ui-profile-form" onSubmit={handleSaveContact}>
-                <fieldset
-                  disabled={isProfileLocked}
-                  style={{ border: 'none', padding: 0, margin: 0 }}
-                >
-                  <div className="ui-form-grid" style={{ gridTemplateColumns: '1fr' }}>
-                    <div className="ui-input-group">
-                      <label>
-                        Phone Number (10 digits){' '}
-                        <span className="req" style={{ color: '#ef4444' }}>
-                          *
-                        </span>
-                      </label>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <div
-                          className="input-wrapper"
-                          style={{ flex: 1, border: phoneVerified ? '1px solid #22c55e' : '' }}
-                        >
-                          <i
-                            className="fa-solid fa-phone"
-                            style={{ color: phoneVerified ? '#22c55e' : '' }}
-                          ></i>
-                          <input
-                            type="text"
-                            placeholder="9876543210"
-                            required
-                            pattern="\d{10}"
-                            title="10-digit mobile number"
-                            value={contactData.phoneNumber}
-                            onChange={(e) => {
-                              setContactData({ ...contactData, phoneNumber: e.target.value });
-                              setPhoneVerified(false);
-                              setIsOtpSent(false);
-                            }}
-                            maxLength="10"
-                          />
-                        </div>
-                        {!isOtpSent && (
-                          <button
-                            type="button"
-                            className="btn-primary"
-                            onClick={handleVerifyPhone}
-                            disabled={isVerifyingPhone}
-                            style={{ whiteSpace: 'nowrap' }}
-                          >
-                            {isVerifyingPhone ? 'SENDING OTP...' : (phoneVerified ? 'RE-VERIFY' : 'VERIFY PHONE')}
-                          </button>
-                        )}
-                        {phoneVerified && (
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              background: '#dcfce7',
-                              color: '#166534',
-                              padding: '0 15px',
-                              borderRadius: '6px',
-                              fontWeight: '600',
-                            }}
-                          >
-                            <i
-                              className="fa-solid fa-check-circle"
-                              style={{ marginRight: '8px' }}
-                            ></i>{' '}
-                            VERIFIED
-                          </div>
-                        )}
-                      </div>
-                      <small style={{ color: '#64748b', marginTop: '5px', display: 'block' }}>
-                        We will send an OTP to your email for phone verification.
-                      </small>
-                    </div>
-
-                    {isOtpSent && !phoneVerified && (
-                      <div
-                        className="ui-input-group"
-                        style={{
-                          background: '#f8fafc',
-                          padding: '20px',
-                          borderRadius: '8px',
-                          border: '1px solid var(--border-color)',
-                          marginTop: '20px',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <label style={{ color: '#2563eb', margin: 0 }}>
-                            Enter 6-Digit OTP sent to your email
-                          </label>
-                          <button
-                            type="button"
-                            onClick={handleVerifyPhone}
-                            disabled={isVerifyingPhone}
-                            style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: '500', padding: 0, fontSize: '0.85rem', textDecoration: 'underline' }}
-                          >
-                            Resend OTP
-                          </button>
-                        </div>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                          <div className="input-wrapper" style={{ flex: 1 }}>
-                            <i className="fa-solid fa-key"></i>
-                            <input
-                              type="text"
-                              placeholder="123456"
-                              value={otp}
-                              onChange={(e) => setOtp(e.target.value)}
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            className="btn-primary"
-                            onClick={handleSubmitPhoneOtp}
-                            disabled={isVerifyingPhone}
-                          >
-                            {isVerifyingPhone ? 'VERIFYING...' : 'SUBMIT OTP'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="ui-input-group" style={{ marginTop: '20px' }}>
-                      <label>
-                        Full Residential Address{' '}
-                        <span className="req" style={{ color: '#ef4444' }}>
-                          *
-                        </span>
-                      </label>
-                      <div
-                        className="input-wrapper"
-                        style={{ height: 'auto', alignItems: 'flex-start' }}
-                      >
-                        <i
-                          className="fa-solid fa-map-location-dot"
-                          style={{ marginTop: '14px' }}
-                        ></i>
-                        <textarea
-                          required
-                          rows="4"
-                          style={{
-                            flex: 1,
-                            border: 'none',
-                            outline: 'none',
-                            padding: '12px 10px',
-                            width: '100%',
-                            resize: 'vertical',
-                            background: 'transparent',
-                            color: 'var(--text-main)',
-                          }}
-                          placeholder="Enter your full address"
-                          value={contactData.address}
-                          onChange={(e) =>
-                            setContactData({ ...contactData, address: e.target.value })
-                          }
-                        ></textarea>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="profile-form-footer">
-                    <button type="submit" className="btn-primary" disabled={isSaving}>
-                      {isSaving ? 'SAVING...' : 'SAVE & CONTINUE'}
-                    </button>
-                  </div>
-                </fieldset>
-              </form>
-            </div>
-          ) : activeTab === 'IDENTITY' ? (
-            <div className="profile-form-wrapper">
-              <form id="ui-profile-form" onSubmit={handleSaveIdentity}>
-                <fieldset
-                  disabled={isProfileLocked}
-                  style={{ border: 'none', padding: 0, margin: 0 }}
-                >
-                  <div className="ui-form-grid" style={{ gridTemplateColumns: '1fr', gap: '30px' }}>
-                    <div className="ui-input-group">
-                      <label>
-                        Aadhaar Card Number{' '}
-                        <span className="req" style={{ color: '#ef4444' }}>
-                          *
-                        </span>
-                      </label>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <div
-                          className="input-wrapper"
-                          style={{ flex: 1, border: aadhaarVerified ? '1px solid #22c55e' : '' }}
-                        >
-                          <i
-                            className="fa-solid fa-id-card"
-                            style={{ color: aadhaarVerified ? '#22c55e' : '' }}
-                          ></i>
-                          <input
-                            type={showAadhaar || !aadhaarVerified ? 'text' : 'password'}
-                            placeholder="12 Digit Aadhaar Number"
-                            required
-                            pattern="\d{12}"
-                            title="12-digit Aadhaar number"
-                            value={
-                              aadhaarVerified && !showAadhaar
-                                ? `XXXX-XXXX-${identityData.aadhaarNumber.slice(-4)}`
-                                : identityData.aadhaarNumber
-                            }
-                            onChange={(e) => {
-                              setIdentityData({ ...identityData, aadhaarNumber: e.target.value });
-                              setAadhaarVerified(false);
-                              setIsAadhaarOtpSent(false);
-                            }}
-                            maxLength="12"
-                          />
-                          {aadhaarVerified && (
-                            <i
-                              className={`fa-solid ${showAadhaar ? 'fa-eye-slash' : 'fa-eye'}`}
-                              style={{
-                                cursor: 'pointer',
-                                position: 'absolute',
-                                right: '15px',
-                                color: '#64748b',
-                              }}
-                              onClick={() => setShowAadhaar(!showAadhaar)}
-                              title={showAadhaar ? 'Hide Aadhaar' : 'Show Aadhaar'}
-                            ></i>
-                          )}
-                        </div>
-                        {!isAadhaarOtpSent && (
-                          <button
-                            type="button"
-                            className="btn-primary"
-                            onClick={handleVerifyAadhaar}
-                            disabled={aadhaarLoadingText !== ''}
-                            style={{ whiteSpace: 'nowrap' }}
-                          >
-                            {aadhaarLoadingText !== '' ? aadhaarLoadingText : (aadhaarVerified ? 'RE-VERIFY' : 'VERIFY AADHAAR')}
-                          </button>
-                        )}
-                        {aadhaarVerified && (
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              background: '#dcfce7',
-                              color: '#166534',
-                              padding: '0 15px',
-                              borderRadius: '6px',
-                              fontWeight: '600',
-                            }}
-                          >
-                            <i
-                              className="fa-solid fa-check-circle"
-                              style={{ marginRight: '8px' }}
-                            ></i>{' '}
-                            VERIFIED
-                          </div>
-                        )}
-                      </div>
-                      <small style={{ color: '#64748b', marginTop: '5px', display: 'block' }}>
-                        We will send an OTP to your email for e-KYC.
-                      </small>
-                    </div>
-
-                    {isAadhaarOtpSent && !aadhaarVerified && (
-                      <div
-                        className="ui-input-group"
-                        style={{
-                          background: '#f8fafc',
-                          padding: '20px',
-                          borderRadius: '8px',
-                          border: '1px solid var(--border-color)',
-                          marginTop: '-10px',
-                          marginBottom: '20px',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <label style={{ color: '#2563eb', margin: 0 }}>
-                            Enter 6-Digit OTP sent to your email
-                          </label>
-                          <button
-                            type="button"
-                            onClick={handleVerifyAadhaar}
-                            disabled={aadhaarLoadingText !== ''}
-                            style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: '500', padding: 0, fontSize: '0.85rem', textDecoration: 'underline' }}
-                          >
-                            Resend OTP
-                          </button>
-                        </div>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                          <div className="input-wrapper" style={{ flex: 1 }}>
-                            <i className="fa-solid fa-key"></i>
-                            <input
-                              type="text"
-                              placeholder="123456"
-                              value={aadhaarOtp}
-                              onChange={(e) => setAadhaarOtp(e.target.value)}
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            className="btn-primary"
-                            onClick={handleSubmitAadhaarOtp}
-                            disabled={aadhaarLoadingText !== ''}
-                          >
-                            {aadhaarLoadingText !== '' ? 'VERIFYING...' : 'SUBMIT OTP'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="ui-input-group">
-                      <label>
-                        PAN Card Number{' '}
-                        <span className="req" style={{ color: '#ef4444' }}>
-                          *
-                        </span>
-                      </label>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <div
-                          className="input-wrapper"
-                          style={{ flex: 1, border: panVerified ? '1px solid #22c55e' : '' }}
-                        >
-                          <i
-                            className="fa-solid fa-address-card"
-                            style={{ color: panVerified ? '#22c55e' : '' }}
-                          ></i>
-                          <input
-                            type="text"
-                            placeholder="ABCDE1234F"
-                            style={{ textTransform: 'uppercase' }}
-                            required
-                            pattern="[a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}"
-                            title="Format: ABCDE1234F"
-                            value={identityData.panNumber}
-                            onChange={(e) => {
-                              setIdentityData({
-                                ...identityData,
-                                panNumber: e.target.value.toUpperCase(),
-                              });
-                              setPanVerified(false);
-                              setIsPanOtpSent(false);
-                            }}
-                            maxLength="10"
-                          />
-                        </div>
-                        {!isPanOtpSent && (
-                          <button
-                            type="button"
-                            className="btn-primary"
-                            onClick={handleVerifyPan}
-                            disabled={panLoadingText !== ''}
-                            style={{ whiteSpace: 'nowrap' }}
-                          >
-                            {panLoadingText !== '' ? panLoadingText : (panVerified ? 'RE-VERIFY' : 'VERIFY PAN')}
-                          </button>
-                        )}
-                        {panVerified && (
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              background: '#dcfce7',
-                              color: '#166534',
-                              padding: '0 15px',
-                              borderRadius: '6px',
-                              fontWeight: '600',
-                            }}
-                          >
-                            <i
-                              className="fa-solid fa-check-circle"
-                              style={{ marginRight: '8px' }}
-                            ></i>{' '}
-                            VERIFIED
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {isPanOtpSent && !panVerified && (
-                      <div
-                        className="ui-input-group"
-                        style={{
-                          background: '#f8fafc',
-                          padding: '20px',
-                          borderRadius: '8px',
-                          border: '1px solid var(--border-color)',
-                          marginTop: '-10px',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <label style={{ color: '#2563eb', margin: 0 }}>
-                            Enter 6-Digit OTP sent to your email
-                          </label>
-                          <button
-                            type="button"
-                            onClick={handleVerifyPan}
-                            disabled={panLoadingText !== ''}
-                            style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: '500', padding: 0, fontSize: '0.85rem', textDecoration: 'underline' }}
-                          >
-                            Resend OTP
-                          </button>
-                        </div>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                          <div className="input-wrapper" style={{ flex: 1 }}>
-                            <i className="fa-solid fa-key"></i>
-                            <input
-                              type="text"
-                              placeholder="123456"
-                              value={panOtp}
-                              onChange={(e) => setPanOtp(e.target.value)}
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            className="btn-primary"
-                            onClick={handleSubmitPanOtp}
-                            disabled={panLoadingText !== ''}
-                          >
-                            {panLoadingText !== '' ? 'VERIFYING...' : 'SUBMIT OTP'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="profile-form-footer" style={{ marginTop: '40px' }}>
-                    <button type="submit" className="btn-primary" disabled={isSaving}>
-                      {isSaving ? 'SAVING...' : 'SAVE & CONTINUE'}
-                    </button>
-                  </div>
-                </fieldset>
-              </form>
-            </div>
-          ) : activeSidebar === 'UPLOAD_DOCUMENTS' ? (
-            <div
-              className="profile-form-wrapper"
-              style={{ minHeight: '500px' }}
-            >
-              <h3 style={{ marginBottom: '30px', color: 'var(--text-main)', fontSize: '1.4rem' }}>
-                Upload Required Documents
-              </h3>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '30px', fontSize: '0.9rem' }}>
-                Please upload clear, legible copies of the original documents. Max file size: 5MB
-                per document.
-              </p>
-
-              <div
-                className="doc-cards-grid"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                  gap: '24px',
-                  marginTop: '10px',
-                }}
-              >
-                {[
-                  { type: 'aadhaar', label: 'Aadhaar Card (Front & Back)', required: true },
-                  { type: 'pan', label: 'PAN Card', required: true },
-                  { type: 'income', label: 'Income Certificate', required: true },
-                  { type: 'passbook', label: 'Bank Passbook / Cheque', required: true },
-                  { type: 'photo', label: 'Passport Size Photograph', required: true },
-                ].map((doc) => {
-                  const fileData = uploadedFiles[doc.type];
-                  const hasFile = !!(fileData?.url || fileData?.file);
-
-                  return (
-                    <div
-                      key={doc.type}
-                      className="doc-card"
-                      onClick={() => !isProfileLocked && openDocModal(doc.type)}
-                      style={{
-                        opacity: isProfileLocked ? 0.6 : 1,
-                        cursor: isProfileLocked ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      <div className="doc-card-preview">
-                        {fileData?.url ? (
-                          fileData.url.toLowerCase().endsWith('.pdf') ? (
-                            <div className="pdf-preview">
-                              <i className="fa-solid fa-file-pdf"></i>
-                              <span>PDF Document</span>
-                            </div>
-                          ) : (
-                            <img src={fileData.url} alt="preview" />
-                          )
-                        ) : fileData?.file ? (
-                          <div className="file-preview-ready">
-                            <i className="fa-solid fa-file-circle-check"></i>
-                            <span>Ready to Upload</span>
-                          </div>
-                        ) : (
-                          <div className="doc-card-empty">
-                            <i className="fa-solid fa-cloud-arrow-up"></i>
-                            <span>Upload {doc.label}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="doc-card-info">
-                        <h4 style={{ textTransform: 'none' }}>
-                          {fileData?.docName || doc.label}{' '}
-                          {doc.required && !fileData?.docName && <span className="req">*</span>}
-                        </h4>
-                        <p>{fileData?.subjectText || 'No subject provided'}</p>
-                        {hasFile && <div className="status-badge success">Ready</div>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="profile-form-footer" style={{ marginTop: '40px' }}>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  disabled={isUploadingDocs || isProfileLocked}
-                  onClick={handleUploadAllDocuments}
-                >
-                  {isUploadingDocs ? 'UPLOADING...' : 'UPLOAD ALL DOCUMENTS'}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div
-              className="profile-form-wrapper"
-              style={{
-                minHeight: '500px',
-                background: 'var(--bg-color)',
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-              }}
-            >
-              <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>
-                Blank Page for {activeTab.replace(/_/g, ' ')}
+                margin: '0 auto 16px auto',
+                boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.8), 0 4px 10px rgba(0,0,0,0.05)'
+              }}>
+                <i className="fa-solid fa-shield-halved" style={{ fontSize: '1.8rem', color: '#6366f1' }}></i>
+              </div>
+              <h3
+                style={{
+                  margin: 0,
+                  color: '#1e293b',
+                  fontSize: '1.5rem',
+                  fontWeight: '700',
+                  letterSpacing: '-0.5px'
+                }}
+              >
+                Secure Password
+              </h3>
+              <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: '0.9rem' }}>
+                Update your password to keep your account safe.
               </p>
             </div>
-          )}
-        </main>
-      </div>
 
-      {/* Document Upload Modal */}
-      {docModal.isOpen && (
-        <div
-          className="modal-overlay active"
-          style={{
-            zIndex: 10000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(15, 23, 42, 0.65)',
-          }}
-        >
-          <div
-            className="modal-content"
-            style={{
-              maxWidth: '500px',
-              width: '100%',
-              background: 'var(--card-bg)',
-              padding: '24px',
-              borderRadius: '12px',
-              border: '1px solid var(--border-color)',
-            }}
-          >
-            <h3 style={{ marginBottom: '20px', color: 'var(--text-main)' }}>Upload Document</h3>
-
-            <div className="ui-input-group" style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-main)' }}>
-                File <span className="req">*</span>
-              </label>
-              <div
-                className="file-upload-wrapper"
-                style={{
-                  border: '2px dashed #cbd5e1',
-                  padding: '20px',
-                  textAlign: 'center',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  position: 'relative',
-                }}
-              >
-                <i
-                  className="fa-solid fa-cloud-arrow-up upload-icon"
-                  style={{ fontSize: '2rem', color: 'var(--text-muted)', marginBottom: '10px' }}
-                ></i>
-                <div className="upload-text" style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                  {docFormData.file ? (
-                    <span
-                      style={{
-                        fontWeight: 'bold',
-                        color: '#2563eb',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                      }}
-                    >
-                      {docFormData.file.name}
-                      <i
-                        className="fa-solid fa-check-circle"
-                        style={{ color: '#22c55e', fontSize: '1.2rem' }}
-                        title="Valid file size"
-                      ></i>
-                    </span>
-                  ) : (
-                    <span>
-                      Drag & Drop or{' '}
-                      <span style={{ color: '#2563eb', textDecoration: 'underline' }}>Browse</span>{' '}
-                      (Max 10MB)
-                    </span>
-                  )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#475569' }}>
+                  Current Password
+                </label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <i className="fa-solid fa-lock" style={{ position: 'absolute', left: '14px', color: '#94a3b8', fontSize: '0.9rem' }}></i>
+                  <input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    required
+                    value={passwordData.currentPassword}
+                    onChange={(e) =>
+                      setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                    }
+                    placeholder="Enter current password"
+                    style={{
+                      width: '100%',
+                      padding: '12px 40px',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      background: '#f8fafc',
+                      fontSize: '0.95rem',
+                      color: '#0f172a',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => { e.target.style.background = '#fff'; e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)'; }}
+                    onBlur={(e) => { e.target.style.background = '#f8fafc'; e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+                  />
+                  <i
+                    className={`fa-solid ${showCurrentPassword ? 'fa-eye-slash' : 'fa-eye'}`}
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '14px',
+                      cursor: 'pointer',
+                      color: '#94a3b8',
+                      fontSize: '0.9rem',
+                      padding: '4px'
+                    }}
+                  ></i>
                 </div>
-                <input
-                  type="file"
-                  className="file-upload-input"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleDocFormChange(e, 'file')}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    opacity: 0,
-                    cursor: 'pointer',
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="ui-input-group" style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-main)' }}>
-                Document Name
-              </label>
-              <input
-                type="text"
-                value={docFormData.docName}
-                onChange={(e) => handleDocFormChange(e, 'docName')}
-                placeholder="E.g. Aadhaar Card Front"
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--bg-color)',
-                  color: 'var(--text-main)',
-                }}
-              />
-            </div>
-
-            <div className="ui-input-group" style={{ marginBottom: '25px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-main)' }}>
-                Subject Text
-              </label>
-              <textarea
-                rows="3"
-                value={docFormData.subjectText}
-                onChange={(e) => handleDocFormChange(e, 'subjectText')}
-                placeholder="Any additional details or subject..."
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--bg-color)',
-                  color: 'var(--text-main)',
-                  resize: 'vertical',
-                }}
-              ></textarea>
-            </div>
-
-            <div
-              className="modal-actions"
-              style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}
-            >
-              <button
-                type="button"
-                onClick={closeDocModal}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--bg-color)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveDocModal}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: '#2563eb',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                }}
-              >
-                Save to Profile
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Permission Pop-up Confirmation Modal */}
-      {pushModal.isOpen && (
-        <div
-          className="modal-overlay active"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.65)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '20px',
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !isPushing) {
-              handleCancelPush();
-            }
-          }}
-        >
-          <div
-            className="modal"
-            style={{
-              maxWidth: '480px',
-              width: '100%',
-              padding: 0,
-              borderRadius: '16px',
-              backgroundColor: '#ffffff',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              overflow: 'hidden',
-              border: '1px solid #e2e8f0',
-              animation: 'modalSlideUp 0.25s ease-out',
-            }}
-          >
-            {/* Header */}
-            <div
-              style={{
-                background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)',
-                color: 'white',
-                padding: '18px 24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.1rem',
-                  }}
-                >
-                  <i className="fa-solid fa-shield-halved"></i>
-                </div>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600, color: 'white' }}>
-                    Data Sharing Permission
-                  </h3>
-                  <span style={{ fontSize: '0.8rem', color: '#bfdbfe' }}>
-                    Security & Consent Verification
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                  <span
+                    onClick={handleForgotPassword}
+                    style={{
+                      color: '#6366f1',
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      transition: 'color 0.2s'
+                    }}
+                    onMouseOver={(e) => e.target.style.color = '#4f46e5'}
+                    onMouseOut={(e) => e.target.style.color = '#6366f1'}
+                    title="Send password reset link to your email"
+                  >
+                    Forgot Password?
                   </span>
                 </div>
               </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#475569' }}>
+                  New Password
+                </label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <i className="fa-solid fa-key" style={{ position: 'absolute', left: '14px', color: '#94a3b8', fontSize: '0.9rem' }}></i>
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    required
+                    value={passwordData.newPassword}
+                    onChange={(e) =>
+                      setPasswordData({ ...passwordData, newPassword: e.target.value })
+                    }
+                    placeholder="Enter new password"
+                    style={{
+                      width: '100%',
+                      padding: '12px 40px',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      background: '#f8fafc',
+                      fontSize: '0.95rem',
+                      color: '#0f172a',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => { e.target.style.background = '#fff'; e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)'; }}
+                    onBlur={(e) => { e.target.style.background = '#f8fafc'; e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+                  />
+                  <i
+                    className={`fa-solid ${showNewPassword ? 'fa-eye-slash' : 'fa-eye'}`}
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '14px',
+                      cursor: 'pointer',
+                      color: '#94a3b8',
+                      fontSize: '0.9rem',
+                      padding: '4px'
+                    }}
+                  ></i>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#475569' }}>
+                  Confirm New Password
+                </label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <i className="fa-solid fa-check-double" style={{ position: 'absolute', left: '14px', color: '#94a3b8', fontSize: '0.9rem' }}></i>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    required
+                    value={passwordData.confirmNewPassword}
+                    onChange={(e) =>
+                      setPasswordData({ ...passwordData, confirmNewPassword: e.target.value })
+                    }
+                    placeholder="Confirm new password"
+                    style={{
+                      width: '100%',
+                      padding: '12px 40px',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      background: '#f8fafc',
+                      fontSize: '0.95rem',
+                      color: '#0f172a',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => { e.target.style.background = '#fff'; e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)'; }}
+                    onBlur={(e) => { e.target.style.background = '#f8fafc'; e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+                  />
+                  <i
+                    className={`fa-solid ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '14px',
+                      cursor: 'pointer',
+                      color: '#94a3b8',
+                      fontSize: '0.9rem',
+                      padding: '4px'
+                    }}
+                  ></i>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '32px' }}>
               <button
-                type="button"
-                disabled={isPushing}
-                onClick={handleCancelPush}
+                type="submit"
+                disabled={isUpdatingPassword}
                 style={{
-                  background: 'transparent',
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: '12px',
                   border: 'none',
-                  color: 'rgba(255,255,255,0.85)',
-                  fontSize: '1.2rem',
-                  cursor: isPushing ? 'not-allowed' : 'pointer',
-                  padding: '4px',
+                  background: isUpdatingPassword ? '#94a3b8' : '#6366f1',
+                  color: 'white',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: isUpdatingPassword ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: isUpdatingPassword ? 'none' : '0 4px 12px rgba(99, 102, 241, 0.3)',
                   display: 'flex',
-                  alignItems: 'center',
                   justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}
-                title="Close"
+                onMouseOver={(e) => !isUpdatingPassword && (e.currentTarget.style.background = '#4f46e5')}
+                onMouseOut={(e) => !isUpdatingPassword && (e.currentTarget.style.background = '#6366f1')}
               >
-                <i className="fa-solid fa-xmark"></i>
+                {isUpdatingPassword ? (
+                  <>
+                    <i className="fa-solid fa-spinner fa-spin"></i> UPDATING...
+                  </>
+                ) : (
+                  <>
+                    <i className="fa-solid fa-check"></i> UPDATE PASSWORD
+                  </>
+                )}
               </button>
             </div>
-
-            {/* Body */}
-            <div style={{ padding: '24px' }}>
-              {pushModal.status === 'success' ? (
-                <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                  <i className="fa-solid fa-circle-check" style={{ fontSize: '48px', color: '#16a34a', marginBottom: '16px' }}></i>
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '1.2rem', color: '#166534' }}>Success!</h4>
-                  <p style={{ color: '#15803d', margin: '0 0 24px 0' }}>{pushModal.message}</p>
-                  <button onClick={handleCancelPush} style={{ padding: '10px 24px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>OK</button>
-                </div>
-              ) : pushModal.status === 'error' ? (
-                <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                  <i className="fa-solid fa-circle-xmark" style={{ fontSize: '48px', color: '#dc2626', marginBottom: '16px' }}></i>
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '1.2rem', color: '#991b1b' }}>Error</h4>
-                  <p style={{ color: '#b91c1c', margin: '0 0 24px 0' }}>{pushModal.message}</p>
-                  <button onClick={handleCancelPush} style={{ padding: '10px 24px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Close</button>
-                </div>
-              ) : (
-                <>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '16px',
-                      marginBottom: '20px',
-                    }}
-                  >
-                <div
-                  style={{
-                    background: '#eff6ff',
-                    color: '#2563eb',
-                    padding: '12px',
-                    borderRadius: '12px',
-                    fontSize: '1.4rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <i className="fa-solid fa-circle-question"></i>
-                </div>
-                <div>
-                  <h4
-                    style={{
-                      margin: '0 0 6px 0',
-                      fontSize: '1.05rem',
-                      color: '#1e293b',
-                      fontWeight: 600,
-                    }}
-                  >
-                    Submit Data to {pushModal.siteName}?
-                  </h4>
-                  <p
-                    style={{ margin: 0, color: '#475569', fontSize: '0.92rem', lineHeight: '1.5' }}
-                  >
-                    Do you really want to submit and sync your profile data with{' '}
-                    <strong>{pushModal.siteName}</strong>?
-                  </p>
-                </div>
-              </div>
-
-              {/* Data Summary Card */}
-              <div
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  padding: '14px 16px',
-                  marginBottom: '24px',
-                  fontSize: '0.85rem',
-                  color: '#475569',
-                }}
-              >
-                <div
-                  style={{
-                    fontWeight: 600,
-                    marginBottom: '8px',
-                    color: '#334155',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  <i className="fa-solid fa-list-check" style={{ color: '#2563eb' }}></i> Details to
-                  be transferred:
-                </div>
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '8px',
-                    marginTop: '6px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <i
-                      className="fa-solid fa-user"
-                      style={{ color: '#94a3b8', fontSize: '0.8rem' }}
-                    ></i>
-                    <span>
-                      <strong>Name:</strong>{' '}
-                      {formData.firstName ? `${formData.firstName} ${formData.lastName}` : 'N/A'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <i
-                      className="fa-solid fa-envelope"
-                      style={{ color: '#94a3b8', fontSize: '0.8rem' }}
-                    ></i>
-                    <span>
-                      <strong>Email:</strong> {formData.officialEmail || 'N/A'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <i
-                      className="fa-solid fa-phone"
-                      style={{ color: '#94a3b8', fontSize: '0.8rem' }}
-                    ></i>
-                    <span>
-                      <strong>Phone:</strong> {phoneVerified ? 'Verified' : 'Unverified'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <i
-                      className="fa-solid fa-id-card"
-                      style={{ color: '#94a3b8', fontSize: '0.8rem' }}
-                    ></i>
-                    <span>
-                      <strong>KYC:</strong>{' '}
-                      {aadhaarVerified || panVerified ? 'Verified' : 'Pending'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons: Yes / No */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button
-                  type="button"
-                  disabled={isPushing}
-                  onClick={handleCancelPush}
-                  style={{
-                    padding: '10px 22px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    background: '#f1f5f9',
-                    color: '#475569',
-                    fontWeight: '600',
-                    fontSize: '0.9rem',
-                    cursor: isPushing ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    transition: 'background 0.2s',
-                  }}
-                  onMouseOver={(e) => !isPushing && (e.currentTarget.style.background = '#e2e8f0')}
-                  onMouseOut={(e) => !isPushing && (e.currentTarget.style.background = '#f1f5f9')}
-                >
-                  <i className="fa-solid fa-xmark"></i> No
-                </button>
-                <button
-                  type="button"
-                  disabled={isPushing}
-                  onClick={handleConfirmPush}
-                  style={{
-                    padding: '10px 26px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: isPushing ? '#93c5fd' : '#2563eb',
-                    color: 'white',
-                    fontWeight: '600',
-                    fontSize: '0.9rem',
-                    cursor: isPushing ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.25)',
-                    transition: 'background 0.2s',
-                  }}
-                  onMouseOver={(e) => !isPushing && (e.currentTarget.style.background = '#1d4ed8')}
-                  onMouseOut={(e) => !isPushing && (e.currentTarget.style.background = '#2563eb')}
-                >
-                  {isPushing ? (
-                    <>
-                      <i className="fa-solid fa-spinner fa-spin"></i> Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <i className="fa-solid fa-check"></i> Yes
-                    </>
-                  )}
-                </button>
-              </div>
-              </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Lock Profile Confirmation Modal */}
-      {showLockConfirmModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ background: '#fef3c7', color: '#d97706', padding: '8px', borderRadius: '8px', display: 'flex' }}>
-                  <i className="fa-solid fa-lock" style={{ fontSize: '1.25rem' }}></i>
-                </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>Lock Profile</h3>
-              </div>
-              <button type="button" onClick={() => setShowLockConfirmModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.1rem' }}>
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <p style={{ color: '#475569', marginBottom: '32px', lineHeight: '1.6' }}>
-              Are you sure you want to lock your profile? You will <strong style={{ color: '#1e293b' }}>not be able to edit any details</strong> after locking.
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button type="button" onClick={() => setShowLockConfirmModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#f1f5f9', color: '#475569', fontWeight: '600', cursor: 'pointer' }}>
-                Cancel
-              </button>
-              <button type="button" onClick={handleLockProfile} disabled={isLockingProfile} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#d97706', color: 'white', fontWeight: '600', cursor: isLockingProfile ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {isLockingProfile ? <><i className="fa-solid fa-spinner fa-spin"></i> Locking...</> : <><i className="fa-solid fa-lock"></i> Yes, Lock</>}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Unlock Profile Confirmation Modal */}
-      {showUnlockConfirmModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ background: '#d1fae5', color: '#059669', padding: '8px', borderRadius: '8px', display: 'flex' }}>
-                  <i className="fa-solid fa-lock-open" style={{ fontSize: '1.25rem' }}></i>
-                </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>Unlock Profile</h3>
-              </div>
-              <button type="button" onClick={() => setShowUnlockConfirmModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.1rem' }}>
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <p style={{ color: '#475569', marginBottom: '32px', lineHeight: '1.6' }}>
-              Are you sure you want to unlock your profile? You will be able to edit your details again.
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button type="button" onClick={() => setShowUnlockConfirmModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#f1f5f9', color: '#475569', fontWeight: '600', cursor: 'pointer' }}>
-                Cancel
-              </button>
-              <button type="button" onClick={handleUnlockProfile} disabled={isLockingProfile} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#059669', color: 'white', fontWeight: '600', cursor: isLockingProfile ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {isLockingProfile ? <><i className="fa-solid fa-spinner fa-spin"></i> Unlocking...</> : <><i className="fa-solid fa-unlock"></i> Yes, Unlock</>}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </fieldset>
+        </form>
+      </div>
     </div>
   );
 }

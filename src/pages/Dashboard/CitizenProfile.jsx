@@ -391,12 +391,14 @@ export default function CitizenProfile() {
   const [docForm, setDocForm] = useState({ file: null, name: '', number: '', expiry: '' });
   const [auditOpen, setAuditOpen] = useState(false);
   const [encryptionStatus, setEncryptionStatus] = useState('checking'); // checking | encrypted | plain
+  const [isDirty, setIsDirty] = useState(false);
 
   /* ---------- deep get/set ---------- */
 
   const get = (path, obj = data) => path.split('.').reduce((o, k) => (o == null ? o : o[k]), obj);
 
   const set = (path, value) => {
+    setIsDirty(true);
     setData((prev) => {
       const next = structuredClone(prev);
       const keys = path.split('.');
@@ -844,13 +846,27 @@ export default function CitizenProfile() {
 
   const scrollToTop = () => topRef.current?.scrollIntoView({ behavior: 'smooth' });
 
-  const goTo = (n) => {
+  const goTo = async (n) => {
     if (n > step) {
       const errs = validateStep(step);
       setErrors(errs);
       if (Object.keys(errs).length > 0) return;
-      persist();
     }
+    
+    if (isDirty) {
+      await persist({}, n);
+      await logAuditEvent({
+        department: 'Citizen Master Profile Registry',
+        requested: `Draft saved at step ${step} of 10 (${STEPS[step - 1]?.label || 'Unknown'})`,
+        purpose: 'Auto-save on navigation',
+        status: 'Completed',
+        type: 'draft-saved',
+      });
+      setIsDirty(false);
+    } else {
+      persist({}, n);
+    }
+    
     setStep(n);
     setErrors({});
     scrollToTop();
@@ -862,15 +878,17 @@ export default function CitizenProfile() {
   const saveDraft = async () => {
     setSaving(true);
     await persist();
-    await logAuditEvent({
-      department: 'Citizen Master Profile Registry',
-      requested: `Draft saved at step ${step} of 10 (${STEPS[step - 1]?.label || 'Unknown'})`,
-      purpose: 'Save & resume draft',
-      status: 'Completed',
-      type: 'draft-saved',
-    });
+    if (isDirty) {
+      await logAuditEvent({
+        department: 'Citizen Master Profile Registry',
+        requested: `Draft saved at step ${step} of 10 (${STEPS[step - 1]?.label || 'Unknown'})`,
+        purpose: 'Save & resume draft',
+        status: 'Completed',
+        type: 'draft-saved',
+      });
+      setIsDirty(false);
+    }
     setSaving(false);
-    alert('Draft saved. You can resume anytime from this page.');
   };
 
   const handleSubmit = async () => {
