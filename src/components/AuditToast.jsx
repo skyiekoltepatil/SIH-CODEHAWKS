@@ -37,7 +37,7 @@ const EVENT_META = {
   },
 };
 
-const TOAST_LIFETIME_MS = 6000;
+const TOAST_LIFETIME_MS = 3000;
 
 const metaFor = (type) => EVENT_META[type] || {
   label: 'Data Access Event',
@@ -80,7 +80,17 @@ export default function AuditToast() {
 
         const added = [];
         snap.docChanges().forEach((change) => {
-          if (change.type === 'added') added.push(change.doc.id);
+          if (change.type === 'added') {
+            const data = change.doc.data();
+            if (data.type === 'draft-saved') return;
+
+            // Only show toast if the event is very recent (within 10 seconds)
+            // or if it is a pending local write (createdAt is null)
+            const isRecent = !data.createdAt || (Date.now() - data.createdAt.toMillis() < 10000);
+            if (isRecent) {
+              added.push(change.doc.id);
+            }
+          }
         });
         if (added.length === 0) return;
 
@@ -90,7 +100,7 @@ export default function AuditToast() {
             if (next.some((t) => t.id === id)) return;
             next.push({ id, type: 'pending', department: '', status: '' });
           });
-          return next;
+          return next.slice(-5);
         });
 
         // Hydrate the toast payloads from the snapshot
@@ -109,7 +119,10 @@ export default function AuditToast() {
         added.forEach((id) => {
           const payload = payloadFor(id);
           if (!payload) return;
-          setToasts((prev) => prev.map((t) => (t.id === id ? payload : t)));
+          setToasts((prev) => {
+            const updated = prev.map((t) => (t.id === id ? payload : t));
+            return updated.slice(-5);
+          });
           const timer = setTimeout(() => {
             timersRef.current.delete(timer);
             dismiss(id);

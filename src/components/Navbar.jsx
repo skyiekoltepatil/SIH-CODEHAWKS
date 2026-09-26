@@ -302,7 +302,7 @@ export default function Navbar() {
                   <div className="dropdown-divider"></div>
                   <ul className="dropdown-menu-list">
                     <li>
-                      <Link to="/dashboard/profile" onClick={() => setIsAuthModalOpen(false)}>
+                      <Link to="/dashboard/citizen-profile" onClick={() => setIsAuthModalOpen(false)}>
                         <i className="fa-solid fa-user" style={{ color: '#3b82f6' }}></i> User
                         Profile
                       </Link>
