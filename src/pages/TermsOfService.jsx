@@ -8,7 +8,7 @@ export default function TermsOfService() {
       
       <section style={{ marginTop: '30px' }}>
         <h3>1. Acceptance of Terms</h3>
-        <p>By accessing or using the SIH CODEHAWKS platform, you agree to be bound by these Terms of Service. If you do not agree with any part of the terms, you may not access the service.</p>
+        <p>By accessing or using the PRAAMAN PORTAL platform, you agree to be bound by these Terms of Service. If you do not agree with any part of the terms, you may not access the service.</p>
       </section>
 
       <section style={{ marginTop: '30px' }}>
