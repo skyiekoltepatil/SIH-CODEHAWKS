@@ -50,7 +50,7 @@ const MockSiteLookup = ({ siteName }) => {
 
       if (foundData) {
         setData({ id: foundId, ...foundData });
-        setSuccessMsg('Profile successfully fetched from SIH-CODEHAWKS API');
+        setSuccessMsg('Profile successfully fetched from PRAAMAN-PORTAL API');
       } else {
         throw new Error('No student found with that ID.');
       }

@@ -31,7 +31,7 @@ const MockSiteSSO = ({ siteName }) => {
         setData({ id: docSnap.id, ...docSnap.data() });
         setIsAuthenticated(true);
       } else {
-        throw new Error('Profile data not found in SIH-CODEHAWKS.');
+        throw new Error('Profile data not found in PRAAMAN-PORTAL.');
       }
     } catch (err) {
       console.error('SSO Error:', err);
@@ -97,7 +97,7 @@ const MockSiteSSO = ({ siteName }) => {
               }}
             >
               {siteName} requires access to your verified profile data. Please login using your
-              central SIH-CODEHAWKS identity to securely pull your information.
+              central PRAAMAN-PORTAL identity to securely pull your information.
             </p>
 
             {error && (
