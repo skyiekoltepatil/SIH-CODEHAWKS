@@ -55,7 +55,7 @@ export default function VirtualIdCard() {
               <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" alt="Emblem" style={{ height: '32px' }} className="emblem-logo-card" />
               <div className="logo-text">
                 <span className="logo-title">SIH</span>
-                <span className="logo-subtitle">CODEHAWKS</span>
+                <span className="logo-subtitle">PRAAMAN</span>
               </div>
             </div>
             <div className="id-card-address">
