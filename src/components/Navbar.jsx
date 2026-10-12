@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { db } from '../firebase';
 import { collection, onSnapshot, query, orderBy, writeBatch, doc } from 'firebase/firestore';
 import userPhoto from '../assets/user.jpg';
-import praamanIcon from '../assets/praaman-icon.png';
+import praamanIcon from '../assets/Praamanprotallogo.svg';
 import logoTextLight from '../assets/logo-text-light.png';
 import logoTextDark from '../assets/logo-text-dark.png';
 
@@ -104,13 +104,13 @@ export default function Navbar() {
   return (
     <>
       <header className="navbar">
-        <div className="navbar-brand">
+        <Link to="/" className="navbar-brand" style={{ textDecoration: 'none' }}>
           <img src={praamanIcon} alt="Praaman Portal Icon" className="brand-logo-img" />
           <div className="logo-text-img-container">
             <img src={logoTextLight} alt="PRAAMAN PORTAL" className="logo-text-img logo-text-light" />
             <img src={logoTextDark} alt="PRAAMAN PORTAL" className="logo-text-img logo-text-dark" />
           </div>
-        </div>
+        </Link>
         <nav className="navbar-links">
           <Link to="/" className={isActive('/')}>
             Home

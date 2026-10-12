@@ -3,51 +3,31 @@ import Icon from "./icons.jsx";
 import { FontControls } from "./ui.jsx";
 import userPhoto from "../assets/user.jpg";
 
+import praamanIcon from "../assets/Praamanprotallogo.svg";
+import logoTextLight from "../assets/logo-text-light.png";
+import logoTextDark from "../assets/logo-text-dark.png";
+
 export function Emblem({ size = 40 }) {
- return (
- <span
- className="relative flex shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-[#f5f2e8] to-[#e9e2cf] ring-1 ring-ink-200 dark:ring-white/20 "
- style={{ width: size, height: size }}
- aria-hidden="true"
- >
- <svg viewBox="0 0 48 48" className="h-[72%] w-[72%]" fill="none">
- <circle cx="24" cy="17.5" r="7" stroke="#1f3d73" strokeWidth="2" />
- <circle cx="24" cy="17.5" r="1.6" fill="#1f3d73" />
- {[...Array(8)].map((_, i) => {
- const a = (i * Math.PI) / 4;
- return (
- <line
- key={i}
- x1={24 + Math.cos(a) * 9}
- y1={17.5 + Math.sin(a) * 9}
- x2={24 + Math.cos(a) * 12.5}
- y2={17.5 + Math.sin(a) * 12.5}
- stroke="#1f3d73"
- strokeWidth="1.7"
- strokeLinecap="round"
- />
- );
- })}
- <path d="M18 33h12M16 38h16" stroke="#1f3d73" strokeWidth="2" strokeLinecap="round" />
- </svg>
- </span>
- );
+  return (
+    <img
+      src={praamanIcon}
+      alt="Praaman Portal Emblem"
+      style={{ width: size, height: size, objectFit: 'contain' }}
+      className="shrink-0"
+    />
+  );
 }
 
 export function Wordmark({ compact = false }) {
- return (
- <Link to="/" className="flex items-center gap-3" aria-label="Bharat Connect home">
- <Emblem size={compact ? 38 : 44} />
- <span className="leading-[1.15]">
- <span className="block text-[14px] font-extrabold tracking-tight text-ink-900 dark:text-white ">Bharat Connect</span>
- <span className="block text-[12.5px] font-medium text-ink-500 dark:text-ink-400 ">
- Ministry of Electronics
- <br />
- and Information Technology
- </span>
- </span>
- </Link>
- );
+  return (
+    <Link to="/" className="flex items-center gap-3" aria-label="Praaman Portal home">
+      <Emblem size={compact ? 36 : 42} />
+      <div className="flex items-center">
+        <img src={logoTextLight} alt="PRAAMAN PORTAL" className="h-[28px] w-auto object-contain dark:hidden" />
+        <img src={logoTextDark} alt="PRAAMAN PORTAL" className="h-[28px] w-auto object-contain hidden dark:block" />
+      </div>
+    </Link>
+  );
 }
 
 export function TricolorBar({ className = "" }) {

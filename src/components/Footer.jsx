@@ -1,7 +1,7 @@
 import React from 'react';
 import './Footer.css';
 import { Link } from 'react-router-dom';
-import praamanIcon from '../assets/praaman-icon.png';
+import praamanIcon from '../assets/Praamanprotallogo.svg';
 import logoTextLight from '../assets/logo-text-light.png';
 import logoTextDark from '../assets/logo-text-dark.png';
 

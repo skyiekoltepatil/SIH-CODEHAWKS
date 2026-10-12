@@ -87,7 +87,7 @@ function SidebarInner({ onNavigate }) {
  const navigate = useNavigate();
 
  const handleLogout = async () => {
- const ok = await confirmAction("Sign out of Bharat Connect?");
+ const ok = await confirmAction("Sign out of Praaman Portal?");
  if (!ok) return;
  await backend.signOut();
  notify("Signed out. See you soon!", "blue");
@@ -167,7 +167,7 @@ export default function Shell() {
  </button>
  <div className="flex items-center gap-2">
  <Emblem size={28} />
- <span className="text-[13.5px] font-extrabold text-ink-900 dark:text-white ">Bharat Connect</span>
+ <span className="text-[13.5px] font-extrabold text-ink-900 dark:text-white ">Praaman Portal</span>
  </div>
  <div className="ml-auto flex items-center gap-2">
  <AnimatedThemeToggler className="rounded-lg p-2 text-ink-600 dark:text-ink-400 hover:bg-ink-50 dark:hover:bg-white/10 flex items-center justify-center" title="Toggle Theme">
