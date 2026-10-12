@@ -3,6 +3,10 @@ import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { db } from '../firebase';
 import { collection, onSnapshot, query, orderBy, writeBatch, doc } from 'firebase/firestore';
+import userPhoto from '../assets/user.jpg';
+import praamanIcon from '../assets/Praamanprotallogo.svg';
+import logoTextLight from '../assets/logo-text-light.png';
+import logoTextDark from '../assets/logo-text-dark.png';
 
 export default function Navbar() {
   const { isLoggedIn, user, logout } = useContext(AuthContext);
@@ -12,6 +16,15 @@ export default function Navbar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const dropdownRef = useRef(null);
+
+  const getInitials = (name) => {
+    if (!name) return 'BK';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.length > 1 ? (name[0] + name[name.length - 1]).toUpperCase() : name.toUpperCase();
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -41,11 +54,27 @@ export default function Navbar() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const notifs = [];
       let unread = 0;
+      const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const batch = writeBatch(db);
+      let batchHasOps = false;
+
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        notifs.push({ id: docSnap.id, ...data });
-        if (!data.read) unread++;
+        const timestampMs = data.timestamp?.seconds ? data.timestamp.seconds * 1000 : Date.now();
+        
+        if (timestampMs < thirtyDaysAgo) {
+          batch.delete(docSnap.ref);
+          batchHasOps = true;
+        } else {
+          notifs.push({ id: docSnap.id, ...data });
+          if (!data.read) unread++;
+        }
       });
+      
+      if (batchHasOps) {
+        batch.commit().catch(console.error);
+      }
+      
       setNotifications(notifs);
       setUnreadCount(unread);
     });
@@ -75,10 +104,13 @@ export default function Navbar() {
   return (
     <>
       <header className="navbar">
-        <div className="navbar-brand">
-          <i className="fa-solid fa-hawk icon-brand"></i>
-          <h1>SIH CODEHAWKS</h1>
-        </div>
+        <Link to="/" className="navbar-brand" style={{ textDecoration: 'none' }}>
+          <img src={praamanIcon} alt="Praaman Portal Icon" className="brand-logo-img" />
+          <div className="logo-text-img-container">
+            <img src={logoTextLight} alt="PRAAMAN PORTAL" className="logo-text-img logo-text-light" />
+            <img src={logoTextDark} alt="PRAAMAN PORTAL" className="logo-text-img logo-text-dark" />
+          </div>
+        </Link>
         <nav className="navbar-links">
           <Link to="/" className={isActive('/')}>
             Home
@@ -107,11 +139,10 @@ export default function Navbar() {
               style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '20px' }}
             >
               <div
-                className="notification-icon"
+                className="notification-icon text-ink-600 dark:text-ink-400 transition-colors hover:text-ink-900 dark:hover:text-white"
                 style={{
                   position: 'relative',
                   cursor: 'pointer',
-                  color: '#4b5563',
                   fontSize: '1.2rem',
                 }}
                 onClick={() => {
@@ -174,7 +205,7 @@ export default function Navbar() {
                     </span>
                   </div>
                   <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                    {notifications.length === 0 ? (
+                    {notifications.filter(n => !n.read).length === 0 ? (
                       <div
                         style={{
                           padding: '20px',
@@ -183,12 +214,18 @@ export default function Navbar() {
                           fontSize: '0.9rem',
                         }}
                       >
-                        No notifications yet.
+                        No new notifications.
                       </div>
                     ) : (
-                      notifications.map((notif) => (
+                      notifications.filter(n => !n.read).map((notif) => (
                         <div
                           key={notif.id}
+                          onClick={async () => {
+                            try {
+                              const ref = doc(db, 'users', user.uid, 'notifications', notif.id);
+                              await writeBatch(db).update(ref, { read: true }).commit();
+                            } catch (err) {}
+                          }}
                           style={{
                             padding: '15px',
                             borderBottom: '1px solid var(--border-color)',
@@ -242,26 +279,25 @@ export default function Navbar() {
               )}
 
               <div
-                className="avatar"
-                style={{
-                  cursor: 'pointer',
-                  background: user?.photoURL ? 'transparent' : '#1d4ed8',
-                  overflow: 'hidden',
-                }}
+                className="flex items-center gap-2.5 rounded-[14px] border border-[#d2dceb] dark:border-white/20 bg-white dark:bg-[#000000] py-1.5 pl-1.5 pr-3 hover:bg-slate-50 dark:hover:bg-white/10 shadow-sm transition-colors"
+                style={{ cursor: 'pointer' }}
                 onClick={() => {
                   setIsAuthModalOpen(!isAuthModalOpen);
                   setIsNotificationOpen(false);
                 }}
               >
-                {user?.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt="Profile"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  user?.name?.charAt(0).toUpperCase() || 'U'
-                )}
+                <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden' }}>
+                  {user?.photoURL ? (
+                    <img src={user.photoURL} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', backgroundColor: '#1f3d73', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 'bold' }}>
+                      {getInitials(user?.name)}
+                    </div>
+                  )}
+                </div>
+                <span className="text-[14px] font-semibold capitalize text-[#1f3d73] dark:text-ink-200 pr-1">
+                  {user?.name || 'Bhushan K.'}
+                </span>
               </div>
 
               {isAuthModalOpen && (
@@ -290,7 +326,7 @@ export default function Navbar() {
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           />
                         ) : (
-                          user?.name?.charAt(0).toUpperCase() || 'U'
+                          getInitials(user?.name)
                         )}
                       </div>
                     </div>
@@ -310,7 +346,7 @@ export default function Navbar() {
                     <li>
                       <Link
                         to="/dashboard/profile"
-                        state={{ tab: 'CHANGE_PASSWORD' }}
+                        state={{ highlightSection: 'security' }}
                         onClick={() => setIsAuthModalOpen(false)}
                       >
                         <i className="fa-solid fa-lock" style={{ color: '#64748b' }}></i> Change

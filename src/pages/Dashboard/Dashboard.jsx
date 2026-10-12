@@ -1,9 +1,6 @@
 import { Outlet } from 'react-router-dom';
+import Shell from '../../components/Shell';
 
 export default function Dashboard() {
-  return (
-    <div className="dashboard-layout" style={{ minHeight: 'calc(100vh - 80px)' }}>
-      <Outlet />
-    </div>
-  );
+  return <Shell />;
 }

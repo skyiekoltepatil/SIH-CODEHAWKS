@@ -4,7 +4,7 @@ export default function Services() {
       <div className="page-container content-page">
         <div className="page-header">
           <h2>Platform Services</h2>
-          <p>Explore the suite of services provided by the SIH CODEHAWKS platform.</p>
+          <p>Explore the suite of services provided by the PRAAMAN PORTAL platform.</p>
         </div>
         <div className="services-grid">
           <div className="service-card">

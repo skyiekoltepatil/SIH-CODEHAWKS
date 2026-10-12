@@ -109,7 +109,6 @@ export const openDocumentUrl = (url, filename = 'document') => {
  * Uploads a document to the cloud via Base64 Cloud Data URL (stored in Firestore database, guaranteed zero-failure).
  */
 export const uploadDocument = async (file) => {
-  console.log('Saving document securely via Firebase cloud storage...');
   const dataUrl = await fileToDataUrl(file);
   return {
     name: file.name,

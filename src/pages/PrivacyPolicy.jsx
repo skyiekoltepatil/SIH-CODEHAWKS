@@ -23,7 +23,7 @@ export default function PrivacyPolicy() {
 
       <section style={{ marginTop: '30px' }}>
         <h3>4. Contact Us</h3>
-        <p>If you have any questions about this Privacy Policy, please contact our support team at support@sihcodehawks.gov.in.</p>
+        <p>If you have any questions about this Privacy Policy, please contact our support team at support@praamanportal.gov.in.</p>
       </section>
     </div>
   );

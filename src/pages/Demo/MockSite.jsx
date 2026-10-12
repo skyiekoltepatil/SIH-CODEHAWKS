@@ -61,7 +61,7 @@ const MockSite = ({ siteName, collectionName }) => {
                 color: '#cbd5e1',
               }}
             ></i>
-            Waiting for incoming data from SIH-CODEHAWKS...
+            Waiting for incoming data from PRAAMAN-PORTAL...
           </div>
         ) : (
           data.map((item, index) => {
