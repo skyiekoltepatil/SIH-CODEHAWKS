@@ -8,6 +8,9 @@ import Schemes from './pages/Schemes';
 import SchemeDetails from './pages/SchemeDetails';
 import Services from './pages/Services';
 import Dashboard from './pages/Dashboard/Dashboard';
+import BcDashboard from './pages/Dashboard/BcDashboard';
+import { FontProvider } from './components/ui';
+import { BCAuthProvider } from './context/BCAuthContext';
 import Applications from './pages/Dashboard/Applications';
 import Profile from './pages/Dashboard/Profile';
 import AIAssistant from './pages/Dashboard/AIAssistant';
@@ -15,8 +18,13 @@ import VirtualIdCard from './pages/Dashboard/VirtualIdCard';
 import DashboardOverview from './pages/Dashboard/DashboardOverview';
 import SchemeApplication from './pages/Dashboard/SchemeApplication';
 import CitizenProfile from './pages/Dashboard/CitizenProfile';
-import AuditLog from './pages/Dashboard/AuditLog';
+
+import AuditLogs from './pages/Dashboard/AuditLogs';
 import Faq from './pages/Dashboard/Faq';
+import Benefits from './pages/Dashboard/Benefits';
+import DataTransfer from './pages/Dashboard/DataTransfer';
+import Notifications from './pages/Dashboard/Notifications';
+import DashboardSchemes from './pages/Dashboard/Schemes';
 
 import Login from './pages/Login';
 import MockSite from './pages/Demo/MockSite';
@@ -63,6 +71,7 @@ function App() {
   }, []);
 
   return (
+    <FontProvider>
     <AuthProvider>
       <ErrorBoundary>
         <Router>
@@ -80,34 +89,38 @@ function App() {
               <Route path="schemes/:schemeId" element={<SchemeDetails />} />
               <Route path="services" element={<Services />} />
               <Route path="login" element={<Login />} />
+              <Route path="faqs" element={<Faq />} />
+              <Route path="privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="terms-of-service" element={<TermsOfService />} />
 
               <Route
                 path="dashboard"
                 element={
                   <ProtectedRoute>
-                    <Dashboard />
+                    <BCAuthProvider>
+                      <Dashboard />
+                    </BCAuthProvider>
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<DashboardOverview />} />
+                <Route index element={<BcDashboard />} />
+                <Route path="overview" element={<DashboardOverview />} />
                 <Route path="applications" element={<Applications />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="citizen-profile" element={<CitizenProfile />} />
-                <Route path="audit-log" element={<AuditLog />} />
+                <Route path="audit-log" element={<AuditLogs />} />
+                <Route path="benefits" element={<Benefits />} />
+                <Route path="data-transfer" element={<DataTransfer />} />
+                <Route path="notifications" element={<Notifications />} />
+                <Route path="schemes" element={<DashboardSchemes />} />
                 <Route path="ai-assistant" element={<AIAssistant />} />
                 <Route path="id-card" element={<VirtualIdCard />} />
                 <Route path="apply/:schemeId" element={<SchemeApplication />} />
+                <Route path="faqs" element={<Faq />} />
               </Route>
 
-              <Route path="faqs" element={<Faq />} />
-              <Route path="privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="terms-of-service" element={<TermsOfService />} />
-
               {/* Mock Sites Demo Routes */}
-              <Route
-                path="mock-b"
-                element={<MockSite siteName="Mock Site B" collectionName="mock_site_b" />}
-              />
+              <Route path="mock-b" element={<MockSite siteName="Mock Site B" collectionName="mock_site_b" />} />
               <Route path="mock-c" element={<MockSiteLookup siteName="Mock Site C" />} />
               <Route path="mock-d" element={<MockSiteSSO siteName="Mock Site D" />} />
             </Route>
@@ -115,6 +128,7 @@ function App() {
         </Router>
       </ErrorBoundary>
     </AuthProvider>
+    </FontProvider>
   );
 }
 
