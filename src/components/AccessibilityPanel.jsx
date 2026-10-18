@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Icon from "./icons.jsx";
+import {
+  speakMultilingual,
+  stopSpeech,
+  getWordAtCoordinates,
+  getActiveSiteLanguage,
+  TTS_WELCOME_MESSAGES,
+  LANGUAGE_LOCALES,
+} from "../utils/tts.js";
 
 /* ─── Accessibility button definitions (SVG-based, no Font Awesome) ─── */
 const BUTTONS = [
@@ -123,37 +131,92 @@ export default function AccessibilityPanel({ isOpen, onClose }) {
  });
  }, []);
 
- /* ─── TTS: hover-to-read ─── */
+ /* ─── TTS: click or hover to read with full multilingual support ─── */
  useEffect(() => {
  if (!settings.tts) {
- window.speechSynthesis?.cancel();
+ document.body.classList.remove("a11y-tts");
+ document.documentElement.classList.remove("a11y-tts");
+ stopSpeech();
  return;
  }
+
+ document.body.classList.add("a11y-tts");
+ document.documentElement.classList.add("a11y-tts");
+
  let ttsTimeout;
  let lastEl = null;
- const handler = (e) => {
- if (e.target.closest(".a11y-panel") || e.target.closest(".a11y-overlay")) return;
+
+ const hoverHandler = (e) => {
+  if (
+    e.target.closest(".a11y-panel") ||
+    e.target.closest(".a11y-overlay") ||
+    e.target.closest('button[title*="Listen"]') ||
+    e.target.closest('button[title*="listening"]') ||
+    e.target.closest('button[title*="Copy"]') ||
+    e.target.closest(".chat-toolbar")
+  ) return;
  if (e.target === lastEl) return;
  lastEl = e.target;
  clearTimeout(ttsTimeout);
  ttsTimeout = setTimeout(() => {
- const text = e.target.innerText || e.target.textContent;
- if (text?.trim() && !["BODY", "HTML", "MAIN", "NAV"].includes(e.target.tagName)) {
- window.speechSynthesis?.cancel();
- const u = new SpeechSynthesisUtterance(text.trim());
- const voices = window.speechSynthesis?.getVoices();
- if (voices?.length) u.voice = voices.find((v) => v.lang.startsWith("en")) || voices[0];
- window._ttsU = u;
- u.onerror = (err) => console.error("TTS Error:", err);
- window.speechSynthesis?.speak(u);
+ const targetEl = e.target.closest('button, a, [role="button"], h1, h2, h3, h4, h5, h6, p, li, label, td, th, span') || e.target;
+ if (!targetEl || ["BODY", "HTML", "MAIN", "NAV", "HEADER", "FOOTER", "SECTION", "ARTICLE", "ASIDE"].includes(targetEl.tagName)) {
+ return;
  }
- }, 500);
+ const text = targetEl.getAttribute("aria-label") || targetEl.getAttribute("title") || targetEl.innerText || targetEl.textContent;
+ if (text && text.trim()) {
+ speakMultilingual(text.trim());
+ }
+ }, 250);
  };
- document.addEventListener("mouseover", handler, true);
+
+ const clickHandler = (e) => {
+  if (
+    e.target.closest(".a11y-panel") ||
+    e.target.closest(".a11y-overlay") ||
+    e.target.closest('button[title*="Listen"]') ||
+    e.target.closest('button[title*="listening"]') ||
+    e.target.closest('button[title*="Copy"]') ||
+    e.target.closest(".chat-toolbar")
+  ) return;
+
+ const selected = window.getSelection()?.toString()?.trim();
+ if (selected) {
+ speakMultilingual(selected);
+ return;
+ }
+
+ const interactiveEl = e.target.closest('button, a, [role="button"]');
+ if (interactiveEl) {
+ const btnText = interactiveEl.getAttribute("aria-label") || interactiveEl.getAttribute("title") || interactiveEl.innerText || interactiveEl.textContent;
+ if (btnText && btnText.trim()) {
+ speakMultilingual(btnText.trim());
+ return;
+ }
+ }
+
+ const clickedWord = getWordAtCoordinates(e.clientX, e.clientY);
+ if (clickedWord && clickedWord.length > 0) {
+ speakMultilingual(clickedWord);
+ return;
+ }
+
+ const targetEl = e.target.closest('h1, h2, h3, h4, h5, h6, p, li, label, td, th, span') || e.target;
+ if (targetEl && !["BODY", "HTML", "MAIN", "NAV", "HEADER", "FOOTER"].includes(targetEl.tagName)) {
+ const text = targetEl.getAttribute("aria-label") || targetEl.getAttribute("title") || targetEl.innerText || targetEl.textContent;
+ if (text && text.trim()) {
+ speakMultilingual(text.trim());
+ }
+ }
+ };
+
+ document.addEventListener("mouseover", hoverHandler, true);
+ document.addEventListener("click", clickHandler, true);
+
  return () => {
- document.removeEventListener("mouseover", handler, true);
+ document.removeEventListener("mouseover", hoverHandler, true);
+ document.removeEventListener("click", clickHandler, true);
  clearTimeout(ttsTimeout);
- window.speechSynthesis?.cancel();
  };
  }, [settings.tts]);
 
@@ -174,16 +237,16 @@ export default function AccessibilityPanel({ isOpen, onClose }) {
  if (isActive) {
  document.body.classList.add(`a11y-${id}`);
  document.documentElement.classList.add(`a11y-${id}`);
- if (id === "tts" && window.speechSynthesis) {
- window.speechSynthesis.cancel();
- const unlock = new SpeechSynthesisUtterance(" ");
- unlock.volume = 0;
- window.speechSynthesis.speak(unlock);
+ if (id === "tts") {
+ const siteLang = getActiveSiteLanguage();
+ const welcomeMsg = TTS_WELCOME_MESSAGES[siteLang] || TTS_WELCOME_MESSAGES.en;
+ speakMultilingual(welcomeMsg, { lang: LANGUAGE_LOCALES[siteLang] || "en-IN" });
  }
  } else {
  document.body.classList.remove(`a11y-${id}`);
  document.documentElement.classList.remove(`a11y-${id}`);
- if (id === "tts") window.speechSynthesis?.cancel();
+ if (id === "tts") stopSpeech();
+ if (id === "adhd") document.documentElement.style.removeProperty("--mouse-y");
  }
  const next = { ...prev, [id]: isActive };
  localStorage.setItem("bc-a11ySettings", JSON.stringify(next));
@@ -196,7 +259,8 @@ export default function AccessibilityPanel({ isOpen, onClose }) {
  localStorage.removeItem("bc-a11ySettings");
  document.body.className = document.body.className.replace(/\ba11y-\S+/g, "").trim();
  document.documentElement.className = document.documentElement.className.replace(/\ba11y-\S+/g, "").trim();
- window.speechSynthesis?.cancel();
+ document.documentElement.style.removeProperty("--mouse-y");
+ stopSpeech();
  };
 
  return (
@@ -308,7 +372,6 @@ export default function AccessibilityPanel({ isOpen, onClose }) {
  body:has(.a11y-panel).a11y-adhd::before {
    display: none !important;
    opacity: 0 !important;
- }
  }
 
  @media (max-width: 420px) {
