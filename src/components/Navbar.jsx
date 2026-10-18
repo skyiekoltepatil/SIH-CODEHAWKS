@@ -3,10 +3,10 @@ import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { db } from '../firebase';
 import { collection, onSnapshot, query, orderBy, writeBatch, doc } from 'firebase/firestore';
-import userPhoto from '../assets/user.jpg';
 import praamanIcon from '../assets/Praamanprotallogo.svg';
 import logoTextLight from '../assets/logo-text-light.png';
 import logoTextDark from '../assets/logo-text-dark.png';
+import defaultUserAvatar from '../assets/user.jpg';
 
 export default function Navbar() {
   const { isLoggedIn, user, logout } = useContext(AuthContext);
@@ -99,7 +99,12 @@ export default function Navbar() {
     }
   };
 
-  const isActive = (path) => (location.pathname === path ? 'nav-link active' : 'nav-link');
+  const isActive = (path) => {
+    if (path === '/dashboard') {
+      return location.pathname.startsWith('/dashboard') ? 'nav-link active' : 'nav-link';
+    }
+    return location.pathname === path ? 'nav-link active' : 'nav-link';
+  };
 
   return (
     <>
@@ -287,16 +292,10 @@ export default function Navbar() {
                 }}
               >
                 <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden' }}>
-                  {user?.photoURL ? (
-                    <img src={user.photoURL} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', backgroundColor: '#1f3d73', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 'bold' }}>
-                      {getInitials(user?.name)}
-                    </div>
-                  )}
+                  <img src={user?.photoURL || defaultUserAvatar} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
-                <span className="text-[14px] font-semibold capitalize text-[#1f3d73] dark:text-ink-200 pr-1">
-                  {user?.name || 'Bhushan K.'}
+                <span className="text-[14px] font-semibold text-[#1f3d73] dark:text-ink-200 pr-1">
+                  {(!user?.name || user?.name.includes('@')) ? 'Bhushan Kolte' : user.name}
                 </span>
               </div>
 
