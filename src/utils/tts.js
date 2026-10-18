@@ -79,3 +79,42 @@ export const detectLanguage = (text) => {
   }
   return 'en-IN';
 };
+
+const translationCache = new Map();
+
+export const translateText = async (text, targetLang) => {
+  if (!text || !targetLang) return text;
+  const baseLang = targetLang.split('-')[0].toLowerCase();
+  if (baseLang === 'en') return text;
+
+  if (hasIndicCharacters(text)) {
+    const detected = detectLanguage(text);
+    if (detected.startsWith(baseLang)) return text;
+  }
+
+  const clean = cleanTextForSpeech(text).slice(0, 1000);
+  if (!clean) return text;
+
+  const cacheKey = `${baseLang}:${clean}`;
+  if (translationCache.has(cacheKey)) {
+    return translationCache.get(cacheKey);
+  }
+
+  try {
+    const res = await fetch(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${baseLang}&dt=t&q=${encodeURIComponent(clean)}`
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && Array.isArray(data[0])) {
+        const translated = data[0].filter((c) => c && c[0]).map((c) => c[0]).join('');
+        if (translated && translated.trim()) {
+          translationCache.set(cacheKey, translated.trim());
+          return translated.trim();
+        }
+      }
+    }
+  } catch (err) {}
+
+  return text;
+};
