@@ -67,6 +67,14 @@ const paths = {
  code: <><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></>,
  download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></>,
  edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></>,
+ message: <><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></>,
+ history: <><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></>,
+ panelLeft: <><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M9 3v18" /></>,
+ menu: <><path d="M4 6h16M4 12h16M4 18h16" /></>,
+ dots: <><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" /><circle cx="5" cy="12" r="1.5" /></>,
+ dotsVertical: <><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" /></>,
+ pin: <><path d="M12 17v5" /><path d="M5 17h14l-1.5-7V4h1V2H5.5v2h1v6L5 17Z" /></>,
+ pinOff: <><line x1="2" x2="22" y1="2" y2="22" /><path d="M12 17v5" /><path d="M9 9v1L7.5 17h10.5M15 9.34V4h1V2H8.5v2h1v3" /></>,
 };
 
 export default function Icon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
