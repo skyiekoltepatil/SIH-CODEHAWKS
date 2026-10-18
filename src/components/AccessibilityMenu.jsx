@@ -2,103 +2,239 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import './AccessibilityMenu.css';
 import { AnimatedThemeToggler } from './AnimatedThemeToggler';
+import {
+  speakMultilingual,
+  stopSpeech,
+  getWordAtCoordinates,
+  getActiveSiteLanguage,
+  TTS_WELCOME_MESSAGES,
+  LANGUAGE_LOCALES,
+} from '../utils/tts.js';
+
 export default function AccessibilityMenu({ isOpen, onClose }) {
   const [activeSettings, setActiveSettings] = useState(() => {
-    const saved = localStorage.getItem('a11ySettings');
-    return saved ? JSON.parse(saved) : {};
+    try {
+      const saved = localStorage.getItem('a11ySettings');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
   });
 
+  // Ensure active classes are applied on mount
+  useEffect(() => {
+    Object.entries(activeSettings).forEach(([setting, isActive]) => {
+      if (isActive) {
+        document.body.classList.add(`a11y-${setting}`);
+        document.documentElement.classList.add(`a11y-${setting}`);
+      }
+    });
+  }, []);
+
+  // Text To Speech (TTS) handler with full multilingual support
   useEffect(() => {
     if (!activeSettings.tts) {
-      window.speechSynthesis?.cancel();
+      document.body.classList.remove('a11y-tts');
+      document.documentElement.classList.remove('a11y-tts');
+      stopSpeech();
       return;
     }
+
+    document.body.classList.add('a11y-tts');
+    document.documentElement.classList.add('a11y-tts');
 
     let ttsTimeout;
     let lastHoveredElement = null;
 
     const handleTTSHover = (e) => {
-      // Ignore hovers within the accessibility menu itself
-      if (e.target.closest('.a11y-menu') || e.target.closest('.a11y-overlay') || e.target.closest('.a11y-btn')) {
+      if (
+        e.target.closest('.a11y-menu') ||
+        e.target.closest('.a11y-overlay') ||
+        e.target.closest('.a11y-btn') ||
+        e.target.closest('.a11y-panel') ||
+        e.target.closest('button[title*="Listen"]') ||
+        e.target.closest('button[title*="listening"]') ||
+        e.target.closest('button[title*="Copy"]') ||
+        e.target.closest('.chat-toolbar')
+      ) return;
+      if (e.target === lastHoveredElement) return;
+      lastHoveredElement = e.target;
+      clearTimeout(ttsTimeout);
+      ttsTimeout = setTimeout(() => {
+        const targetEl = e.target.closest('button, a, [role="button"], h1, h2, h3, h4, h5, h6, p, li, label, td, th, span') || e.target;
+        if (!targetEl || ['BODY', 'HTML', 'MAIN', 'NAV', 'HEADER', 'FOOTER', 'SECTION', 'ARTICLE', 'ASIDE'].includes(targetEl.tagName)) {
+          return;
+        }
+        const text = targetEl.getAttribute('aria-label') || targetEl.getAttribute('title') || targetEl.innerText || targetEl.textContent;
+        if (text && text.trim()) {
+          const siteLang = getActiveSiteLanguage();
+          speakMultilingual(text.trim(), { lang: LANGUAGE_LOCALES[siteLang] || `${siteLang}-IN` });
+        }
+      }, 250);
+    };
+
+    const handleTTSClick = (e) => {
+      if (
+        e.target.closest('.a11y-menu') ||
+        e.target.closest('.a11y-overlay') ||
+        e.target.closest('.a11y-btn') ||
+        e.target.closest('.a11y-panel') ||
+        e.target.closest('button[title*="Listen"]') ||
+        e.target.closest('button[title*="listening"]') ||
+        e.target.closest('button[title*="Copy"]') ||
+        e.target.closest('.chat-toolbar')
+      ) return;
+
+      const siteLang = getActiveSiteLanguage();
+      const targetLang = LANGUAGE_LOCALES[siteLang] || `${siteLang}-IN`;
+
+      // 1. Text highlighted or selected by user
+      const selected = window.getSelection()?.toString()?.trim();
+      if (selected) {
+        speakMultilingual(selected, { lang: targetLang });
         return;
       }
 
-      if (e.target === lastHoveredElement) return;
-      lastHoveredElement = e.target;
-
-      clearTimeout(ttsTimeout);
-      ttsTimeout = setTimeout(() => {
-        const text = e.target.innerText || e.target.textContent;
-        // Don't read if it's a huge structural container or empty
-        if (text && text.trim() && !['BODY', 'HTML', 'MAIN', 'NAV'].includes(e.target.tagName)) {
-          window.speechSynthesis?.cancel();
-          
-          const utterance = new SpeechSynthesisUtterance(text.trim());
-          
-          // Some browsers fail silently if no voice is explicitly set
-          const voices = window.speechSynthesis?.getVoices();
-          if (voices && voices.length > 0) {
-            // Try to find a default English voice, or just use the first one
-            utterance.voice = voices.find(v => v.lang.startsWith('en')) || voices[0];
-          }
-
-          // Fix for Chrome/Safari bug: utterance gets garbage collected before speaking
-          window.ttsUtterance = utterance;
-          
-          utterance.onerror = (err) => console.error("TTS Error:", err);
-          
-          window.speechSynthesis?.speak(utterance);
+      // 2. Interactive element (button, link, tab)
+      const interactiveEl = e.target.closest('button, a, [role="button"]');
+      if (interactiveEl) {
+        const btnText = interactiveEl.getAttribute('aria-label') || interactiveEl.getAttribute('title') || interactiveEl.innerText || interactiveEl.textContent;
+        if (btnText && btnText.trim()) {
+          speakMultilingual(btnText.trim(), { lang: targetLang });
+          return;
         }
-      }, 500); // 500ms delay
+      }
+
+      // 3. Specific word clicked across ANY language / script (Tamil, Hindi, Marathi, Telugu, Punjabi, Gujarati, etc.)
+      const clickedWord = getWordAtCoordinates(e.clientX, e.clientY);
+      if (clickedWord && clickedWord.length > 0) {
+        speakMultilingual(clickedWord, { lang: targetLang });
+        return;
+      }
+
+      // 4. Element text fallback (headings, paragraphs, labels, spans)
+      const targetEl = e.target.closest('h1, h2, h3, h4, h5, h6, p, li, label, td, th, span') || e.target;
+      if (targetEl && !['BODY', 'HTML', 'MAIN', 'NAV', 'HEADER', 'FOOTER'].includes(targetEl.tagName)) {
+        const text = targetEl.getAttribute('aria-label') || targetEl.getAttribute('title') || targetEl.innerText || targetEl.textContent;
+        if (text && text.trim()) {
+          speakMultilingual(text.trim(), { lang: targetLang });
+        }
+      }
     };
 
-    // Use capture phase to ensure it triggers early
     document.addEventListener('mouseover', handleTTSHover, true);
+    document.addEventListener('click', handleTTSClick, true);
 
     return () => {
       document.removeEventListener('mouseover', handleTTSHover, true);
+      document.removeEventListener('click', handleTTSClick, true);
       clearTimeout(ttsTimeout);
-      window.speechSynthesis?.cancel();
     };
   }, [activeSettings.tts]);
 
-  // ADHD Mode cursor tracker
+  // Track drawer open state to suppress ADHD mask while drawer is open
   useEffect(() => {
-    if (!activeSettings.adhd) return;
+    if (isOpen) {
+      document.body.classList.add('a11y-menu-open');
+    } else {
+      document.body.classList.remove('a11y-menu-open');
+      if (activeSettings.adhd) {
+        document.documentElement.style.setProperty('--mouse-y', `${window.innerHeight / 2}px`);
+      }
+    }
+    return () => {
+      document.body.classList.remove('a11y-menu-open');
+    };
+  }, [isOpen, activeSettings.adhd]);
+
+  // ADHD Mode cursor and scroll tracker (always tracks when ADHD is active)
+  useEffect(() => {
+    if (!activeSettings.adhd) {
+      document.body.classList.remove('a11y-adhd');
+      document.documentElement.classList.remove('a11y-adhd');
+      document.documentElement.style.removeProperty('--mouse-y');
+      return;
+    }
+
+    document.body.classList.add('a11y-adhd');
+    document.documentElement.classList.add('a11y-adhd');
+    
+    const initialY = window.innerHeight / 2;
+    document.documentElement.style.setProperty('--mouse-y', `${initialY}px`);
+
+    let lastY = initialY;
+    let rafId = null;
+
+    const setPosition = (y) => {
+      lastY = y;
+      if (!rafId) {
+        rafId = requestAnimationFrame(() => {
+          document.documentElement.style.setProperty('--mouse-y', `${lastY}px`);
+          rafId = null;
+        });
+      }
+    };
 
     const handleMouseMove = (e) => {
-      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+      setPosition(e.clientY);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
+    const handleTouchMove = (e) => {
+      if (e.touches && e.touches[0]) {
+        setPosition(e.touches[0].clientY);
+      }
+    };
+
+    const handleScroll = () => {
+      setPosition(lastY);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('wheel', handleScroll, { passive: true });
+
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.documentElement.style.removeProperty('--mouse-y');
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('wheel', handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, [activeSettings.adhd]);
+
+  // Close drawer on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   const toggleSetting = (setting) => {
     setActiveSettings((prev) => {
       const isActive = !prev[setting];
       
-      // Handle global CSS classes for demo purposes
       if (isActive) {
         document.body.classList.add(`a11y-${setting}`);
         document.documentElement.classList.add(`a11y-${setting}`);
         
-        // Fix for strict browsers (Safari/Chrome): Unlock speech engine during a direct user click
-        if (setting === 'tts' && window.speechSynthesis) {
-          window.speechSynthesis.cancel();
-          const unlockUtterance = new SpeechSynthesisUtterance(" ");
-          unlockUtterance.volume = 0; // Silent unlock
-          window.speechSynthesis.speak(unlockUtterance);
+        if (setting === 'tts') {
+          const siteLang = getActiveSiteLanguage();
+          const welcomeMsg = TTS_WELCOME_MESSAGES[siteLang] || TTS_WELCOME_MESSAGES.en;
+          speakMultilingual(welcomeMsg, { lang: LANGUAGE_LOCALES[siteLang] || 'en-IN' });
         }
       } else {
         document.body.classList.remove(`a11y-${setting}`);
         document.documentElement.classList.remove(`a11y-${setting}`);
         
-        if (setting === 'tts' && window.speechSynthesis) {
-          window.speechSynthesis.cancel();
+        if (setting === 'tts') {
+          stopSpeech();
+        }
+        if (setting === 'adhd') {
+          document.documentElement.style.removeProperty('--mouse-y');
         }
       }
       
@@ -107,6 +243,7 @@ export default function AccessibilityMenu({ isOpen, onClose }) {
         [setting]: isActive,
       };
       localStorage.setItem('a11ySettings', JSON.stringify(newSettings));
+      localStorage.setItem('bc-a11ySettings', JSON.stringify(newSettings));
       return newSettings;
     });
   };
@@ -114,9 +251,11 @@ export default function AccessibilityMenu({ isOpen, onClose }) {
   const resetSettings = () => {
     setActiveSettings({});
     localStorage.removeItem('a11ySettings');
-    // Remove all a11y classes from body and html
+    localStorage.removeItem('bc-a11ySettings');
     document.body.className = document.body.className.replace(/\ba11y-\S+/g, '').trim();
     document.documentElement.className = document.documentElement.className.replace(/\ba11y-\S+/g, '').trim();
+    document.documentElement.style.removeProperty('--mouse-y');
+    stopSpeech();
   };
 
   if (!isOpen) return null;
