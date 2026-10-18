@@ -9,13 +9,47 @@ const TYPE_META = {
  "otp-sent": { label: "OTP Sent", tone: "blue" },
  "otp-verified": { label: "Phone Verification", tone: "green" },
  "document-uploaded": { label: "Document Verification", tone: "violet" },
+ "document-deleted": { label: "Document Removed", tone: "red" },
  "profile-saved": { label: "User Profile Updates", tone: "green" },
- "profile-submitted": { label: "User Profile Updates", tone: "green" },
+ "profile-submitted": { label: "Profile Registration", tone: "green" },
+ "draft-saved": { label: "Profile Draft Saved", tone: "blue" },
  "data-transferred": { label: "Data Fetch", tone: "blue" },
  "application-submitted": { label: "Application Submitted", tone: "blue" },
  "application-withdrawn": { label: "Application Withdrawn", tone: "red" },
  "consent-granted": { label: "Consent Granted", tone: "green" },
  "consent-revoked": { label: "Consent Revoked", tone: "red" },
+};
+
+const getActionLabel = (ev) => {
+ if (ev.title) return ev.title;
+ if (TYPE_META[ev.type]?.label) return TYPE_META[ev.type].label;
+ if (ev.department) return ev.department;
+ if (ev.action) return ev.action;
+ if (ev.type) {
+  return ev.type
+   .split('-')
+   .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+   .join(' ');
+ }
+ return "System Activity";
+};
+
+const getEventDetails = (ev) => {
+ if (ev.body) return ev.body;
+ if (ev.requested && ev.purpose) return `${ev.requested} — ${ev.purpose}`;
+ if (ev.requested) return ev.requested;
+ if (ev.purpose) return ev.purpose;
+ if (ev.department) return `Activity recorded by ${ev.department}`;
+ if (ev.message) return ev.message;
+ if (ev.details) return ev.details;
+ return "Activity logged and verified.";
+};
+
+const getTone = (ev) => {
+ if (TYPE_META[ev.type]?.tone) return TYPE_META[ev.type].tone;
+ if (ev.status === "Revoked" || ev.status === "Rejected") return "red";
+ if (ev.status === "Authorized" || ev.status === "Completed" || ev.status === "Verified") return "green";
+ return "blue";
 };
 
 /* ── Filter definitions ── */
@@ -61,7 +95,7 @@ const FILTERS = [
  <path d="M4 17c1-3 3.4-4.6 6-4.6s5 1.6 6 4.6" />
  </svg>
  ),
- match: (ev) => ["profile-saved", "profile-submitted"].includes(ev.type),
+ match: (ev) => ["profile-saved", "profile-submitted", "draft-saved"].includes(ev.type),
  },
 ];
 
@@ -141,25 +175,27 @@ export default function AuditLogs() {
  </thead>
  <tbody className="divide-y divide-ink-100 dark:divide-white/10 ">
  {filtered.map((ev) => {
- const m = TYPE_META[ev.type] || { label: ev.title, tone: "gray" };
- return (
- <tr key={ev.id} className="hover:bg-ink-50/50 dark:bg-white/5 transition-colors">
- <td className="whitespace-nowrap px-5 py-3.5 text-ink-600 dark:text-ink-400 ">{fmtDateTime(ev.createdAt)}</td>
- <td className="px-5 py-3.5 font-medium text-ink-900 dark:text-white ">{m.label}</td>
- <td className="px-5 py-3.5 text-ink-500 dark:text-ink-400 ">{ev.body}</td>
- <td className="px-5 py-3.5">
- <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-bold ring-1 ring-inset ${
- m.tone === "green" ? "bg-verd-50 text-verd-700 ring-verd-200 " :
- m.tone === "red" ? "bg-red-50 text-red-700 ring-red-200 " :
- m.tone === "violet" ? "bg-violet-50 text-violet-700 ring-violet-200 " :
- "bg-blue-50 text-blue-700 ring-blue-200 "
- }`}>
- {ev.status || "Completed"}
- </span>
- </td>
- </tr>
- );
- })}
+  const actionLabel = getActionLabel(ev);
+  const details = getEventDetails(ev);
+  const tone = getTone(ev);
+  return (
+  <tr key={ev.id} className="hover:bg-ink-50/50 dark:bg-white/5 transition-colors">
+  <td className="whitespace-nowrap px-5 py-3.5 text-ink-600 dark:text-ink-400 font-mono text-[12px]">{fmtDateTime(ev.createdAt)}</td>
+  <td className="px-5 py-3.5 font-medium text-ink-900 dark:text-white">{actionLabel}</td>
+  <td className="px-5 py-3.5 text-ink-500 dark:text-ink-400 max-w-md" title={details}>{details}</td>
+  <td className="px-5 py-3.5">
+  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-bold ring-1 ring-inset ${
+  tone === "green" ? "bg-verd-50 text-verd-700 ring-verd-200 " :
+  tone === "red" ? "bg-red-50 text-red-700 ring-red-200 " :
+  tone === "violet" ? "bg-violet-50 text-violet-700 ring-violet-200 " :
+  "bg-blue-50 text-blue-700 ring-blue-200 "
+  }`}>
+  {ev.status || "Completed"}
+  </span>
+  </td>
+  </tr>
+  );
+  })}
  {filtered.length === 0 && (
  <tr>
  <td colSpan="4" className="px-5 py-10 text-center text-ink-400 dark:text-ink-500 ">
