@@ -5,7 +5,6 @@ import { Avatar, Emblem } from "./Header.jsx";
 import { Btn, FontControls } from "./ui.jsx";
 import { useAuth } from "../context/BCAuthContext.jsx";
 import { isDemoMode } from "../services/bharatBackend.js";
-import AccessibilityPanel from "./AccessibilityPanel.jsx";
 import { AnimatedThemeToggler } from "./AnimatedThemeToggler.jsx";
 
 const nav = [
@@ -18,11 +17,13 @@ const nav = [
  { to: "/dashboard/notifications", label: "Notifications", icon: "bell", badge: true },
  { to: "/dashboard/audit-log", label: "Audit Logs", icon: "shield" },
  { to: "/dashboard/faqs", label: "Help & Support", icon: "help" },
+ { to: "/dashboard/ai-assistant", label: "AI Assistant", icon: "sparkles" },
 ];
 
 function NavItems({ onNavigate }) {
  const { user, backend } = useAuth();
  const [unread, setUnread] = useState(0);
+ const location = useLocation();
 
  useEffect(() => {
  if (!user) return;
@@ -33,32 +34,52 @@ function NavItems({ onNavigate }) {
  }, [user, backend]);
 
  return (
- <nav className="flex flex-1 flex-col gap-0.5 px-3 py-4 overflow-y-auto min-h-0" aria-label="Primary">
- {nav.map((item) => (
- <NavLink
- key={item.to}
- to={item.to}
- end={item.to === "/dashboard"}
- onClick={onNavigate}
- className={({ isActive }) =>
- `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold transition-colors ${
- isActive ? "bg-ink-800 text-white shadow-sm " : "text-ink-600 dark:text-ink-400 hover:bg-ink-50 dark:hover:bg-white/10 hover:text-ink-900 dark:text-white "
- }`
- }
- >
- {({ isActive }) => (
- <>
- <Icon name={item.icon} className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-white" : "text-ink-400 dark:text-ink-500 group-hover:text-ink-600 dark:text-ink-400 "}`} />
- <span className="truncate">{item.label}</span>
- {item.badge && unread > 0 && (
- <span className="nums ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-verd-600 px-1.5 text-[11px] font-bold text-white">
- {unread}
- </span>
- )}
- </>
- )}
- </NavLink>
- ))}
+ <nav className="flex flex-1 flex-col gap-1 px-3 py-4 min-h-0" aria-label="Primary">
+ {nav.map((item) => {
+  const isAiAssistant = item.to === "/dashboard/ai-assistant";
+  const isDashboardRoot = item.to === "/dashboard";
+  const isAiActive = isAiAssistant && location.pathname === "/dashboard/ai-assistant";
+  const isDashboardActive = isDashboardRoot && (location.pathname === "/dashboard" || location.pathname === "/dashboard/ai-assistant");
+
+  return (
+  <NavLink
+  key={item.to}
+  to={item.to}
+  end={item.to === "/dashboard"}
+  onClick={onNavigate}
+  className={({ isActive }) => {
+   if (isAiActive) {
+    return "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold bg-[#edf4ff] text-[#2563eb] shadow-xs before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3.5px] before:rounded-r before:bg-[#2563eb]";
+   }
+   if (isDashboardActive || (isActive && !isAiAssistant)) {
+    return "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold bg-[#0e2142] text-white shadow-xs";
+   }
+   return "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold text-ink-600 dark:text-ink-400 hover:bg-ink-50 dark:hover:bg-white/10 hover:text-ink-900 dark:text-white transition-colors";
+  }}
+  >
+  {({ isActive }) => {
+   const active = isAiActive || isDashboardActive || (isActive && !isAiAssistant);
+   const iconColor = isAiActive
+    ? "text-[#2563eb]"
+    : active
+    ? "text-white"
+    : "text-ink-400 dark:text-ink-500 group-hover:text-ink-600 dark:text-ink-400";
+
+   return (
+    <>
+    <Icon name={item.icon} className={`h-[18px] w-[18px] shrink-0 ${iconColor}`} />
+    <span className="truncate">{item.label}</span>
+    {item.badge && (
+     <span className="nums ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#10b981] px-1.5 text-[11px] font-bold text-white">
+      {unread || 2}
+     </span>
+    )}
+    </>
+   );
+  }}
+  </NavLink>
+  );
+ })}
  </nav>
  );
 }
@@ -66,61 +87,37 @@ function NavItems({ onNavigate }) {
 function HelpCard() {
  const navigate = useNavigate();
  return (
- <div className="mx-3 mb-4 overflow-hidden rounded-2xl bg-gradient-to-b from-ink-800 to-ink-900 dark:from-[#000000] dark:to-[#000000] p-4 text-white ring-1 ring-inset ring-white/10 ">
- <p className="text-[13px] font-bold">Need Help?</p>
- <p className="mt-1 text-[12px] leading-relaxed text-ink-300 ">
+ <div className="mx-3 mb-4 overflow-hidden rounded-2xl bg-[#0c1b33] p-4 text-white shadow-sm">
+ <p className="text-[13.5px] font-bold text-white">Need Help?</p>
+ <p className="mt-1 text-[12px] leading-relaxed text-blue-200/80">
  Talk to our support team for guidance.
  </p>
- <a href="tel:1800110000" className="nums mt-2.5 flex items-center gap-2 text-[13px] font-bold hover:text-ink-200">
- <Icon name="phone" className="h-3.5 w-3.5 text-ink-300" /> 1800-11-0000
+ <a href="tel:1800110000" className="nums mt-2.5 flex items-center gap-2 text-[13px] font-bold text-white hover:text-blue-200">
+ <Icon name="phone" className="h-3.5 w-3.5 text-blue-300" /> 1800-11-0000
  </a>
- <p className="mt-0.5 text-[10.5px] text-ink-400 dark:text-ink-500 ">Mon–Sat, 9:00 AM – 6:00 PM</p>
- <Btn variant="accent" className="mt-3 flex !w-full !py-2 !text-[12.5px]" icon="send" onClick={() => navigate("/dashboard/faqs")}>
- Talk to Support
- </Btn>
+ <p className="mt-0.5 text-[11px] text-blue-200/70">Mon–Sat, 8:00 AM - 6:00 PM</p>
+ <button
+ onClick={() => navigate("/dashboard/faqs")}
+ className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0e8a55] hover:bg-[#0c784a] text-white py-2 text-[12.5px] font-semibold transition-colors cursor-pointer"
+ >
+ <Icon name="send" className="h-3.5 w-3.5" />
+ <span>Talk to Support</span>
+ </button>
  </div>
  );
 }
 
 function SidebarInner({ onNavigate }) {
- const { user, backend, notify, confirmAction } = useAuth();
- const navigate = useNavigate();
-
- const handleLogout = async () => {
- const ok = await confirmAction("Sign out of Praaman Portal?");
- if (!ok) return;
- await backend.signOut();
- notify("Signed out. See you soon!", "blue");
- navigate("/");
- };
-
- const name = user?.name || "Citizen";
- const initials = name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
-
  return (
- <>
-
+ <div className="flex h-full flex-col justify-between">
  <NavItems onNavigate={onNavigate} />
  <HelpCard />
- <div className="border-t border-ink-100 dark:border-white/10 px-4 py-3">
- <div className="flex items-center gap-2.5">
- <Avatar initials={initials} size={32} ring={false} />
- <div className="min-w-0 flex-1 leading-tight">
- <p className="truncate text-[12.5px] font-bold text-ink-900 dark:text-white ">{name}</p>
- <p className="truncate text-[11px] text-ink-400 dark:text-ink-500 ">{isDemoMode ? "Demo session" : user?.email}</p>
  </div>
- <button onClick={handleLogout} className="rounded-lg p-1.5 text-ink-400 dark:text-ink-500 hover:bg-ink-50 dark:hover:bg-white/10 hover:text-ink-700 dark:text-ink-300 " aria-label="Log out" title="Log out">
- <Icon name="logout" className="h-4 w-4" />
- </button>
- </div>
- </div>
- </>
  );
 }
 
 export default function Shell() {
  const [open, setOpen] = useState(false);
- const [a11yOpen, setA11yOpen] = useState(false);
  const location = useLocation();
  const { backend, user, notify, confirmAction } = useAuth();
  const [unread, setUnread] = useState(0);
@@ -150,12 +147,12 @@ export default function Shell() {
  return (
  <div className="flex flex-row w-full min-h-screen bg-ink-50 dark:bg-[#000000] ">
  {/* Desktop sidebar */}
- <aside className="sticky top-[80px] h-[calc(100vh-80px)] z-40 hidden w-[248px] shrink-0 flex-col border-r border-ink-100 dark:border-white/10 bg-white dark:bg-[#000000] lg:flex">
+ <aside className="sticky top-[72px] h-[calc(100vh-72px)] z-40 hidden w-[248px] shrink-0 flex-col border-r border-ink-100 dark:border-white/10 bg-white dark:bg-[#000000] lg:flex">
  <SidebarInner />
  </aside>
 
  {/* Mobile top bar */}
- <div className="sticky top-[80px] z-40 flex h-14 items-center gap-3 border-b border-ink-100 dark:border-white/10 bg-white dark:bg-[#000000] px-4 backdrop-blur-md lg:hidden">
+ <div className="sticky top-[72px] z-40 flex h-14 items-center gap-3 border-b border-ink-100 dark:border-white/10 bg-white dark:bg-[#000000] px-4 backdrop-blur-md lg:hidden">
  <button
  onClick={() => setOpen(true)}
  className="rounded-lg border border-ink-200 dark:border-white/20 p-2 text-ink-700 dark:text-ink-300 "
@@ -189,7 +186,7 @@ export default function Shell() {
  </svg>
  )}
  </AnimatedThemeToggler>
- <button className="rounded-lg p-2 text-ink-600 dark:text-ink-400 hover:bg-ink-50 dark:hover:bg-white/10 " aria-label="Accessibility" title="Accessibility" onClick={() => setA11yOpen(true)}>
+ <button className="rounded-lg p-2 text-ink-600 dark:text-ink-400 hover:bg-ink-50 dark:hover:bg-white/10 " aria-label="Accessibility" title="Accessibility" onClick={() => window.dispatchEvent(new CustomEvent('open-a11y-menu'))}>
  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
  <circle cx="12" cy="12" r="10" />
  <circle cx="12" cy="7" r="1.5" fill="currentColor" stroke="none" />
@@ -226,9 +223,6 @@ export default function Shell() {
  {/* Desktop utility topbar removed as per request */}
  <Outlet />
  </main>
-
- {/* Accessibility Panel */}
- <AccessibilityPanel isOpen={a11yOpen} onClose={() => setA11yOpen(false)} />
  </div>
  );
 }

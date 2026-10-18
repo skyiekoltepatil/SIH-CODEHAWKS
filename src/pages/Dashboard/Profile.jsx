@@ -159,14 +159,62 @@ export default function Profile() {
 
  /* ---------- load ---------- */
  useEffect(() => {
- if (!user || loaded) return;
+ if (!user) return;
  (async () => {
  const cp = await backend.loadProfile(user.uid);
- if (cp) setData({ ...initialData, ...cp });
+ if (cp) {
+   const normalized = {
+     ...initialData,
+     ...cp,
+     basic: {
+       ...initialData.basic,
+       fullName: cp.basic?.fullName || cp.basic?.nameAsPerId || user?.displayName || user?.name || "",
+       dob: cp.basic?.dob || "",
+       gender: cp.basic?.gender || "",
+       mobile: cp.basic?.mobile || user?.phoneNumber || "",
+       email: cp.basic?.email || user?.email || "",
+       photoURL: cp.basic?.photoURL || user?.photoURL || "",
+       ...(cp.basic || {}),
+     },
+     identity: {
+       ...initialData.identity,
+       ...(cp.identity || {}),
+     },
+     address: {
+       ...initialData.address,
+       line1: cp.address?.line1 || cp.address?.current?.line1 || "",
+       village: cp.address?.village || cp.address?.current?.village || "",
+       district: cp.address?.district || cp.address?.current?.district || "",
+       state: cp.address?.state || cp.address?.current?.state || "",
+       pincode: cp.address?.pincode || cp.address?.current?.pincode || "",
+       ...(cp.address || {}),
+     },
+     bank: {
+       ...initialData.bank,
+       ...(cp.bank || {}),
+     },
+     family: {
+       ...initialData.family,
+       fatherName: cp.family?.fatherName || cp.family?.father?.name || "",
+       motherName: cp.family?.motherName || cp.family?.mother?.name || "",
+       guardianName: cp.family?.guardianName || cp.family?.guardian?.name || "",
+       ...(cp.family || {}),
+     },
+     education: {
+       ...initialData.education,
+       level: cp.education?.level || cp.education?.entries?.[0]?.level || "",
+       institution: cp.education?.institution || cp.education?.entries?.[0]?.institution || "",
+       passingYear: cp.education?.passingYear || cp.education?.entries?.[0]?.passingYear || "",
+       occupation: cp.education?.occupation || cp.employment?.jobRole || cp.employment?.organization || "",
+       ...(cp.education || {}),
+     },
+   };
+   setData(normalized);
+ }
  setVault(await backend.listVaultDocuments(user.uid));
  setLoaded(true);
  })();
- }, [user, backend, loaded]);
+ }, [user, backend, location.key]);
 
  /* ---------- "Complete Profile" deep-link: highlight first pending section ---------- */
  useEffect(() => {

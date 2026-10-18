@@ -592,6 +592,54 @@ function respondContactPerson(lang) {
   };
 }
 
+// Citizen Personal Profile Help (NOT schemes & services)
+function respondProfileHelp(lang, ctx) {
+  const userName = ctx?.user?.name || 'Citizen';
+  return {
+    text: `👤 **Your Personal Citizen Profile Guide**
+
+Your **Citizen Profile** represents your complete, verified personal identity across all integrated government departments. It contains everything about you — establishing who you are, your family background, residence, economic status, education, and banking records.
+
+📋 **What your personal profile contains (The 10 Sections):**
+1. **Basic Personal Information:** Your full legal name, name as per government ID, date of birth, gender, nationality, marital status, preferred language, profile photograph, and OTP-verified mobile number and email address.
+2. **Identity & Aadhaar:** Aadhaar number (masked), PAN or Government ID with checksum authentication for verified citizen status.
+3. **Address & Residence:** Your complete residential address (House/Flat, Street, Village/Town, District, State, and 6-digit PIN code) used for domicile eligibility.
+4. **Family Details:** Father's, Mother's, and Guardian's full names, locations, and occupations for household-level entitlement verification.
+5. **Education & Qualifications:** Highest education level, school/college/university, passing year, and roll number.
+6. **Employment & Livelihood:** Current employment status, organization, job role, or student enrollment details.
+7. **Bank Details:** Account holder name, Bank name, Account number, and IFSC code (essential for Direct Benefit Transfer DBT subsidies).
+8. **Document Vault:** Secure encrypted vault holding your identity proofs, caste/income certificates, and marksheets.
+9. **Emergency Contacts:** Primary emergency contact name, relationship, and contact number.
+10. **Data Privacy & Encryption (DPDP Act):** All sensitive fields are encrypted client-side using AES-256-GCM before saving to the database. You hold full consent control over which departments can access your profile.
+
+---
+
+**Would you like me to update your profile?**
+Choose how you would like to proceed:
+• **Upload JSON:** Instantly upload your profile data in JSON format for automated validation and encryption.
+• **Update Manually:** Open the comprehensive 10-step Citizen Verification Form (Step 1 to 10) directly inside this chat.`,
+    isProfileGuide: true,
+    suggestions: [
+      { label: '📂 Upload JSON', intent: 'upload_profile_json' },
+      { label: '📝 Update Manually (10-Step Form)', intent: 'manual_profile_update' },
+      { label: '👤 View Current Profile', intent: 'view_profile' },
+    ],
+  };
+}
+
+function respondManualProfileForm(lang) {
+  return {
+    text: `Here is your official **10-Step Citizen Master Profile Form** fitted directly into Praaman AI.
+You can review, edit, and fill out each section step-by-step (Personal, Identity, Address, Family, Education, Employment, Bank, Documents, Emergency, and Consent). All information is encrypted with AES-256 and will synchronize with your official profile immediately.`,
+    isProfileFormMessage: true,
+    showInlineForm: true,
+    suggestions: [
+      { label: '📂 Upload JSON Instead', intent: 'upload_profile_json' },
+      { label: '👤 View Current Profile', intent: 'view_profile' },
+    ],
+  };
+}
+
 // ===========================================================================
 // 4. INTENT ROUTER
 // ===========================================================================
@@ -688,6 +736,19 @@ function matchIntent(msg) {
   if (/\b(eligib|eligible|eligibity|eligibility|eligible for|eligibility criteria|criteria|who eligible|who is eligible|qualify|qualification|qualify for|am i eligible|eligible for scheme|which scheme i eligible|scheme eligible|scheme eligib|eligib for scheme|scheme i can apply|which scheme i|scheme for me|scheme for my|can i apply|can apply|can i get|can i receive|can i get scheme|can i get benefit|can i get money|can i get help|can i get support)\b/i.test(msg))
     return 'eligibility';
 
+  // manual profile form intent (fit 10-step form directly in chat)
+  if (
+    /\b(manual|manually|10-step|10 step|open form|show form|profile form|fill form|update manually|edit manually|open profile form|start form)\b/i.test(msg)
+  ) {
+    return 'manual_profile_update';
+  }
+
+  // personal profile (not schemes & services)
+  if (
+    /\b(profile|my profile|update profile|update my profile|edit profile|change profile|profile update|profile details|personal profile|citizen profile|personal details|how do i update my profile|how do i update profile|update personal|edit personal|update my details|update personal details)\b/i.test(msg)
+  )
+    return 'profile_help';
+
   // general problem router
   if (/\b(problem|issue|help me|i have a problem|i have issue|trouble|not working|can't|cannot|not able|unable|issue with|problem with|difficulty|troubled|stuck|stuck on|error|exception|failed|failure|fault|defect|not right|not correct|not good|not proper|not working|not functioning|not operating|not responding|not opening|not opening|not opening up|not open|not open up|not open up|not open up|page not|page not load|page not open)\b/i.test(msg))
     return 'open_problem';
@@ -768,6 +829,10 @@ function handleIntent(intent, msg, ctx) {
       return respondOTP(lang);
     case 'eligibility':
       return respondEligibility(lang);
+    case 'profile_help':
+      return respondProfileHelp(lang, ctx);
+    case 'manual_profile_update':
+      return respondManualProfileForm(lang);
     case 'open_problem':
       return respondOpenProblem(lang);
     default:
@@ -821,6 +886,11 @@ export function handleQuickCommand(cmd, ctx = {}) {
     'network': 'network',
     'otp': 'otp',
     'eligibility': 'eligibility',
+    'profile_help': 'profile_help',
+    'update_profile': 'profile_help',
+    'upload_profile_json': 'profile_help',
+    'manual_profile_update': 'manual_profile_update',
+    'view_profile': 'profile_help',
     'contact_person': 'contact_person',
     'contact_call': 'contact_call',
     'contact_email': 'contact_email',
