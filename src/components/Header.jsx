@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import Icon from "./icons.jsx";
 import { FontControls } from "./ui.jsx";
-import userPhoto from "../assets/user.jpg";
 
 import praamanIcon from "../assets/Praamanprotallogo.svg";
 import logoTextLight from "../assets/logo-text-light.png";
@@ -84,7 +83,7 @@ export default function Header() {
             <Icon name="down" className="h-3.5 w-3.5 text-ink-400 dark:text-ink-500 " />
           </button>
           <Link to="/dashboard" className="flex items-center gap-2.5 rounded-[14px] border border-[#d2dceb] dark:border-white/20 bg-white dark:bg-[#000000] py-1.5 pl-1.5 pr-3 hover:bg-ink-50 dark:hover:bg-white/10 shadow-sm" aria-label="Open dashboard">
-            <Avatar src={userPhoto} size={36} ring={false} />
+            <Avatar size={36} ring={false} />
             <span className="text-[14px] font-semibold text-[#1f3d73] dark:text-ink-200 pr-1">Bhushan K.</span>
           </Link>
         </div>
