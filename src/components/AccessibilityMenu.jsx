@@ -132,22 +132,16 @@ export default function AccessibilityMenu({ isOpen, onClose }) {
     };
   }, [activeSettings.tts]);
 
-  // Track drawer open state to suppress ADHD mask while drawer is open
+  // Global cursor tracker to always know cursor Y
   useEffect(() => {
-    if (isOpen) {
-      document.body.classList.add('a11y-menu-open');
-    } else {
-      document.body.classList.remove('a11y-menu-open');
-      if (activeSettings.adhd) {
-        document.documentElement.style.setProperty('--mouse-y', `${window.innerHeight / 2}px`);
-      }
-    }
-    return () => {
-      document.body.classList.remove('a11y-menu-open');
+    const trackCursor = (e) => {
+      window._lastMouseY = e.clientY;
     };
-  }, [isOpen, activeSettings.adhd]);
+    window.addEventListener('mousemove', trackCursor, { passive: true });
+    return () => window.removeEventListener('mousemove', trackCursor);
+  }, []);
 
-  // ADHD Mode cursor and scroll tracker (always tracks when ADHD is active)
+  // ADHD Mode cursor, touch, and scroll tracker (smoothly updates reading guide across entire screen)
   useEffect(() => {
     if (!activeSettings.adhd) {
       document.body.classList.remove('a11y-adhd');
@@ -159,7 +153,7 @@ export default function AccessibilityMenu({ isOpen, onClose }) {
     document.body.classList.add('a11y-adhd');
     document.documentElement.classList.add('a11y-adhd');
     
-    const initialY = window.innerHeight / 2;
+    const initialY = window._lastMouseY || (window.innerHeight / 2);
     document.documentElement.style.setProperty('--mouse-y', `${initialY}px`);
 
     let lastY = initialY;
@@ -167,6 +161,7 @@ export default function AccessibilityMenu({ isOpen, onClose }) {
 
     const setPosition = (y) => {
       lastY = y;
+      window._lastMouseY = y;
       if (!rafId) {
         rafId = requestAnimationFrame(() => {
           document.documentElement.style.setProperty('--mouse-y', `${lastY}px`);
@@ -225,6 +220,10 @@ export default function AccessibilityMenu({ isOpen, onClose }) {
           const siteLang = getActiveSiteLanguage();
           const welcomeMsg = TTS_WELCOME_MESSAGES[siteLang] || TTS_WELCOME_MESSAGES.en;
           speakMultilingual(welcomeMsg, { lang: LANGUAGE_LOCALES[siteLang] || 'en-IN' });
+        }
+        if (setting === 'adhd') {
+          const currentY = window._lastMouseY || (window.innerHeight / 2);
+          document.documentElement.style.setProperty('--mouse-y', `${currentY}px`);
         }
       } else {
         document.body.classList.remove(`a11y-${setting}`);

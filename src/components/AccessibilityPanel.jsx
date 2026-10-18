@@ -351,27 +351,37 @@ export default function AccessibilityPanel({ isOpen, onClose }) {
  body.a11y-pause .a11y-panel, body.a11y-pause .a11y-panel * { animation-duration: initial !important; transition-duration: initial !important; }
  body.a11y-hide-images img { visibility: hidden !important; }
 
- /* ADHD focus reading guide */
+ /* ADHD focus reading guide - high-contrast ruler visible across website and panel */
  body.a11y-adhd::before {
  content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
- pointer-events: none; z-index: 9990;
+ pointer-events: none !important; z-index: 10005 !important;
  background: linear-gradient(
-   rgba(15, 23, 42, 0.35) 0%,
-   rgba(15, 23, 42, 0.35) calc(var(--mouse-y, 50vh) - 45px),
-   rgba(59, 130, 246, 0.45) calc(var(--mouse-y, 50vh) - 44px),
+   rgba(15, 23, 42, 0.45) 0%,
+   rgba(15, 23, 42, 0.45) calc(var(--mouse-y, 50vh) - 45px),
+   #2563eb calc(var(--mouse-y, 50vh) - 45px),
+   #3b82f6 calc(var(--mouse-y, 50vh) - 42px),
    transparent calc(var(--mouse-y, 50vh) - 42px),
    transparent calc(var(--mouse-y, 50vh) + 42px),
-   rgba(59, 130, 246, 0.45) calc(var(--mouse-y, 50vh) + 44px),
-   rgba(15, 23, 42, 0.35) calc(var(--mouse-y, 50vh) + 45px),
-   rgba(15, 23, 42, 0.35) 100%
+   #3b82f6 calc(var(--mouse-y, 50vh) + 42px),
+   #2563eb calc(var(--mouse-y, 50vh) + 45px),
+   rgba(15, 23, 42, 0.45) calc(var(--mouse-y, 50vh) + 45px),
+   rgba(15, 23, 42, 0.45) 100%
  );
- transition: opacity 0.2s ease;
+ transition: opacity 0.15s ease;
  }
- body.a11y-menu-open.a11y-adhd::before,
- body:has(.a11y-overlay).a11y-adhd::before,
- body:has(.a11y-panel).a11y-adhd::before {
-   display: none !important;
-   opacity: 0 !important;
+ .dark body.a11y-adhd::before {
+ background: linear-gradient(
+   rgba(0, 0, 0, 0.58) 0%,
+   rgba(0, 0, 0, 0.58) calc(var(--mouse-y, 50vh) - 45px),
+   #3b82f6 calc(var(--mouse-y, 50vh) - 45px),
+   #60a5fa calc(var(--mouse-y, 50vh) - 42px),
+   transparent calc(var(--mouse-y, 50vh) - 42px),
+   transparent calc(var(--mouse-y, 50vh) + 42px),
+   #60a5fa calc(var(--mouse-y, 50vh) + 42px),
+   #3b82f6 calc(var(--mouse-y, 50vh) + 45px),
+   rgba(0, 0, 0, 0.58) calc(var(--mouse-y, 50vh) + 45px),
+   rgba(0, 0, 0, 0.58) 100%
+ );
  }
 
  @media (max-width: 420px) {
