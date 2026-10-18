@@ -118,3 +118,30 @@ export const translateText = async (text, targetLang) => {
 
   return text;
 };
+
+export const PREFERRED_SOFT_VOICES = {
+  en: ['samantha', 'google us english', 'victoria', 'karen', 'moira', 'tara', 'serena', 'rishi'],
+  hi: ['lekha', 'google hindi', 'google हिन्दी', 'heera', 'swara', 'rishi'],
+  mr: ['google marathi', 'google मराठी', 'swara', 'lekha', 'google hindi'],
+  ta: ['google tamil', 'google தமிழ்', 'vani', 'kanya', 'pallavi'],
+  te: ['google telugu', 'google తెలుగు', 'geeta', 'chitra', 'mohan'],
+  gu: ['google gujarati', 'google ગુજરાતી', 'dhwani', 'niranjan'],
+  pa: ['google punjabi', 'google ਪੰਜਾਬੀ', 'raag', 'gagan'],
+  bn: ['google bangla', 'google bengali', 'google বাংলা', 'piya'],
+};
+
+export const findBestVoice = (voices, targetLang) => {
+  if (!voices || voices.length === 0) return null;
+  const target = (targetLang || 'en-IN').replace('_', '-').toLowerCase();
+  const baseCode = target.split('-')[0];
+  const softPreferences = PREFERRED_SOFT_VOICES[baseCode] || [];
+  for (const preferred of softPreferences) {
+    const found = voices.find((v) => v.name && v.name.toLowerCase().includes(preferred.toLowerCase()));
+    if (found) return found;
+  }
+  const exactMatch = voices.find((v) => v.lang && v.lang.replace('_', '-').toLowerCase() === target);
+  if (exactMatch) return exactMatch;
+  const baseMatch = voices.find((v) => v.lang && v.lang.replace('_', '-').toLowerCase().startsWith(baseCode));
+  if (baseMatch) return baseMatch;
+  return null;
+};
