@@ -4,8 +4,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.2);
-  z-index: 1000;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(2px);
+  z-index: 10000;
 }
 
 .a11y-menu {
@@ -15,10 +16,10 @@
   bottom: 0;
   width: 380px;
   background-color: var(--bg-color);
-  z-index: 1001;
+  z-index: 10001;
   display: flex;
   flex-direction: column;
-  box-shadow: -4px 0 15px rgba(0,0,0,0.1);
+  box-shadow: -4px 0 25px rgba(0,0,0,0.2);
   animation: slideInRight 0.3s ease-out;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -175,13 +176,34 @@ body.a11y-text-spacing {
   letter-spacing: 1px !important;
   word-spacing: 2px !important;
 }
-body.a11y-tts *:hover {
+body.a11y-tts p:hover,
+body.a11y-tts h1:hover,
+body.a11y-tts h2:hover,
+body.a11y-tts h3:hover,
+body.a11y-tts h4:hover,
+body.a11y-tts h5:hover,
+body.a11y-tts h6:hover,
+body.a11y-tts a:hover,
+body.a11y-tts button:hover,
+body.a11y-tts [role="button"]:hover,
+body.a11y-tts span:hover,
+body.a11y-tts label:hover,
+body.a11y-tts li:hover,
+body.a11y-tts td:hover,
+body.a11y-tts th:hover {
   outline: 2px solid #7b40f2 !important;
   outline-offset: 2px;
-  cursor: crosshair !important;
+  cursor: pointer !important;
 }
 
-/* ADHD Mode Reading Mask */
+body.a11y-tts .a11y-menu *:hover,
+body.a11y-tts .a11y-overlay:hover,
+body.a11y-tts .a11y-panel *:hover {
+  outline: none !important;
+  cursor: default !important;
+}
+
+/* ADHD Mode Reading Guide */
 body.a11y-adhd::before {
   content: "";
   position: fixed;
@@ -190,11 +212,27 @@ body.a11y-adhd::before {
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 9999;
+  z-index: 9990;
   background: 
-    linear-gradient(rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.5) calc(var(--mouse-y, 50vh) - 50px),
-    transparent calc(var(--mouse-y, 50vh) - 50px), transparent calc(var(--mouse-y, 50vh) + 50px),
-    rgba(0,0,0,0.5) calc(var(--mouse-y, 50vh) + 50px), rgba(0,0,0,0.5) 100%);
+    linear-gradient(
+      rgba(15, 23, 42, 0.35) 0%,
+      rgba(15, 23, 42, 0.35) calc(var(--mouse-y, 50vh) - 45px),
+      rgba(59, 130, 246, 0.45) calc(var(--mouse-y, 50vh) - 44px),
+      transparent calc(var(--mouse-y, 50vh) - 42px),
+      transparent calc(var(--mouse-y, 50vh) + 42px),
+      rgba(59, 130, 246, 0.45) calc(var(--mouse-y, 50vh) + 44px),
+      rgba(15, 23, 42, 0.35) calc(var(--mouse-y, 50vh) + 45px),
+      rgba(15, 23, 42, 0.35) 100%
+    );
+  transition: opacity 0.2s ease;
+}
+
+/* Hide ADHD mask completely while Accessibility menu or overlay is open */
+body.a11y-menu-open.a11y-adhd::before,
+body:has(.a11y-overlay).a11y-adhd::before,
+body:has(.a11y-menu).a11y-adhd::before {
+  display: none !important;
+  opacity: 0 !important;
 }
 body.a11y-line-height {
   line-height: 1.8 !important;
