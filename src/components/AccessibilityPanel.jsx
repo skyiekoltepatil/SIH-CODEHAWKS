@@ -351,36 +351,28 @@ export default function AccessibilityPanel({ isOpen, onClose }) {
  body.a11y-pause .a11y-panel, body.a11y-pause .a11y-panel * { animation-duration: initial !important; transition-duration: initial !important; }
  body.a11y-hide-images img { visibility: hidden !important; }
 
- /* ADHD focus reading guide - high-contrast ruler visible across website and panel */
+ /* ADHD focus reading guide - clean focus band without colored lines */
  body.a11y-adhd::before {
  content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
  pointer-events: none !important; z-index: 10005 !important;
  background: linear-gradient(
-   rgba(15, 23, 42, 0.45) 0%,
-   rgba(15, 23, 42, 0.45) calc(var(--mouse-y, 50vh) - 45px),
-   #2563eb calc(var(--mouse-y, 50vh) - 45px),
-   #3b82f6 calc(var(--mouse-y, 50vh) - 42px),
-   transparent calc(var(--mouse-y, 50vh) - 42px),
-   transparent calc(var(--mouse-y, 50vh) + 42px),
-   #3b82f6 calc(var(--mouse-y, 50vh) + 42px),
-   #2563eb calc(var(--mouse-y, 50vh) + 45px),
-   rgba(15, 23, 42, 0.45) calc(var(--mouse-y, 50vh) + 45px),
-   rgba(15, 23, 42, 0.45) 100%
+   rgba(15, 23, 42, 0.50) 0%,
+   rgba(15, 23, 42, 0.50) calc(var(--mouse-y, 50vh) - 45px),
+   transparent calc(var(--mouse-y, 50vh) - 45px),
+   transparent calc(var(--mouse-y, 50vh) + 45px),
+   rgba(15, 23, 42, 0.50) calc(var(--mouse-y, 50vh) + 45px),
+   rgba(15, 23, 42, 0.50) 100%
  );
  transition: opacity 0.15s ease;
  }
  .dark body.a11y-adhd::before {
  background: linear-gradient(
-   rgba(0, 0, 0, 0.58) 0%,
-   rgba(0, 0, 0, 0.58) calc(var(--mouse-y, 50vh) - 45px),
-   #3b82f6 calc(var(--mouse-y, 50vh) - 45px),
-   #60a5fa calc(var(--mouse-y, 50vh) - 42px),
-   transparent calc(var(--mouse-y, 50vh) - 42px),
-   transparent calc(var(--mouse-y, 50vh) + 42px),
-   #60a5fa calc(var(--mouse-y, 50vh) + 42px),
-   #3b82f6 calc(var(--mouse-y, 50vh) + 45px),
-   rgba(0, 0, 0, 0.58) calc(var(--mouse-y, 50vh) + 45px),
-   rgba(0, 0, 0, 0.58) 100%
+   rgba(0, 0, 0, 0.60) 0%,
+   rgba(0, 0, 0, 0.60) calc(var(--mouse-y, 50vh) - 45px),
+   transparent calc(var(--mouse-y, 50vh) - 45px),
+   transparent calc(var(--mouse-y, 50vh) + 45px),
+   rgba(0, 0, 0, 0.60) calc(var(--mouse-y, 50vh) + 45px),
+   rgba(0, 0, 0, 0.60) 100%
  );
  }
 

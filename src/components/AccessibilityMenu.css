@@ -203,7 +203,7 @@ body.a11y-tts .a11y-panel *:hover {
   cursor: default !important;
 }
 
-/* ADHD Mode Reading Guide - High-contrast reading ruler visible across website & accessibility window */
+/* ADHD Mode Reading Guide - Clean focus band without colored lines */
 body.a11y-adhd::before {
   content: "";
   position: fixed;
@@ -215,16 +215,12 @@ body.a11y-adhd::before {
   z-index: 10005 !important;
   background: 
     linear-gradient(
-      rgba(15, 23, 42, 0.45) 0%,
-      rgba(15, 23, 42, 0.45) calc(var(--mouse-y, 50vh) - 45px),
-      #2563eb calc(var(--mouse-y, 50vh) - 45px),
-      #3b82f6 calc(var(--mouse-y, 50vh) - 42px),
-      transparent calc(var(--mouse-y, 50vh) - 42px),
-      transparent calc(var(--mouse-y, 50vh) + 42px),
-      #3b82f6 calc(var(--mouse-y, 50vh) + 42px),
-      #2563eb calc(var(--mouse-y, 50vh) + 45px),
-      rgba(15, 23, 42, 0.45) calc(var(--mouse-y, 50vh) + 45px),
-      rgba(15, 23, 42, 0.45) 100%
+      rgba(15, 23, 42, 0.50) 0%,
+      rgba(15, 23, 42, 0.50) calc(var(--mouse-y, 50vh) - 45px),
+      transparent calc(var(--mouse-y, 50vh) - 45px),
+      transparent calc(var(--mouse-y, 50vh) + 45px),
+      rgba(15, 23, 42, 0.50) calc(var(--mouse-y, 50vh) + 45px),
+      rgba(15, 23, 42, 0.50) 100%
     );
   transition: opacity 0.15s ease;
 }
@@ -232,16 +228,12 @@ body.a11y-adhd::before {
 .dark body.a11y-adhd::before {
   background: 
     linear-gradient(
-      rgba(0, 0, 0, 0.58) 0%,
-      rgba(0, 0, 0, 0.58) calc(var(--mouse-y, 50vh) - 45px),
-      #3b82f6 calc(var(--mouse-y, 50vh) - 45px),
-      #60a5fa calc(var(--mouse-y, 50vh) - 42px),
-      transparent calc(var(--mouse-y, 50vh) - 42px),
-      transparent calc(var(--mouse-y, 50vh) + 42px),
-      #60a5fa calc(var(--mouse-y, 50vh) + 42px),
-      #3b82f6 calc(var(--mouse-y, 50vh) + 45px),
-      rgba(0, 0, 0, 0.58) calc(var(--mouse-y, 50vh) + 45px),
-      rgba(0, 0, 0, 0.58) 100%
+      rgba(0, 0, 0, 0.60) 0%,
+      rgba(0, 0, 0, 0.60) calc(var(--mouse-y, 50vh) - 45px),
+      transparent calc(var(--mouse-y, 50vh) - 45px),
+      transparent calc(var(--mouse-y, 50vh) + 45px),
+      rgba(0, 0, 0, 0.60) calc(var(--mouse-y, 50vh) + 45px),
+      rgba(0, 0, 0, 0.60) 100%
     );
 }
 body.a11y-line-height {
