@@ -216,3 +216,29 @@ export const playAudioTts = (text, targetLang, options = {}) => {
     }
   };
 };
+
+export const getWordAtCoordinates = (x, y) => {
+  if (typeof document === 'undefined') return '';
+  let range = null;
+  if (document.caretRangeFromPoint) {
+    range = document.caretRangeFromPoint(x, y);
+  } else if (document.caretPositionFromPoint) {
+    const pos = document.caretPositionFromPoint(x, y);
+    if (pos && pos.offsetNode) {
+      range = document.createRange();
+      range.setStart(pos.offsetNode, pos.offset);
+      range.collapse(true);
+    }
+  }
+  if (!range) return '';
+  const node = range.startContainer;
+  if (!node || node.nodeType !== Node.TEXT_NODE) return '';
+  const text = node.textContent || '';
+  const offset = range.startOffset;
+  let start = offset;
+  while (start > 0 && /[\p{L}\p{M}\p{N}]/u.test(text[start - 1])) start--;
+  let end = offset;
+  while (end < text.length && /[\p{L}\p{M}\p{N}]/u.test(text[end])) end++;
+  const rawWord = text.slice(start, end);
+  return rawWord.replace(/^[^\p{L}\p{M}\p{N}]+|[^\p{L}\p{M}\p{N}]+$/gu, '').trim();
+};
