@@ -15,6 +15,12 @@ export default function TopBar() {
   const [chatLoading, setChatLoading] = useState(true);
 
   useEffect(() => {
+    const handleOpenA11y = () => setIsA11yOpen(true);
+    window.addEventListener('open-a11y-menu', handleOpenA11y);
+    return () => window.removeEventListener('open-a11y-menu', handleOpenA11y);
+  }, []);
+
+  useEffect(() => {
     const fetchUserApps = async () => {
       if (!user?.uid) {
         setChatLoading(false);
@@ -83,6 +89,10 @@ export default function TopBar() {
     setLang(selectedLang);
     localStorage.setItem('site_language', selectedLang);
     
+    // Dispatch custom event and storage event so all components and TTS know immediately
+    window.dispatchEvent(new CustomEvent('siteLanguageChange', { detail: { lang: selectedLang } }));
+    window.dispatchEvent(new Event('storage'));
+
     // Trigger the hidden Google Translate dropdown safely
     const select = document.querySelector('.goog-te-combo');
     if (select) {
@@ -150,7 +160,7 @@ export default function TopBar() {
         .goog-text-highlight { background: none !important; box-shadow: none !important; }
       `}</style>
       
-      {isA11yOpen && <AccessibilityMenu isOpen={isA11yOpen} onClose={() => setIsA11yOpen(false)} />}
+      <AccessibilityMenu isOpen={isA11yOpen} onClose={() => setIsA11yOpen(false)} />
       
       {isChatOpen && (
         <div className="floating-chat-widget">
