@@ -145,3 +145,74 @@ export const findBestVoice = (voices, targetLang) => {
   if (baseMatch) return baseMatch;
   return null;
 };
+
+let activeAudioStream = null;
+
+export const playAudioTts = (text, targetLang, options = {}) => {
+  stopSpeech();
+  const baseLang = (targetLang || 'hi').split('-')[0].toLowerCase();
+  const clean = cleanTextForSpeech(text).slice(0, 1000);
+  if (!clean) {
+    if (options.onEnd) options.onEnd();
+    return null;
+  }
+  const rawSentences = clean.split(/(?<=[.?!।\n])\s+/).filter(Boolean);
+  const chunks = [];
+  for (const s of rawSentences) {
+    if (s.length <= 180) {
+      chunks.push(s);
+    } else {
+      const words = s.split(/\s+/);
+      let cur = '';
+      for (const w of words) {
+        if ((cur + ' ' + w).trim().length <= 180) {
+          cur = (cur + ' ' + w).trim();
+        } else {
+          if (cur) chunks.push(cur);
+          cur = w;
+        }
+      }
+      if (cur) chunks.push(cur);
+    }
+  }
+  if (chunks.length === 0) chunks.push(clean.slice(0, 180));
+  let currentIndex = 0;
+  let isCancelled = false;
+
+  const playNextChunk = () => {
+    if (isCancelled || currentIndex >= chunks.length) {
+      activeAudioStream = null;
+      if (options.onEnd) options.onEnd();
+      return;
+    }
+    const chunkText = chunks[currentIndex];
+    const encoded = encodeURIComponent(chunkText);
+    const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${baseLang}&client=tw-ob&q=${encoded}`;
+    const audio = new Audio(audioUrl);
+    activeAudioStream = audio;
+    audio.playbackRate = options.rate || 0.95;
+    audio.volume = options.volume || 0.95;
+    audio.onended = () => {
+      currentIndex++;
+      playNextChunk();
+    };
+    audio.onerror = () => {
+      currentIndex++;
+      playNextChunk();
+    };
+    audio.play().catch((err) => {
+      activeAudioStream = null;
+      if (options.onError) options.onError(err);
+    });
+  };
+  playNextChunk();
+  return {
+    stop: () => {
+      isCancelled = true;
+      if (activeAudioStream) {
+        try { activeAudioStream.pause(); activeAudioStream.currentTime = 0; } catch (e) {}
+        activeAudioStream = null;
+      }
+    }
+  };
+};
