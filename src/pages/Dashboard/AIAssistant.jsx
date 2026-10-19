@@ -381,37 +381,37 @@ const createNewSession = (title = 'New Conversation') => {
 };
 
 const loadInitialSessions = (uid) => {
-  try {
-    const raw = localStorage.getItem(getStorageKey(uid));
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+  // If guest, try reading temporary guest storage
+  if (!uid) {
+    try {
+      const raw = localStorage.getItem(getStorageKey(null));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
-    }
-  } catch (err) {
-    console.error('Failed to load chat sessions:', err);
+    } catch (err) {}
   }
-  const defaultSession = createNewSession('New Conversation');
-  try {
-    localStorage.setItem(getStorageKey(uid), JSON.stringify([defaultSession]));
-  } catch (e) {}
-  return [defaultSession];
+  return [createNewSession('New Conversation')];
 };
 
 const loadInitialActiveId = (uid, initialSessions) => {
-  try {
-    const savedActiveId = localStorage.getItem(getActiveKey(uid));
-    if (savedActiveId && initialSessions.some((s) => s.id === savedActiveId)) {
-      return savedActiveId;
-    }
-  } catch (err) {}
+  if (!uid) {
+    try {
+      const savedActiveId = localStorage.getItem(getActiveKey(null));
+      if (savedActiveId && initialSessions.some((s) => s.id === savedActiveId)) {
+        return savedActiveId;
+      }
+    } catch (err) {}
+  }
   return initialSessions[0]?.id || '';
 };
 
 export default function AIAssistant() {
   const { user, backend } = useAuth();
 
+  const [syncStatus, setSyncStatus] = useState('syncing'); // 'syncing' | 'synced' | 'migrating' | 'guest'
   const [sessions, setSessions] = useState(() => loadInitialSessions(user?.uid));
   const [activeSessionId, setActiveSessionId] = useState(() => {
     const initial = loadInitialSessions(user?.uid);
@@ -497,33 +497,83 @@ export default function AIAssistant() {
     };
   }, [user, cp, apps]);
 
-  // Sync sessions with user changes
+  // Real-time synchronization of chat history with registered user account in Firestore
   useEffect(() => {
-    const loaded = loadInitialSessions(user?.uid);
-    setSessions(loaded);
-    const activeId = loadInitialActiveId(user?.uid, loaded);
-    setActiveSessionId(activeId);
-  }, [user?.uid]);
+    if (!user?.uid) {
+      const local = loadInitialSessions(null);
+      setSessions(local);
+      setActiveSessionId(local[0]?.id || '');
+      setSyncStatus('guest');
+      return;
+    }
 
-  // Persist sessions to localStorage
-  useEffect(() => {
-    if (sessions && sessions.length > 0) {
-      try {
-        localStorage.setItem(getStorageKey(user?.uid), JSON.stringify(sessions));
-      } catch (err) {
-        console.error('Failed to save chat sessions:', err);
+    let isSubscribed = true;
+    setSyncStatus('syncing');
+
+    // Subscribe to cloud chat sessions from the user's registered account in Firestore
+    const unsubscribe = backend.subscribeChatSessions(user.uid, async (cloudSessions) => {
+      if (!isSubscribed) return;
+
+      if (cloudSessions && cloudSessions.length > 0) {
+        setSessions(cloudSessions);
+        setSyncStatus('synced');
+        setActiveSessionId((prevId) => {
+          if (prevId && cloudSessions.some((s) => s.id === prevId)) return prevId;
+          return cloudSessions[0]?.id || '';
+        });
+      } else {
+        // No cloud chats yet — check if there are legacy local chats to migrate to account
+        const legacyRaw = localStorage.getItem(getStorageKey(user.uid));
+        let legacySessions = [];
+        try {
+          legacySessions = legacyRaw ? JSON.parse(legacyRaw) : [];
+        } catch (e) {}
+
+        if (Array.isArray(legacySessions) && legacySessions.length > 0) {
+          setSyncStatus('migrating');
+          for (const s of legacySessions) {
+            await backend.saveChatSession(user.uid, s, user.email);
+          }
+          try {
+            localStorage.removeItem(getStorageKey(user.uid));
+            localStorage.removeItem(getActiveKey(user.uid));
+          } catch (e) {}
+          setSessions(legacySessions);
+          setActiveSessionId(legacySessions[0]?.id || '');
+          setSyncStatus('synced');
+        } else {
+          // Initialize their first cloud chat session in their registered account
+          const fresh = createNewSession('New Conversation');
+          await backend.saveChatSession(user.uid, fresh, user.email);
+          await backend.setActiveChatSessionId(user.uid, fresh.id);
+          setSessions([fresh]);
+          setActiveSessionId(fresh.id);
+          setSyncStatus('synced');
+        }
       }
+    });
+
+    // Also load active session id if saved in account
+    backend.getActiveChatSessionId(user.uid).then((savedActiveId) => {
+      if (isSubscribed && savedActiveId) {
+        setActiveSessionId((prev) => prev || savedActiveId);
+      }
+    }).catch(() => {});
+
+    return () => {
+      isSubscribed = false;
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, [user?.uid, user?.email, backend]);
+
+  // Persist guest session only when not logged in
+  useEffect(() => {
+    if (!user?.uid && sessions && sessions.length > 0) {
+      try {
+        localStorage.setItem(getStorageKey(null), JSON.stringify(sessions));
+      } catch (err) {}
     }
   }, [sessions, user?.uid]);
-
-  // Persist active session id
-  useEffect(() => {
-    if (activeSessionId) {
-      try {
-        localStorage.setItem(getActiveKey(user?.uid), activeSessionId);
-      } catch (e) {}
-    }
-  }, [activeSessionId, user?.uid]);
 
   const activeSession = useMemo(() => {
     return sessions.find((s) => s.id === activeSessionId) || sessions[0] || null;
@@ -535,7 +585,8 @@ export default function AIAssistant() {
 
   const updateSessionMessages = useCallback((targetSessionId, updater) => {
     setSessions((prevSessions) => {
-      return prevSessions.map((session) => {
+      let targetSessionToSave = null;
+      const nextSessions = prevSessions.map((session) => {
         if (session.id !== targetSessionId) return session;
         const prevMsgs = session.messages || [];
         const newMsgs = typeof updater === 'function' ? updater(prevMsgs) : updater;
@@ -549,15 +600,25 @@ export default function AIAssistant() {
           }
         }
 
-        return {
+        const updated = {
           ...session,
           title: newTitle,
           messages: newMsgs,
           updatedAt: new Date().toISOString(),
         };
+        targetSessionToSave = updated;
+        return updated;
       });
+
+      if (user?.uid && targetSessionToSave && backend?.saveChatSession) {
+        backend.saveChatSession(user.uid, targetSessionToSave, user.email).catch((err) => {
+          console.error('Failed to sync chat to account:', err);
+        });
+      }
+
+      return nextSessions;
     });
-  }, []);
+  }, [user?.uid, user?.email, backend]);
 
   const setMessages = useCallback(
     (updater) => {
@@ -574,6 +635,11 @@ export default function AIAssistant() {
     setAttachments([]);
     setInput('');
     setIsMobileHistoryOpen(false);
+
+    if (user?.uid && backend?.saveChatSession) {
+      backend.saveChatSession(user.uid, newSession, user.email);
+      backend.setActiveChatSessionId(user.uid, newSession.id);
+    }
   };
 
   const handleSelectSession = (sessionId) => {
@@ -582,6 +648,10 @@ export default function AIAssistant() {
     setAttachments([]);
     setInput('');
     setIsMobileHistoryOpen(false);
+
+    if (user?.uid && backend?.setActiveChatSessionId) {
+      backend.setActiveChatSessionId(user.uid, sessionId);
+    }
   };
 
   const handleDeleteSession = (sessionToDelete, e) => {
@@ -597,13 +667,24 @@ export default function AIAssistant() {
       if (filtered.length === 0) {
         const fresh = createNewSession('New Conversation');
         setActiveSessionId(fresh.id);
+        if (user?.uid && backend?.saveChatSession) {
+          backend.saveChatSession(user.uid, fresh, user.email);
+          backend.setActiveChatSessionId(user.uid, fresh.id);
+        }
         return [fresh];
       }
       if (activeSessionId === targetId) {
         setActiveSessionId(filtered[0].id);
+        if (user?.uid && backend?.setActiveChatSessionId) {
+          backend.setActiveChatSessionId(user.uid, filtered[0].id);
+        }
       }
       return filtered;
     });
+
+    if (user?.uid && backend?.deleteChatSession) {
+      backend.deleteChatSession(user.uid, targetId);
+    }
     setDeleteConfirmSession(null);
   };
 
@@ -618,9 +699,20 @@ export default function AIAssistant() {
     if (!editingSessionId) return;
     const trimmed = editingTitle.trim();
     if (trimmed) {
+      let updatedToSave = null;
       setSessions((prev) =>
-        prev.map((s) => (s.id === editingSessionId ? { ...s, title: trimmed } : s))
+        prev.map((s) => {
+          if (s.id === editingSessionId) {
+            const updated = { ...s, title: trimmed, updatedAt: new Date().toISOString() };
+            updatedToSave = updated;
+            return updated;
+          }
+          return s;
+        })
       );
+      if (user?.uid && updatedToSave && backend?.saveChatSession) {
+        backend.saveChatSession(user.uid, updatedToSave, user.email);
+      }
     }
     setEditingSessionId(null);
   };
@@ -635,9 +727,20 @@ export default function AIAssistant() {
       if (typeof e.preventDefault === 'function') e.preventDefault();
       if (typeof e.stopPropagation === 'function') e.stopPropagation();
     }
+    let updatedToSave = null;
     setSessions((prev) =>
-      prev.map((s) => (s.id === session.id ? { ...s, isPinned: !s.isPinned } : s))
+      prev.map((s) => {
+        if (s.id === session.id) {
+          const updated = { ...s, isPinned: !s.isPinned, updatedAt: new Date().toISOString() };
+          updatedToSave = updated;
+          return updated;
+        }
+        return s;
+      })
     );
+    if (user?.uid && updatedToSave && backend?.saveChatSession) {
+      backend.saveChatSession(user.uid, updatedToSave, user.email);
+    }
     setActiveMenuSessionId(null);
   };
 
@@ -696,26 +799,46 @@ export default function AIAssistant() {
     setActiveFormMsgId(null);
     setAttachments([]);
     setInput('');
-    try {
-      localStorage.setItem(getStorageKey(user?.uid), JSON.stringify([fresh]));
-      localStorage.setItem(getActiveKey(user?.uid), fresh.id);
-    } catch (e) {}
+
+    if (user?.uid && backend?.clearAllChatSessions) {
+      backend.clearAllChatSessions(user.uid).then(() => {
+        backend.saveChatSession(user.uid, fresh, user.email);
+        backend.setActiveChatSessionId(user.uid, fresh.id);
+      }).catch((e) => console.error('Failed to clear cloud chat history:', e));
+
+      try {
+        localStorage.removeItem(getStorageKey(user.uid));
+        localStorage.removeItem(getActiveKey(user.uid));
+      } catch (e) {}
+    } else {
+      try {
+        localStorage.setItem(getStorageKey(null), JSON.stringify([fresh]));
+        localStorage.setItem(getActiveKey(null), fresh.id);
+      } catch (e) {}
+    }
   };
 
   const executeClearCurrentChat = () => {
     const welcome = createWelcomeMessage();
+    let updatedToSave = null;
     setSessions((prev) =>
-      prev.map((s) =>
-        s.id === activeSessionId
-          ? {
-              ...s,
-              title: 'New Conversation',
-              messages: [welcome],
-              updatedAt: new Date().toISOString(),
-            }
-          : s
-      )
+      prev.map((s) => {
+        if (s.id === activeSessionId) {
+          const updated = {
+            ...s,
+            title: 'New Conversation',
+            messages: [welcome],
+            updatedAt: new Date().toISOString(),
+          };
+          updatedToSave = updated;
+          return updated;
+        }
+        return s;
+      })
     );
+    if (user?.uid && updatedToSave && backend?.saveChatSession) {
+      backend.saveChatSession(user.uid, updatedToSave, user.email);
+    }
     setAttachments([]);
     setShowClearCurrentModal(false);
     setActiveFormMsgId(null);
@@ -1421,7 +1544,7 @@ Here is a summary of your updated personal records:
         >
           {/* Sidebar Top: Header, Count & New Chat Button */}
           <div className="p-3.5 border-b border-ink-100 dark:border-white/10 shrink-0 bg-white/50 dark:bg-white/[0.02]">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
                   <Icon name="history" className="h-4 w-4" />
@@ -1431,7 +1554,7 @@ Here is a summary of your updated personal records:
                     Chat History
                   </h2>
                   <p className="text-[10.5px] text-ink-400 dark:text-ink-500">
-                    {sessions.length} saved {sessions.length === 1 ? 'conversation' : 'conversations'}
+                    {sessions.length} {sessions.length === 1 ? 'conversation' : 'conversations'} • {user?.email ? 'Account synced' : 'Guest mode'}
                   </p>
                 </div>
               </div>
@@ -1446,6 +1569,16 @@ Here is a summary of your updated personal records:
                 <Icon name="x" className="h-4 w-4" />
               </button>
             </div>
+
+            {/* Account Synced Badge */}
+            {user?.email && (
+              <div className="mb-2.5 flex items-center gap-1.5 rounded-lg bg-blue-50/80 dark:bg-blue-950/40 px-2 py-1 text-[11px] font-medium text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-900/50">
+                <Icon name="cloudCheck" className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
+                <span className="truncate" title={`AI chats are securely saved to your account: ${user.email}`}>
+                  Saved to: {user.email}
+                </span>
+              </div>
+            )}
 
             {/* "+ New Chat" Button */}
             <button
@@ -1581,9 +1714,22 @@ Here is a summary of your updated personal records:
                   <p className="text-[13px] font-bold text-ink-900 dark:text-white leading-tight truncate">
                     {activeSession?.title || 'Praaman AI Assistant'}
                   </p>
-                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>Online & Ready to Help</span>
+                  <div className="flex items-center gap-2 text-[11px] font-medium flex-wrap">
+                    <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Online</span>
+                    </div>
+                    <span className="text-ink-300 dark:text-white/20">•</span>
+                    {user?.email ? (
+                      <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400" title={`All conversations are stored in your registered cloud account (${user.email})`}>
+                        <Icon name="cloudCheck" className="h-3 w-3" />
+                        <span>Saved to account ({user.email})</span>
+                      </div>
+                    ) : (
+                      <span className="text-amber-600 dark:text-amber-400">
+                        Guest session (Local only)
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

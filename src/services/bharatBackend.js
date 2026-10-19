@@ -583,23 +583,114 @@ export const backend = {
     return { otp, deliveredTo: channel };
   },
 
+  /* ---------------- AI CHAT SESSIONS (Persisted to User Account) ---------------- */
+
+  async listChatSessions(uid) {
+    if (!uid) return [];
+    const rows = await listDocuments(`users/${uid}/ai_chats`);
+    return rows.sort((a, b) => tsToMs(b.updatedAt || b.createdAt) - tsToMs(a.updatedAt || a.createdAt));
+  },
+
+  async getChatSession(uid, sessionId) {
+    if (!uid || !sessionId) return null;
+    return getDocument(`users/${uid}/ai_chats/${sessionId}`);
+  },
+
+  async saveChatSession(uid, session, userEmail = "") {
+    if (!uid || !session?.id) return;
+    const clean = {
+      id: session.id,
+      userId: uid,
+      userEmail: userEmail || "",
+      title: session.title || "New Conversation",
+      isPinned: Boolean(session.isPinned),
+      createdAt: session.createdAt || nowIso(),
+      updatedAt: nowIso(),
+      messages: Array.isArray(session.messages)
+        ? session.messages.map((m) => {
+            const out = {
+              id: m.id || `msg-${Date.now()}`,
+              role: m.role || "user",
+              text: m.text || "",
+              timestamp: m.timestamp || "",
+            };
+            if (m.title) out.title = m.title;
+            if (m.isProfileGuide) out.isProfileGuide = true;
+            if (m.showInlineForm) out.showInlineForm = true;
+            if (m.actionBtn) out.actionBtn = m.actionBtn;
+            if (Array.isArray(m.suggestions)) out.suggestions = m.suggestions;
+            if (Array.isArray(m.attachments)) {
+              out.attachments = m.attachments.map((a) => ({
+                id: a.id || `att-${Date.now()}`,
+                name: a.name || "Attachment",
+                size: a.size || "",
+                type: a.type || "doc",
+              }));
+            }
+            return out;
+          })
+        : [],
+    };
+    await setDocument(`users/${uid}/ai_chats/${session.id}`, clean);
+    return clean;
+  },
+
+  async deleteChatSession(uid, sessionId) {
+    if (!uid || !sessionId) return;
+    await deleteDocument(`users/${uid}/ai_chats/${sessionId}`);
+  },
+
+  async clearAllChatSessions(uid) {
+    if (!uid) return;
+    const rows = await listDocuments(`users/${uid}/ai_chats`);
+    await Promise.all(rows.map((r) => deleteDocument(`users/${uid}/ai_chats/${r.id}`)));
+  },
+
+  subscribeChatSessions(uid, cb) {
+    if (!uid) {
+      cb([]);
+      return () => {};
+    }
+    return subscribeCollection(`users/${uid}/ai_chats`, (rows) => {
+      const sorted = (rows || []).sort(
+        (a, b) => tsToMs(b.updatedAt || b.createdAt) - tsToMs(a.updatedAt || a.createdAt)
+      );
+      cb(sorted);
+    });
+  },
+
+  async getActiveChatSessionId(uid) {
+    if (!uid) return null;
+    const meta = await getDocument(`users/${uid}/ai_meta/activeSession`);
+    return meta?.activeSessionId || null;
+  },
+
+  async setActiveChatSessionId(uid, sessionId) {
+    if (!uid) return;
+    await setDocument(`users/${uid}/ai_meta/activeSession`, {
+      activeSessionId: sessionId,
+      updatedAt: nowIso(),
+    });
+  },
+
   /* ---------------- DATA EXPORT / DELETE (DPDP rights) ---------------- */
 
   async exportMyData(uid) {
-    const [doc, apps, events, consents, transfers, docs] = await Promise.all([
+    const [doc, apps, events, consents, transfers, docs, chats] = await Promise.all([
       backend.getUserDoc(uid),
       backend.listApplications(uid),
       backend.listEvents(uid),
       backend.listConsents(uid),
       backend.listTransfers(uid),
       backend.listVaultDocuments(uid),
+      backend.listChatSessions(uid),
     ]);
     const decryptedDoc = doc?.citizenProfile ? { ...doc, citizenProfile: await decryptProfile(doc.citizenProfile, uid) } : doc;
-    return { exportedAt: nowIso(), engine: ENGINE, profile: decryptedDoc, applications: apps, auditEvents: events, consents, transfers, documents: docs };
+    return { exportedAt: nowIso(), engine: ENGINE, profile: decryptedDoc, applications: apps, auditEvents: events, consents, transfers, documents: docs, aiChats: chats };
   },
 
   async deleteMyData(uid) {
-    const prefixes = ["applications", "dataAccessHistory", "consents", "transfers", "documents"];
+    const prefixes = ["applications", "dataAccessHistory", "consents", "transfers", "documents", "ai_chats", "ai_meta"];
     for (const p of prefixes) {
       const rows = await listDocuments(`users/${uid}/${p}`);
       await Promise.all(rows.map((r) => deleteDocument(`users/${uid}/${p}/${r.id}`)));

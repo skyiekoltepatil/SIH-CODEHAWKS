@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { handleUserMessage, handleQuickCommand } from '../services/chatbot';
+import backend from '../services/bharatBackend.js';
 
 // ---------------------------------------------------------------------------
 // Reusable chatbot UI — used by both the AIAssistant page and the floating widget
@@ -47,7 +48,8 @@ export default function ChatBot({ context }) {
     if (!text) return;
 
     setInput('');
-    addMessage({ role: 'user', text });
+    const userMsg = { role: 'user', text, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    addMessage(userMsg);
     setLoading(true);
 
     // Give the UI a breath before the reply
@@ -57,12 +59,29 @@ export default function ChatBot({ context }) {
           handleQuickCommand(text, context) ||
           handleUserMessage(text, context || { user: null, applications: [] });
 
-        addMessage({
+        const aiMsg = {
           role: 'ai',
           text: reply.text || "I'm not sure how to help with that. Try asking something else.",
           lang: reply.lang,
           suggestions: (reply.suggestions && reply.suggestions.length > 0) ? reply.suggestions : undefined,
-        });
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        addMessage(aiMsg);
+
+        if (user?.uid && backend?.saveChatSession) {
+          const updatedMessages = [...messages, userMsg, aiMsg];
+          backend.saveChatSession(
+            user.uid,
+            {
+              id: `topbar-chat-${user.uid}`,
+              title: `TopBar Chat: ${text.slice(0, 28)}`,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              messages: updatedMessages,
+            },
+            user.email
+          ).catch((e) => console.error('Failed to sync topbar chat to account:', e));
+        }
       } catch (err) {
         addMessage({
           role: 'ai',
@@ -73,7 +92,7 @@ export default function ChatBot({ context }) {
         setLoading(false);
       }
     }, 350);
-  }, [input, addMessage, context]);
+  }, [input, addMessage, context, user, messages]);
 
   const handleKeyDown = useCallback(
     (e) => {

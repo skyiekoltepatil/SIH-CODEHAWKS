@@ -193,7 +193,23 @@ export default function AIAssistantDrawer({ isOpen, onClose, initialQuery = '' }
             suggestions: reply.suggestions && reply.suggestions.length > 0 ? reply.suggestions : undefined,
           };
 
-          setMessages((prev) => [...prev, aiMsg]);
+          setMessages((prev) => {
+            const next = [...prev, aiMsg];
+            if (user?.uid && backend?.saveChatSession) {
+              backend.saveChatSession(
+                user.uid,
+                {
+                  id: `quick-drawer-${user.uid}`,
+                  title: 'Quick Assistant Drawer',
+                  createdAt: next[0]?.timestamp || new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                  messages: next,
+                },
+                user.email
+              ).catch((e) => console.error('Failed to sync drawer chat to account:', e));
+            }
+            return next;
+          });
         } catch (err) {
           console.error('Chat error:', err);
         } finally {
@@ -202,7 +218,7 @@ export default function AIAssistantDrawer({ isOpen, onClose, initialQuery = '' }
         }
       }, 400);
     },
-    [input, isTyping, chatContext, selectedLang]
+    [input, isTyping, chatContext, selectedLang, user, backend]
   );
 
   useEffect(() => {
@@ -314,6 +330,14 @@ export default function AIAssistantDrawer({ isOpen, onClose, initialQuery = '' }
                 </option>
               ))}
             </select>
+            <Link
+              to="/dashboard/ai-assistant"
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-ink-400 hover:bg-ink-100 dark:hover:bg-white/10 hover:text-blue-600 dark:text-ink-300 transition-colors"
+              title="Open full AI Assistant page"
+            >
+              <Icon name="external" className="h-4 w-4" />
+            </Link>
             <button
               onClick={handleClear}
               className="rounded-lg p-1.5 text-ink-400 hover:bg-ink-100 dark:hover:bg-white/10 hover:text-ink-700 dark:text-ink-300"

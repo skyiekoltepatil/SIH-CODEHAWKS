@@ -75,6 +75,8 @@ const paths = {
  dotsVertical: <><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" /></>,
  pin: <><path d="M12 17v5" /><path d="M5 17h14l-1.5-7V4h1V2H5.5v2h1v6L5 17Z" /></>,
  pinOff: <><line x1="2" x2="22" y1="2" y2="22" /><path d="M12 17v5" /><path d="M9 9v1L7.5 17h10.5M15 9.34V4h1V2H8.5v2h1v3" /></>,
+ cloud: <><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" /></>,
+ cloudCheck: <><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" /><path d="m9 13 2 2 4-4" /></>,
 };
 
 export default function Icon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
