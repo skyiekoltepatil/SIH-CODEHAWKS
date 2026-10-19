@@ -210,11 +210,17 @@ async function listDocuments(pathPrefix) {
 
 function subscribeCollection(pathPrefix, cb) {
   if (ENGINE === "firebase") {
-    return onSnapshot(collection(getDb(), pathPrefix), (snap) => {
-      const out = [];
-      snap.forEach((d) => out.push({ id: d.id, ...d.data() }));
-      cb(out);
-    });
+    return onSnapshot(
+      collection(getDb(), pathPrefix),
+      (snap) => {
+        const out = [];
+        snap.forEach((d) => out.push({ id: d.id, ...d.data() }));
+        cb(out);
+      },
+      (err) => {
+        console.warn(`Firestore subscription notice for ${pathPrefix}:`, err);
+      }
+    );
   }
   cb(lsCollection(pathPrefix));
   return onLocalChange(pathPrefix, () => cb(lsCollection(pathPrefix)));

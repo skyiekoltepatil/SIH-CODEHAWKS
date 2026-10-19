@@ -1674,14 +1674,6 @@ Here is a summary of your updated personal records:
                 {sessions.length}
               </span>
             </button>
-
-            <div className="mt-1.5 px-2 flex items-center justify-between text-[10.5px] text-ink-400 dark:text-ink-500">
-              <div className="flex items-center gap-1.5">
-                <Icon name="shield" className="h-3 w-3 text-emerald-500" />
-                <span>Saved locally</span>
-              </div>
-              <span>Private & safe</span>
-            </div>
           </div>
         </aside>
 
